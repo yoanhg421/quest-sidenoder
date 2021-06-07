@@ -1,3 +1,28 @@
+const fs = require('fs'),
+    path = require('path');
+
+function readSizeRecursive(item) {
+    const stats = fs.lstatSync(item);
+    if (!stats.isDirectory()) return stats.size;
+
+    let total = 0;
+    const list = fs.readdirSync(item);
+    for (const diritem of list) {
+        const size = readSizeRecursive(path.join(item, diritem));
+        total += size;
+    }
+
+    return total;
+}
+
+function getItemSize(item) {
+    return (readSizeRecursive(item) / 1024 / 1024).toFixed(2);
+}
+
+function esc(item) {
+    return item.split('\'').join('\\\'');
+}
+
 //when dir listing comes back, list it
 ipcRenderer.on('get_dir', (event, arg) => {
     console.log("get_dir msg came: ");
@@ -39,60 +64,63 @@ function loadDir(path, list) {
     let UpDir = path.substr(0, path.lastIndexOf("/"));
     $("#listTableStart tbody").html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
     $("#browseCardBody").html('');
-    for (item in list) {
-        let name = list[item].name
-        fullPath = list[item].filePath.replace("\\", "/").replace("", ":")
+    for (id in list) {
+        const item = list[id];
+        const name = item.name;
+        const createdAt = item.createdAt.getTime();
+        const fullPath = item.filePath.replace("\\", "/").replace("", ":");
 
 
-        if (list[item].isFile) {
-            if (list[item].name.endsWith(".apk")) {
-                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${list[item].name.toUpperCase()}" data-createdat="${list[item].createdAt.getTime()}"><td><a data-path="${fullPath}" onclick='getDir(this)'><b><i class="browse-file fa fa-upload" aria-hidden="true"></i> &nbsp;` + `${name}</b></a><td></tr>`)
+        if (item.isFile) {
+            const size = (item.info.size / 1024 / 1024).toFixed(2);
+            if (item.name.endsWith(".apk")) {
+                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td><a data-path="${fullPath}" onclick='getDir(this)'><b><i class="browse-file fa fa-upload" aria-hidden="true"></i> &nbsp;` + `${name}</b></a></td><td>${size} Mb</td></tr>`)
             } else {
-                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${list[item].name.toUpperCase()}" data-createdat="${list[item].createdAt.getTime()}"><td><i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp;` + `${name}<td></tr>`)
+                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td><i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp;` + `${name}</td><td>${size} Mb</td></tr>`)
             }
         } else {
-            if (list[item].imagePath) {
-
-                if (list[item].mp) {
+            if (item.imagePath) {
+                const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
+                if (item.mp) {
                     mpribbon = `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>`
                 } else {
                     mpribbon = ''
                 }
 
-                if (list[item].versionCode !== 'PROCESSING') {
+                if (item.versionCode !== 'PROCESSING') {
                     selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-primary btn-block">Select</span></a>`
                 } else {
-                    selectBtn = `<a><span class="btn btn-outline-secondary btn-block">${list[item].versionCode}</span></a>`
+                    selectBtn = `<a><span class="btn btn-outline-secondary btn-block">${item.versionCode}</span></a>`
                 }
 
                 //row = $("#listTable tbody").append("<tr><td class='browse-folder' ><a onclick='getDir(\"" + fullPath + "\")'><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;" + `${name}</a><td></tr>`)
-                row = $("#browseCardBody").append(`<div class="col mb-4 listitem" data-name="${list[item].name.toUpperCase()}" data-createdat="${list[item].createdAt.getTime()}">
+                row = $("#browseCardBody").append(`<div class="col mb-4 listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
           <div class="card h-100">
 
             ${mpribbon}
 
 
-<img src="${list[item].imagePath}" style="max-height: 100px" class="card-img-top" alt="...">
+<img src="${item.imagePath}" style="max-height: 100px" class="card-img-top" alt="...">
 
             <div class="card-body">
 
               <p class="card-text" style="color: black">
-${list[item].simpleName}<br><br>
+${item.simpleName}<br><br>
 
 ${selectBtn}
 
 
 </p>
             </div>
-            <div style="color: gray" class="card-footer">v. ${list[item].versionCode}</div>
+            <div style="color: gray" class="card-footer">v. ${item.versionCode} (<a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a>)  <a onclick="window.open('${youtubeUrl}')"><i class="fa fa-youtube-play"></i></a></div>
 
           </div>
         </div>`);
             } else {
 
-                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${list[item].name.toUpperCase()}" data-createdat="${list[item].createdAt.getTime()}"><td class='browse-folder'>
+                row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td class='browse-folder'>
 <a data-path="${fullPath}" onclick='getDir(this)'>
-<i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;` + `${name}</a><td></tr>`)
+<i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;` + `${name}</a></td><td><a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a></td></tr>`)
             }
 
         }
