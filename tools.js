@@ -1,22 +1,22 @@
 const exec = require('child_process').exec;
-var adb = require('adbkit')
-var client = adb.createClient();
+const adb = require('adbkit')
+const client = adb.createClient();
 const fs = require('fs');
 const fsExtra = require('fs-extra');
 const fsPromise = fs.promises;
-var platform = require('os').platform;
+const platform = require('os').platform;
 
 
-var fetch = require('node-fetch')
-var path = require('path')
-var commandExists = require('command-exists');
-var util = require('util')
-var ApkReader = require('node-apk-parser')
+const fetch = require('node-fetch');
+const path = require('path');
+const commandExists = require('command-exists');
+const util = require('util');
+const ApkReader = require('node-apk-parser');
 
 const fixPath = require('fix-path');
 fixPath();
 
-const configLocation = require('path').join(homedir, "sidenoder-config.json")
+const configLocation = require('path').join(homedir, "sidenoder-config.json");
 
 if (`${platform}` != "win64" && `${platform}` != "win32") {
     global.nullcmd = "> /dev/null"
@@ -25,6 +25,14 @@ if (`${platform}` != "win64" && `${platform}` != "win32") {
     global.nullcmd = "> null"
     global.nullerror = "2> null"
 }
+
+let QUEST_ICONS = [];
+fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json')
+.then(res => res.json()) // expecting a json response
+.then(json => QUEST_ICONS = json)
+.catch(err => {
+    console.error('can`t get quest_icons', err);
+})
 
 
 module.exports =
@@ -289,45 +297,42 @@ async function mount(){
 }
 
 
-async function getDir(folder){
-
-
-
+async function getDir(folder) {
     try {
         const files = await fsPromise.readdir(folder, { withFileTypes: true });
         let fileNames = await Promise.all(files.map(async (fileEnt) => {
             const info = await fsPromise.lstat(path.join(folder, fileEnt.name));
-            steamid=false;oculusid=false;imagePath = false;versionCode="PROCESSING";infoLink = false;simpleName=fileEnt.name;packageName=false;mp=false
+            steamId = false; oculusId = false; imagePath = false; versionCode = "PROCESSING"; infoLink = false; simpleName = fileEnt.name; packageName = false; mp = false
 
 
             if (  (new RegExp(".*\ -steam-")).test(fileEnt.name)  ) {
-                //steamid = fileEnt.name.split('steam-')[1]
-                steamid = fileEnt.name.match(/-steam-([0-9]*)/)[1]
+                //steamId = fileEnt.name.split('steam-')[1]
+                steamId = fileEnt.name.match(/-steam-([0-9]*)/)[1]
                 simpleName = simpleName.split(' -steam-')[0]
-                imagePath = "https://cdn.cloudflare.steamstatic.com/steam/apps/"+steamid+"/header.jpg"
-                infoLink = "https://store.steampowered.com/app/"+steamid+"/"
+                imagePath = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + steamId + "/header.jpg"
+                infoLink = "https://store.steampowered.com/app/" + steamId + "/"
             }
             if (  (new RegExp(".*\ -oculus-")).test(fileEnt.name)  ) {
-                //oculusid = fileEnt.name.split('oculus-')[1]
-                oculusid = fileEnt.name.match(/-oculus-([0-9]*)/)[1]
+                //oculusId = fileEnt.name.split('oculus-')[1]
+                oculusId = fileEnt.name.match(/-oculus-([0-9]*)/)[1]
                 simpleName = simpleName.split(' -oculus-')[0]
-                imagePath = "https://vrdb.app/oculus/images/"+oculusid+".jpg"
-                infoLink = "https://www.oculus.com/experiences/quest/"+oculusid+"/"
+                imagePath = "https://vrdb.app/oculus/images/" + oculusId + ".jpg"
+                infoLink = "https://www.oculus.com/experiences/quest/" + oculusId + "/"
             }
 
             if (  (new RegExp(".*v[0-9]+\\+[0-9].*")).test(fileEnt.name)  ) {
-                //oculusid = fileEnt.name.split('oculus-')[1]
                 versionCode = fileEnt.name.match(/.*v([0-9]+)\+[0-9].*/)[1]
             }
 
             if (  (new RegExp(".*\ -versionCode-")).test(fileEnt.name)  ) {
-                //oculusid = fileEnt.name.split('oculus-')[1]
                 versionCode = fileEnt.name.match(/-versionCode-([0-9]*)/)[1]
                 simpleName = simpleName.split(' -versionCode-')[0]
             }
             if (  (new RegExp(".*\ -packageName-")).test(fileEnt.name)  ) {
-                packageName = fileEnt.name.match(/-packageName-([a-zA-Z.]*)/)[1]
-                simpleName = simpleName.split(' -packageName-')[0]
+                packageName = fileEnt.name.match(/-packageName-([a-zA-Z.]*)/)[1];
+                simpleName = simpleName.split(' -packageName-')[0];
+                if (QUEST_ICONS.includes(packageName + '.jpg')) imagePath = `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`;
+                else if (!imagePath) imagePath = 'unknown.png';
             }
 
             if (  (new RegExp(".*\ -MP-")).test(fileEnt.name)  ) {
@@ -338,20 +343,21 @@ async function getDir(folder){
                 na = true
             }
 
+
             simpleName = await cleanUpFoldername(simpleName)
 
                 return {
                     name: fileEnt.name,
-                    simpleName: simpleName,
+                    simpleName,
                     isFile: fileEnt.isFile(),
-                    steamId: steamid,
-                    oculusId: oculusid,
-                    imagePath: imagePath,
-                    versionCode: versionCode,
-                    packageName: packageName,
-                    mp:mp,
-                    infoLink: infoLink,
-                    info: info,
+                    steamId,
+                    oculusId,
+                    imagePath,
+                    versionCode,
+                    packageName,
+                    mp,
+                    infoLink,
+                    info,
                     createdAt: new Date(info.mtimeMs),
                     filePath: folder + "/" + fileEnt.name.replace(/\\/g,"/"),
                 }
@@ -436,7 +442,7 @@ async function sideloadFolder(arg) {
                 tempapk = global.tmpdir+"/"+path.basename(apkfile);
                 console.log('is remote, copying to '+ tempapk)
 
-                if (fsExtra.existsSync(`${tempapk}`)) {
+                if (fs.existsSync(`${tempapk}`)) {
                     console.log('is remote, '+ tempapk+ 'already exists, using')
                 } else {
                     await fsExtra.copyFile(`${apkfile}`, `${tempapk}`);
@@ -529,8 +535,8 @@ async function sideloadFolder(arg) {
             tempapk = global.tmpdir+"/"+path.basename(apkfile);
             console.log('is remote, copying to '+ tempapk)
 
-            if (fsExtra.existsSync(`${tempapk}`)) {
-                console.log('is remote, '+ tempapk+ 'already exists, using')
+            if (fs.existsSync(`${tempapk}`)) {
+                console.log('is remote, '+ tempapk+ ' already exists, using')
             } else {
                 await fsExtra.copyFile(`${apkfile}`, `${tempapk}`);
             }
@@ -589,7 +595,7 @@ async function sideloadFolder(arg) {
                     tempobb = global.tmpdir+"/"+packageName+"/"+path.basename(item);
                     console.log('obb is remote, copying to '+ tempobb)
 
-                    if (fsExtra.existsSync(tempobb)) {
+                    if (fs.existsSync(tempobb)) {
                         console.log('obb is remote, '+ tempobb+ 'already exists, using')
                     } else {
                         await fsExtra.copyFile(`${item}`, `${tempobb}`);
@@ -657,15 +663,15 @@ async function getInstalledApps(send = true) {
         appinfo[x] = []
         info = await execShellCommand(`adb shell dumpsys package ${apps[x]}`);
 
-        propername = apps[x].replace(/(\r\n|\n|\r)/gm,"");
+        packageName = apps[x].replace(/(\r\n|\n|\r)/gm, "");
 
-        appinfo[x]['packageName'] = propername;
+        appinfo[x]['packageName'] = packageName;
         appinfo[x]['versionCode'] = info.match(/versionCode=[0-9]*/)[0].slice(12);
-        if (info.match(/ DEBUGGABLE /)) {
-            appinfo[x]['debug'] = true
-        } else {
-            appinfo[x]['debug'] = false
-        }
+        appinfo[x]['debug'] = info.match(/ DEBUGGABLE /);
+
+        appinfo[x]['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
+            ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
+            : 'unknown.png';
 
         if (send === true) {
             win.webContents.send('list_installed_app',appinfo[x]);
@@ -685,8 +691,9 @@ async function getInstalledAppsWithUpdates() {
 
     apps = await getInstalledApps(false);
     for (x in apps) {
-        console.log("checking "+apps[x]['packageName'])
-        var re = new RegExp(`.*${apps[x]['packageName']}.*`, "g");
+        packageName = apps[x]['packageName'];
+        console.log("checking " + packageName)
+        var re = new RegExp(`.*${packageName}.*`, "g");
         if (  linematch = listing.match(re)  ) {
 
             //linematch.pop()
@@ -716,7 +723,8 @@ async function getInstalledAppsWithUpdates() {
                     apps[x]['update']['path'] = properpath
                     //apps[x]['update']['simpleName'] = simpleName
                     apps[x]['packageName'] = simpleName
-                    apps[x]['update']['versionCode'] = remoteversion
+                    apps[x]['update']['versionCode'] = remoteversion;
+
                     console.log("UPDATE AVAILABLE")
                     win.webContents.send('list_installed_app', apps[x]);
                 }

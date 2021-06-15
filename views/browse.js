@@ -79,8 +79,9 @@ function loadDir(path, list) {
                 row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td><i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp;` + `${name}</td><td>${size} Mb</td></tr>`)
             }
         } else {
+            const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
+            const steamlink = !item.steamId ? '' : '<a onclick="window.open(\'' + item.infoLink + '\')" title="infolink"><i class="fa fa-steam"></i></a>';
             if (item.imagePath) {
-                const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
                 if (item.mp) {
                     mpribbon = `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>`
                 } else {
@@ -98,29 +99,29 @@ function loadDir(path, list) {
           <div class="card h-100">
 
             ${mpribbon}
-
-
-<img src="${item.imagePath}" style="max-height: 100px" class="card-img-top" alt="...">
-
+            <img src="${item.imagePath}" style="max-height: 100px" class="card-img-top" alt="...">
             <div class="card-body">
-
               <p class="card-text" style="color: black">
 ${item.simpleName}<br><br>
-
 ${selectBtn}
-
-
 </p>
             </div>
-            <div style="color: gray" class="card-footer">v. ${item.versionCode} (<a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a>)  <a onclick="window.open('${youtubeUrl}')"><i class="fa fa-youtube-play"></i></a></div>
+            <div style="color: gray" class="card-footer">
+                v. ${item.versionCode}
+                (<a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a>)
+                <a onclick="window.open('${youtubeUrl}')" title="youtube"><i class="fa fa-youtube-play"></i></a>
+                ${steamlink}<br>
+                ${item.packageName}
+            </div>
 
           </div>
         </div>`);
-            } else {
-
+            }
+            else {
+                const info = !item.packageName ? '' : `<br/><small>${item.packageName} <a onclick="window.open('${youtubeUrl}')" title="youtube"><i class="fa fa-youtube-play"></i>${steamlink}`;
                 row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td class='browse-folder'>
 <a data-path="${fullPath}" onclick='getDir(this)'>
-<i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;` + `${name}</a></td><td><a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a></td></tr>`)
+<i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;` + `${name}</a>${info}</td><td><a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a></td></tr>`)
             }
 
         }
