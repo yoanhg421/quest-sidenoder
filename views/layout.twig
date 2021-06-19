@@ -330,7 +330,7 @@
 
         ipcRenderer.on('rclone_data', (event, arg) => {
           data=arg;
-          console.log('rclone_data received', data)
+          // console.log('rclone_data received', data);
           if(data.transferring && data.transferring.length > 0) {
             $(".mountcopystatus").text(`${formatBytes(data.transferring[0].bytes)} of ${formatBytes(data.transferring[0].size)} (${data.transferring[0].percentage}%) - ${formatBytes(data.transferring[0].speedAvg)}/s (${formatEta(data.transferring[0].eta)})`);
           } else {

@@ -64,8 +64,7 @@ function loadDir(path, list) {
     let UpDir = path.substr(0, path.lastIndexOf("/"));
     $("#listTableStart tbody").html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
     $("#browseCardBody").html('');
-    for (id in list) {
-        const item = list[id];
+      for (const item of list) {
         const name = item.name;
         const createdAt = item.createdAt.getTime();
         const fullPath = item.filePath.replace("\\", "/").replace("", ":");
@@ -78,7 +77,8 @@ function loadDir(path, list) {
             } else {
                 row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td><i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp;` + `${name}</td><td>${size} Mb</td></tr>`)
             }
-        } else {
+        }
+        else {
             const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
             const steamlink = !item.steamId ? '' : '<a onclick="window.open(\'' + item.infoLink + '\')" title="infolink"><i class="fa fa-steam"></i></a>';
             if (item.imagePath) {
