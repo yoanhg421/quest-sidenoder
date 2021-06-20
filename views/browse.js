@@ -64,8 +64,7 @@ function loadDir(path, list) {
     let UpDir = path.substr(0, path.lastIndexOf("/"));
     $("#listTableStart tbody").html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
     $("#browseCardBody").html('');
-    for (id in list) {
-        const item = list[id];
+      for (const item of list) {
         const name = item.name;
         const createdAt = item.createdAt.getTime();
         const fullPath = item.filePath.replace("\\", "/").replace("", ":");
@@ -78,7 +77,8 @@ function loadDir(path, list) {
             } else {
                 row = $("#listTable tbody").append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td><i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp;` + `${name}</td><td>${size} Mb</td></tr>`)
             }
-        } else {
+        }
+        else {
             const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
             const steamlink = !item.steamId ? '' : '<a onclick="window.open(\'' + item.infoLink + '\')" title="infolink"><i class="fa fa-steam"></i></a>';
             if (item.imagePath) {
@@ -89,29 +89,30 @@ function loadDir(path, list) {
                 }
 
                 if (item.versionCode !== 'PROCESSING') {
-                    selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-primary btn-block">Select</span></a>`
+                  selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-primary col-8">Select</span></a>
+                <a onclick="window.open('${youtubeUrl}')" title="youtube" class="btn btn-danger"><i class="fa fa-youtube-play"></i></a>`
                 } else {
                     selectBtn = `<a><span class="btn btn-outline-secondary btn-block">${item.versionCode}</span></a>`
                 }
 
                 //row = $("#listTable tbody").append("<tr><td class='browse-folder' ><a onclick='getDir(\"" + fullPath + "\")'><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;" + `${name}</a><td></tr>`)
                 row = $("#browseCardBody").append(`<div class="col mb-4 listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
-          <div class="card h-100">
+          <div class="card h-100 bg-primary text-center">
 
             ${mpribbon}
             <img src="${item.imagePath}" style="max-height: 100px" class="card-img-top" alt="...">
             <div class="card-body">
-              <p class="card-text" style="color: black">
+              <p class="card-text">
 ${item.simpleName}<br><br>
 ${selectBtn}
 </p>
             </div>
-            <div style="color: gray" class="card-footer">
+            <div style="color:#ccc;font-size:smaller" class="card-footer">
                 v. ${item.versionCode}
                 (<a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a>)
-                <a onclick="window.open('${youtubeUrl}')" title="youtube"><i class="fa fa-youtube-play"></i></a>
                 ${steamlink}<br>
-                ${item.packageName}
+                ${item.packageName}<br>
+                Updated: ${item.createdAt.toLocaleString()}
             </div>
 
           </div>

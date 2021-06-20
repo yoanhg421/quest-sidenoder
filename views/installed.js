@@ -16,15 +16,12 @@ ipcRenderer.on('list_installed_app', (event, arg) => {
 });
 
 
-
-
-
 ipcRenderer.on('get_installed', (event, arg) => {
-    console.log("get_installed msg came ! ");
+    console.log('get_installed msg came ! ');
     console.log(arg)
     if (arg.success) {
         //$("#updateBadge").html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
-        $("#updateBadge").show();
+        $('#updateBadge').show();
     }
 });
 
@@ -32,13 +29,13 @@ ipcRenderer.on('get_installed_with_updates', (event, arg) => {
     console.log("get_installed msg came ! ");
     console.log(arg)
     if (arg.success) {
-        $("#updateBadge").html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
-        $("#updateBadge").show();
+        $('#updateBadge').html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
+        $('#updateBadge').show();
     }
 });
 
 ipcRenderer.on('uninstall', (event, arg) => {
-    console.log("uninstall msg came ! ");
+    console.log('uninstall msg came ! ');
     loadInclude('installed_include.twig');
 });
 

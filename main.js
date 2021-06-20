@@ -139,7 +139,7 @@ ipcMain.on('start_sideload', async (event, arg) => {
 
 ipcMain.on('get_dir', async (event, arg) => {
     console.log("get_dir received");
-    if ((typeof arg === 'string') && arg.endsWith(".apk")) {
+    if ((typeof arg === 'string') && arg.endsWith('.apk')) {
         event.reply('ask_sideload', `{"success":true, "path": "${arg}", "update": false}`)
         return
     }
@@ -219,10 +219,10 @@ ipcMain.on('uninstall', async (event, arg) => {
 //     return
 // })
 
-ipcMain.on('change_config_autoMount', async (event, arg) => {
-    console.log("change_config_autoMount received");
-    await tools.changeConfig('autoMount', arg)
-    event.reply('change_config_autoMount', {"success":true, config: global.currentConfiguration})
+ipcMain.on('change_config', async (event, { key, val }) => {
+    console.log('change_config received', {key, val});
+    await tools.changeConfig(key, val)
+    event.reply('change_config', {"success":true, config: global.currentConfiguration})
     return
 })
 
