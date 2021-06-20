@@ -244,7 +244,7 @@ async function mount(){
     return;
   }
 
-  if (`${global.platform}` != "win64" && `${global.platform}` != "win32") {
+  if (`${global.platform}` != 'win64' && `${global.platform}` != 'win32') {
     await execShellCommand(`umount ${mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${mountFolder} ${global.nullerror}`);
     await fs.mkdir(mountFolder, {}, ()=>{}) // folder must exist on windows
@@ -254,36 +254,21 @@ async function mount(){
     await execShellCommand(`rmdir "${mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
-  let content = await fetch('https://raw.githubusercontent.com/whitewhidow/quest-sideloader-linux/main/extras/k')
-  content = await content.text();
-  let buff = Buffer.from(content, 'base64');
-  const key = buff.toString('ascii');
+  const epath = require('path').join(__dirname , 'a.enc'); // 'a'
+  const cpath = require('path').join(global.tmpdir, 'sidenoder_a');
+  const data = fs.readFileSync(epath, 'utf-8');
+  const buff = Buffer.from(data, 'base64');
+  const cfg = buff.toString('ascii');
+  fs.writeFileSync(cpath, cfg);
 
-  kpath = require('path').join(tmpdir, "k")
-  //console.log(kpath)
-  fs.writeFileSync(kpath, key)
-
-
-  content = await fetch('https://raw.githubusercontent.com/whitewhidow/quest-sideloader-linux/main/extras/c')
-  content = await content.text()
-  buff = Buffer.from(content, 'base64');
-  let config = buff.toString('ascii');
-
-  config = config.replace('XXX', kpath);
-  // const cpath = require('path').join(tmpdir, 'c');
-  // fs.writeFileSync(cpath, config);
-
-  const cpath = require('path').join(__dirname , 'rclone', 'a');
+  // const buff = new Buffer(data);
+  // const base64data = buff.toString('base64');
+  // fs.writeFileSync(epath + '.enc', base64data);
   //console.log(cpath);
 
-  if (`${platform}` === 'darwin') {
-    var mountCmd = 'cmount'
-  }
-  else {
-    var mountCmd = 'mount'
-  }
+  const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
 
-  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} WHITEWHIDOW_QUEST: ${mountFolder}`, (error, stdout, stderr) => {
+  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
       if (error.message.search('transport endpoint is not connected')) {
@@ -836,14 +821,14 @@ function updateRcloneProgress() {
 }
 
 function reloadConfig() {
-  const defaultConfig = {autoMount: false};
+  const defaultConfig = { autoMount: false, cfgSection: 'VRP-mirror10' };
   try {
     if (fs.existsSync(configLocation)) {
-      console.log("Config exist, using " + configLocation);
+      console.log('Config exist, using ' + configLocation);
       global.currentConfiguration = require(configLocation);
     }
     else {
-      console.log("Config doesnt exist, creating ") + configLocation;
+      console.log('Config doesnt exist, creating ') + configLocation;
       fs.writeFileSync(configLocation, JSON.stringify(defaultConfig))
       global.currentConfiguration = defaultConfig;
     }
@@ -858,5 +843,5 @@ function reloadConfig() {
 function changeConfig(key, value) {
   global.currentConfiguration[key] = value;
   console.log(global.currentConfiguration[key]);
-  fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration))
+  fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration));
 }
