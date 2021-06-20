@@ -400,7 +400,7 @@ async function getDir(folder) {
         infoLink,
         info,
         createdAt: new Date(info.mtimeMs),
-        filePath: folder + "/" + fileName.replace(/\\/g, '/'),
+        filePath: folder + '/' + fileName.replace(/\\/g, '/'),
       };
     }));
     // console.log({ fileNames });
@@ -502,7 +502,7 @@ async function sideloadFolder(arg) {
     }
 
 
-    win.webContents.send('sideload_aapt_done', '{"success":true}');
+    win.webContents.send('sideload_aapt_done', `{"success":true}`);
     console.log('package info read success (' + packageName + ')')
   }
   catch (e) {
@@ -716,7 +716,7 @@ async function getInstalledApps(send = true) {
     appinfo[x] = []
     info = await execShellCommand(`adb shell dumpsys package ${apps[x]}`);
 
-    packageName = apps[x].replace(/(\r\n|\n|\r)/gm, "");
+    packageName = apps[x].replace(/(\r\n|\n|\r)/gm, '');
 
     appinfo[x]['packageName'] = packageName;
     appinfo[x]['versionCode'] = info.match(/versionCode=[0-9]*/)[0].slice(12);
@@ -738,47 +738,49 @@ async function getInstalledApps(send = true) {
 }
 
 async function getInstalledAppsWithUpdates() {
-  //listing = await execShellCommand(`ls "${global.mountFolder}"`);
-  listing = await getDirListing(global.mountFolder);
-  listing = listing.join(global.endOfLine);
+  const remotePath = path.join(global.mountFolder, 'Quest Games'); // TODO: folder path to config
+  const list = await getDir(remotePath);
+  let remotePackages = {};
+  let remoteList = {};
+  for (const app of list) {
+    const { name, packageName, versionCode, simpleName, filePath } = app;
+    if (!packageName) continue;
 
-  apps = await getInstalledApps(false);
-  for (x in apps) {
-    packageName = apps[x]['packageName'];
-    console.log("checking " + packageName)
-    var re = new RegExp(`.*${packageName}.*`, "g");
-    if (  linematch = listing.match(re)  ) {
-      //linematch.pop()
-      for (line in linematch) {
-        console.log(linematch[line])
-        if (  (new RegExp(".*v[0-9]+\\+[0-9].*")).test(linematch[line])  ) {
-          remoteversion = linematch[line].match(/.*v([0-9]+)\+[0-9].*/)[1];
-        }
+    if (!remotePackages[packageName]) remotePackages[packageName] = [];
+    remotePackages[packageName].push(name);
 
-        if (  (new RegExp(".*\ -versionCode-")).test(linematch[line])  ) {
-          remoteversion = linematch[line].match(/-versionCode-([0-9.]*)/)[1];
-        }
+    remoteList[name] = {
+      versionCode,
+      simpleName,
+      filePath,
+    };
+  };
 
-        installedVersion = apps[x]['versionCode'];
+  const remoteKeys = Object.keys(remotePackages);
 
-        properpath = linematch[line].replace(/\\/g, "/").replace(/(\r\n|\n|\r)/gm, "");
-        simpleName = await cleanUpFoldername(properpath)
+  const apps = await getInstalledApps(false);
+  for (const x in apps) {
+    const packageName = apps[x]['packageName'];
+    console.log('checking ' + packageName);
+    if (!remoteKeys.includes(packageName)) continue;
 
+    for (name of remotePackages[packageName]) {
+      const package = remoteList[name];
+      const installedVersion = apps[x]['versionCode'];
+      const remoteversion = package.versionCode;
 
-        //TODO: path
-        console.log("remote version: " + remoteversion)
-        console.log("installed version: " + installedVersion)
-        if (remoteversion > installedVersion) {
-          apps[x]['update'] = []
-          apps[x]['update']['path'] = properpath
-          //apps[x]['update']['simpleName'] = simpleName
-          apps[x]['packageName'] = simpleName
-          apps[x]['update']['versionCode'] = remoteversion;
+      console.log({ packageName, installedVersion, remoteversion });
 
-          console.log("UPDATE AVAILABLE")
-          win.webContents.send('list_installed_app', apps[x]);
-        }
-      }
+      if (remoteversion <= installedVersion) continue;
+
+      apps[x]['update'] = [];
+      apps[x]['update']['path'] = package.filePath;
+      //apps[x]['update']['simpleName'] = package.simpleName
+      apps[x]['packageName'] = package.simpleName
+      apps[x]['update']['versionCode'] = remoteversion;
+
+      console.log('UPDATE AVAILABLE');
+      win.webContents.send('list_installed_app', apps[x]);
     }
   }
 
