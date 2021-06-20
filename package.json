@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "SideNoder",
   "main": "main.js",
   "dependencies": {
@@ -28,20 +28,30 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "electron-forge make --skip-package",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
+    "dist": "electron-builder -mwl",
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "appId": "com.sidenoder.app"
+    "appId": "com.sidenoder.app",
+    "asar": true,
+    "directories": {
+      "output": "out"
+    },
+    "afterPack": "./removeLocales.js",
+    "mac": {
+      "target": "tar.gz"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "asar": true
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
@@ -50,15 +60,7 @@
           }
         },
         {
-          "name": "@electron-forge/maker-zip",
-          "config": {}
-        },
-        {
           "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
           "config": {}
         },
         {

@@ -139,7 +139,7 @@ ipcMain.on('start_sideload', async (event, arg) => {
 
 ipcMain.on('get_dir', async (event, arg) => {
     console.log("get_dir received");
-    if ((typeof arg === 'string') && arg.endsWith(".apk")) {
+    if ((typeof arg === 'string') && arg.endsWith('.apk')) {
         event.reply('ask_sideload', `{"success":true, "path": "${arg}", "update": false}`)
         return
     }

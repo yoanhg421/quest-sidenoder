@@ -3,7 +3,7 @@ global.version = pkg.version
 async function checkVersion() {
     var fetch = require('node-fetch')
     var compareVersions = require('compare-versions');
-    content = await fetch("https://api.github.com/repos/whitewhidow/quest-sidenoder/releases/latest")
+    content = await fetch("https://api.github.com/repos/vKolerts/quest-sidenoder/releases/latest")
     remoteversion = JSON.parse(await content.text()).name;
     console.log("Current version: "+pkg.version);
     console.log("Github version: "+remoteversion);
