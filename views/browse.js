@@ -111,7 +111,8 @@ ${selectBtn}
                 (<a onclick="this.innerText=getItemSize('${esc(fullPath)}') + ' Mb'">get size</a>)
                 <a onclick="window.open('${youtubeUrl}')" title="youtube"><i class="fa fa-youtube-play"></i></a>
                 ${steamlink}<br>
-                ${item.packageName}
+                ${item.packageName}<br>
+                Updated: ${item.createdAt.toLocaleString()}
             </div>
 
           </div>
