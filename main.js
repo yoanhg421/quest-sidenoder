@@ -55,7 +55,7 @@ ipcMain.on('test', async (event, arg) => {
 })
 
 ipcMain.on('get_installed', async (event, arg) => {
-  console.log("get_installed received");
+  console.log('get_installed received');
   await tools.getInstalledApps();
 
 
@@ -63,11 +63,11 @@ ipcMain.on('get_installed', async (event, arg) => {
   return
 })
 
-ipcMain.on('get_devise_info', async (event, arg) => {
-  console.log('get_devise_info received');
+ipcMain.on('get_device_info', async (event, arg) => {
+  console.log('get_device_info received');
   const res = await tools.getDeviceInfo();
 
-  event.reply('get_devise_info', res);
+  event.reply('get_device_info', res);
   return;
 })
 
@@ -81,15 +81,15 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
   return
 })
 
-ipcMain.on('get_device', async (event, arg) => {
-  console.log("get_device received");
+ipcMain.on('check_device', async (event, arg) => {
+  console.log('check_device received');
   resp = {success: global.adbDevice}
-  event.reply('get_device', resp)
+  event.reply('check_device', resp)
 
 })
 
 ipcMain.on('check_deps', async (event, arg) => {
-  console.log("check_deps received");
+  console.log('check_deps received');
 
   await tools.checkDeps()
 
@@ -132,7 +132,7 @@ ipcMain.on('start_sideload', async (event, arg) => {
   }
   event.reply('start_sideload', `{"success":true, "path": "${arg.path}"}`)
   tools.sideloadFolder(arg)
-  event.reply('get_device', `{success:true}`)
+  event.reply('check_device', `{success:true}`)
   return
 })
 
@@ -263,15 +263,11 @@ function createWindow () {
 }
 
 
-
-
-
-
 try {
   tools.reloadConfig();
 }
 catch (e) {
-  returnError("Could not (re)load config file.")
+  returnError('Could not (re)load config file.')
   return
 }
 

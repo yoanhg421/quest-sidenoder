@@ -41,7 +41,7 @@
     },
     "afterPack": "./removeLocales.js",
     "mac": {
-      "target": "tar.gz"
+      "target": "dir"
     }
   },
   "keywords": [],

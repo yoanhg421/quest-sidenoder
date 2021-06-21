@@ -156,11 +156,11 @@ function getDeviceSync(){
       console.log('getDevice()')
       if (devices.length > 0) {
         global.adbDevice = devices[0].id;
-        win.webContents.send('get_device', `{success:"${devices[0].id}"}`);
+        win.webContents.send('check_device', `{success:"${devices[0].id}"}`);
       }
       else {
         global.adbDevice = false;
-        win.webContents.send('get_device', { success: false });
+        win.webContents.send('check_device', { success: false });
       }
     })
     .catch(function(err) {
@@ -188,7 +188,7 @@ function execShellCommand(cmd, buffer = 5000) {
       }
       else {
         console.error('exec_stderr', stderr);
-        resolve(stderr);
+        resolve(false);
       }
     });
   });
@@ -200,14 +200,14 @@ function trackDevices(){
   client.trackDevices()
   .then(function(tracker) {
     tracker.on('add', function(device) {
-      win.webContents.send('get_device',`{success:"${device.id}"}`);
+      win.webContents.send('check_device',`{success:"${device.id}"}`);
       global.adbDevice = device.id
       console.log('Device %s was plugged in', `{success:${device.id}`)
     })
     tracker.on('remove', function(device) {
       global.adbDevice = false
       resp = {success: global.adbDevice}
-      win.webContents.send('get_device',resp);
+      win.webContents.send('check_device',resp);
       console.log('Device %s was unplugged', resp)
     })
     tracker.on('end', function() {

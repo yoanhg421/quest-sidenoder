@@ -63,8 +63,8 @@
     }
   });
 
-  ipcRenderer.on('get_devise_info', (event, arg) => {
-    console.log('get_devise_info ! ', arg);
+  ipcRenderer.on('get_device_info', (event, arg) => {
+    console.log('get_device_info ! ', arg);
     const {
       storage,
       user,
@@ -140,7 +140,7 @@
 
   ipcRenderer.on('sideload_aapt_done', (event, arg) => {
     $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
-    ipcRenderer.send('get_devise_info', '');
+    ipcRenderer.send('get_device_info', '');
   });
   ipcRenderer.on('sideload_check_done', (event, arg) => {
     $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
@@ -234,10 +234,10 @@
     $('#devicerefresh').addClass('fa-spin');
     $('#devicebtn').removeClass('btn-danger');
     $('#devicebtn').addClass('btn-warning');
-    ipcRenderer.send('get_device', 'bla');
+    ipcRenderer.send('check_device', 'bla');
   }
 
-  ipcRenderer.on('get_device', (event, arg) => {
+  ipcRenderer.on('check_device', (event, arg) => {
     console.log('get_device msg came FROM BE to fe:', arg);
 
     if (arg.success !== false) {
@@ -249,9 +249,10 @@
       $('.deviceBadge').removeClass('badge-warning');
       $('.deviceBadge').addClass('badge-success');
 
-      $('#installedAppsNav').removeClass("disabled");
-      $('#installedAppsNav').removeClass("btn-secondary");
-      $('#installedAppsNav').addClass("btn-primary");
+      $('#installedAppsNav').removeClass('disabled');
+      $('#installedAppsNav').removeClass('btn-secondary');
+      $('#installedAppsNav').addClass('btn-primary');
+      ipcRenderer.send('get_device_info', '');
     }
     else {
       $('#devicebtn').removeClass('btn-success');
@@ -314,7 +315,7 @@
         console.log('ONLOAD');
         ipcRenderer.send('check_mount', 'bla');
         //checkMount()
-        ipcRenderer.send('get_device', 'bla');
+        ipcRenderer.send('check_device', 'bla');
 
         console.log('setup ask device listener')
         ipcRenderer.on('ask_device', (event, arg) => {
