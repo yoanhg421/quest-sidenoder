@@ -691,27 +691,17 @@ async function getPackageInfo(apkPath) {
 }
 
 async function getInstalledApps(send = true) {
-  let apps = await execShellCommand(`adb shell cmd package list packages -3`);
+  let apps = await execShellCommand(`adb shell cmd package list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   apps.pop();
-
-  apps = apps.map(a => a.slice(8).replace(/(\r\n|\n|\r)/gm, ''));
-  // console.log(apps); return [];
-
-  let appsinfo = await execShellCommand(`adb shell dumpsys package packages | grep -E 'Package \\[|versionCode'`);
-  appsinfo = appsinfo.split('\n');
-  apps.pop();
-
   appinfo = [];
-  for (let i = 0; i < appsinfo.length; i = i + 2) {
-    const packageName = appsinfo[i].slice(11).split(']')[0];
-    if (!apps.includes(packageName)) continue;
+
+  for (const appLine of apps) {
+    const [packageName, versionCode] = appLine.slice(8).split(' versionCode:');
 
     const info = [];
     info['packageName'] = packageName;
-    info['versionCode'] = appsinfo[i + 1].slice(16).split(' ')[0];
-    // appinfo[x]['debug'] = infoline.match(/ DEBUGGABLE /);
-
+    info['versionCode'] = versionCode;
     info['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
       : 'unknown.png';
