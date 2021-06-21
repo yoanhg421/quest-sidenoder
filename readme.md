@@ -87,7 +87,10 @@ What makes sidenoder better than other sideloaders ?
 
 #### Run precompiled release on windows:
 1. Download and unpack the latest windows release from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
-2. Run the [windows-install.bat](https://raw.githubusercontent.com/vKolerts/quest-sidenoder/main/windows-install.bat) script and follow the onscreen instructions (this will install 7ZIP, GIT, NODE, ADB, RCLONE and WINFSP)
+2. Run the [windows-install.bat](https://raw.githubusercontent.com/vKolerts/quest-sidenoder/main/windows-install.bat) script and follow the onscreen instructions this will install:
+    * 7ZIP - for unzip archives
+    * ADB - for communicate with your device
+    * RCLONE - for access to discs
 3. Run the `sidenoder.exe` application
 
 
@@ -137,6 +140,7 @@ https://github.com/vKolerts/quest-sidenoder/issues
     ```
     git clone https://github.com/vKolerts/quest-sidenoder.git
     cd quest-sidenoder/
+    windows-install.bat
     windows-install-dev.bat
     npm install
     ```
