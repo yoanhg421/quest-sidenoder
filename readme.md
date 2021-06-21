@@ -4,11 +4,11 @@
 <summary>
 What makes sidenoder better than other sideloaders ?
 </summary>
-  
+
 
 
 ---
-  
+
 - **Automatically scan** hmd and drive, to **find available updates**.
 - Apps automatically **update without losing app/cache/save data**.
 - Apps can update **across mismatching apk signatures**.
@@ -22,10 +22,10 @@ What makes sidenoder better than other sideloaders ?
 
 </details>
 
-![screen](https://github.com/whitewhidow/quest-sidenoder/raw/main/.github/screen.gif)
+![screen](https://github.com/vKolerts/quest-sidenoder/raw/main/.github/screen.gif)
 
 
-<!-- TABLE OF CONTENTS 
+<!-- TABLE OF CONTENTS
 <details open="open">
   <summary>Table of Contents</summary>
   <ol>
@@ -86,15 +86,15 @@ What makes sidenoder better than other sideloaders ?
 ## Running the compiled version
 
 #### Run precompiled release on windows:
-1. Download and unpack the latest windows release from `https://github.com/whitewhidow/quest-sidenoder/releases/latest`
-2. Run the `windows-install.bat` script and follow the onscreen instructions (this will install 7ZIP, GIT, NODE, ADB, RCLONE and WINFSP) 
+1. Download and unpack the latest windows release from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
+2. Run the [windows-install.bat](https://raw.githubusercontent.com/vKolerts/quest-sidenoder/main/windows-install.bat) script and follow the onscreen instructions (this will install 7ZIP, GIT, NODE, ADB, RCLONE and WINFSP)
 3. Run the `sidenoder.exe` application
 
 
 
 #### Run precompiled release on linux:
 1. Install ADB and RCLONE: `sudo apt install adb && curl https://rclone.org/install.sh | sudo bash`
-2. Download and unpack the latest linux AppImage from `https://github.com/whitewhidow/quest-sidenoder/releases/latest`
+2. Download and unpack the latest linux AppImage from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
 3. Make the AppImage executable.
 4. Run the AppImage
 
@@ -109,7 +109,7 @@ brew install android-platform-tools
 curl https://rclone.org/install.sh | sudo bash
 brew install osxfuse
 ```
-2. Download and unpack the latest mac release (.App / .dmg) from `https://github.com/whitewhidow/quest-sidenoder/releases/latest`
+2. Download and unpack the latest mac release (.App / .dmg) from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
 3. Run the .App or .dmg
 
 <details>
@@ -121,7 +121,7 @@ https://github.com/osxfuse/osxfuse/releases
 
 Please report any issues here :
 
-https://github.com/whitewhidow/quest-sidenoder/issues | https://t.me/whitewhidow | https://discord.gg/pVMsAyYhAf
+https://github.com/vKolerts/quest-sidenoder/issues
 
 ---
 ---
@@ -135,9 +135,9 @@ https://github.com/whitewhidow/quest-sidenoder/issues | https://t.me/whitewhidow
 1. Download and install GIT from `https://git-scm.com/download/win`
 2. Run the following in a command line terminal (cmd):
     ```
-    git clone https://github.com/whitewhidow/quest-sidenoder.git
+    git clone https://github.com/vKolerts/quest-sidenoder.git
     cd quest-sidenoder/
-    windows-install.bat
+    windows-install-dev.bat
     npm install
     ```
 3. Reboot and launch the app from the command line terminal:
@@ -151,7 +151,7 @@ https://github.com/whitewhidow/quest-sidenoder/issues | https://t.me/whitewhidow
 ```
 sudo apt install git adb nodejs
 curl https://rclone.org/install.sh | sudo bash
-git clone https://github.com/whitewhidow/quest-sidenoder.git
+git clone https://github.com/vKolerts/quest-sidenoder.git
 cd quest-sidenoder/
 npm install
 npm start
@@ -165,7 +165,7 @@ brew install node
 curl https://rclone.org/install.sh | sudo bash
 brew cask install android-platform-tools
 brew cask install osxfuse
-git clone https://github.com/whitewhidow/quest-sidenoder.git
+git clone https://github.com/vKolerts/quest-sidenoder.git
 cd quest-sidenoder/
 npm install
 npm start
@@ -176,4 +176,7 @@ For mounting issues with Sidenoder on Osx Big Sur, Please install the latest osx
 </details>
 Please report any issues here :
 
-https://github.com/whitewhidow/quest-sidenoder/issues | https://t.me/whitewhidow | https://discord.gg/pVMsAyYhAf
+https://github.com/vKolerts/quest-sidenoder/issues
+
+
+Main repository https://github.com/whitewhidow/quest-sidenoder

@@ -212,7 +212,7 @@ async function checkDeps(){
     exists = await commandExists('adb');
   }
   catch (e) {
-    returnError('ADB global installation not found, please read the README on github.')
+    returnError('ADB global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
 
@@ -220,7 +220,7 @@ async function checkDeps(){
     exists = await commandExists('rclone');
   }
   catch (e) {
-    returnError('RCLONE global installation not found, please read the README on github.')
+    returnError('RCLONE global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
   //wtf werkt nie
