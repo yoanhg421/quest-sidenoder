@@ -53,7 +53,11 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  getDeviceInfo,
   getStorageInfo,
+  getUserInfo,
+  getFwInfo,
+  getBatteryInfo,
   changeConfig,
   reloadConfig,
   execShellCommand,
@@ -61,26 +65,74 @@ module.exports =
   // ...
 }
 
-async function getStorageInfo() {
-  console.log('getStorageInfo()')
+async function getDeviceInfo() {
+  console.log('getDeviceInfo()');
 
-  res = await execShellCommand('adb shell df -h')
+  const storage = await getStorageInfo();
+  const user = await getUserInfo();
+  const fw = await getFwInfo();
+  const battery = await getBatteryInfo();
 
-  var re = new RegExp('.*/storage/emulated.*');
-  if (  linematch = res.match(re)  ) {
-    var refree = new RegExp('([0-9(.{1})]+[a-zA-Z%])', 'g');
-    //return {success: true, nr: linematch[0].match(renr)[1], free: }
-    return {success: true, storage: linematch[0].match(refree)}
+  const res = {
+    success: !!storage,
+    storage,
+    user,
+    fw,
+    battery,
+  };
+
+  console.log('getDeviceInfo', res);
+  return res;
+}
+
+async function getFwInfo() {
+  console.log('getFwInfo()');
+  const res = await execShellCommand('adb shell getprop ro.vndk.version');
+  if (!res) return false;
+
+  return {
+    version: res.replace('\n', ''),
   }
+}
 
-  return {success: false};
+async function getBatteryInfo() {
+  console.log('getBatteryInfo()');
+  const res = await execShellCommand('adb shell dumpsys battery | grep level');
+  if (!res) return false;
+
+  return {
+    level: res.slice(9).replace('\n', ''),
+  }
+}
+
+async function getUserInfo() {
+  console.log('getUserInfo()');
+  const res = await execShellCommand('adb shell dumpsys user | grep UserInfo');
+  if (!res) return false;
+
+  return {
+    name: res.split(':')[1],
+  }
+}
+
+async function getStorageInfo() {
+  console.log('getStorageInfo()');
+
+  const res = await execShellCommand('adb shell df -h');
+  const re = new RegExp('.*/storage/emulated.*');
+  const linematch = res.match(re);
+  if (!linematch) return false;
+
+  const refree = new RegExp('([0-9(.{1})]+[a-zA-Z%])', 'g');
+  const storage = linematch[0].match(refree);
+  return storage;
 }
 
 async function checkUpdateAvailable() {
   console.log('Checking local version vs latest github version')
-  remotehead = await execShellCommand("git ls-remote origin HEAD")
-  await execShellCommand("git fetch")
-  localhead = await execShellCommand("git rev-parse HEAD")
+  remotehead = await execShellCommand('git ls-remote origin HEAD')
+  await execShellCommand('git fetch')
+  localhead = await execShellCommand('git rev-parse HEAD')
   //console.log(`remotehead: ${remotehead}|`)
   //console.log(`localhead: ${localhead}|`)
 
@@ -488,7 +540,7 @@ async function sideloadFolder(arg) {
 
 
     win.webContents.send('sideload_aapt_done', `{"success":true}`);
-    console.log('package info read success (' + packageName + ')')
+    console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
     console.log(e);
@@ -518,7 +570,6 @@ async function sideloadFolder(arg) {
         fs.mkdirSync(global.tmpdir + '/sidenoder_restore_backup');
       }
 
-      //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
       await execShellCommand(`adb pull "/sdcard/Android/data/${packageName}" "${global.tmpdir}/sidenoder_restore_backup"`, 100000);
     }
     catch (e) {
@@ -567,14 +618,14 @@ async function sideloadFolder(arg) {
   console.log('doing adb install');
   try {
     if (fromremote) {
-      tempapk = global.tmpdir+"/"+path.basename(apkfile);
-      console.log('is remote, copying to '+ tempapk)
+      tempapk = global.tmpdir + '/' + path.basename(apkfile);
+      console.log('is remote, copying to ' + tempapk)
 
-      if (fs.existsSync(`${tempapk}`)) {
-        console.log('is remote, '+ tempapk+ ' already exists, using')
+      if (fs.existsSync(tempapk)) {
+        console.log('is remote, ' + tempapk + ' already exists, using')
       }
       else {
-        await fsExtra.copyFile(`${apkfile}`, `${tempapk}`);
+        await fsExtra.copyFile(apkfile, tempapk);
       }
 
       win.webContents.send('sideload_download_done', `{"success":true}`);
@@ -613,34 +664,35 @@ async function sideloadFolder(arg) {
     catch (e) {
       //console.log(e);
     }
-    obbFiles = await getObbs(location+"/"+obbFolder);
-    if (obbFiles.length > 0) {
-      //console.log("obbFiles: "+obbFiles)
 
-      if (!fs.existsSync(global.tmpdir+"/"+packageName)){
-        fs.mkdirSync(global.tmpdir+"/"+packageName);
+    obbFiles = await getObbs(location + '/' + obbFolder);
+    if (obbFiles.length > 0) {
+      console.log('obbFiles: ', obbFiles.length);
+
+      if (!fs.existsSync(global.tmpdir + '/' + packageName)) {
+        fs.mkdirSync(global.tmpdir + '/' + packageName);
       }
       else {
-        console.log(global.tmpdir+"/"+packageName+ ' already exists')
+        console.log(global.tmpdir + '/' + packageName + ' already exists');
       }
 
       //TODO, make name be packageName instead of foldername
       for (const item of obbFiles) {
-        console.log("obb File: "+item)
+        console.log('obb File: ' + item)
         console.log('doing obb push');
         var n = item.lastIndexOf('/');
         var name = item.substring(n + 1);
 
 
         if (fromremote) {
-          tempobb = global.tmpdir+"/"+packageName+"/"+path.basename(item);
-          console.log('obb is remote, copying to '+ tempobb)
+          tempobb = global.tmpdir + '/' + packageName + '/' + path.basename(item);
+          console.log('obb is remote, copying to ' + tempobb);
 
           if (fs.existsSync(tempobb)) {
-            console.log('obb is remote, '+ tempobb+ 'already exists, using')
+            console.log('obb is remote, ' + tempobb + 'already exists, using');
           }
           else {
-            await fsExtra.copyFile(`${item}`, `${tempobb}`);
+            await fsExtra.copyFile(item, tempobb);
           }
 
           await execShellCommand(`adb push "${tempobb}" "/sdcard/Download/obb/${obbFolder}/${name}" ${nullcmd}`);
@@ -656,7 +708,6 @@ async function sideloadFolder(arg) {
       console.log('doing shell mv');
       await execShellCommand(`adb shell mv "/sdcard/Download/obb/${obbFolder}" "/sdcard/Android/obb/${obbFolder}"`);
       win.webContents.send('sideload_move_obb_done',`{"success":true}`);
-
     }
   }
   else {
