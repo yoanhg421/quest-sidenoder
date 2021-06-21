@@ -691,31 +691,38 @@ async function getPackageInfo(apkPath) {
 }
 
 async function getInstalledApps(send = true) {
-  apps = await execShellCommand(`adb shell cmd package list packages -3`);
-  apps = apps.split("\n")
+  let apps = await execShellCommand(`adb shell cmd package list packages -3`);
+  apps = apps.split('\n');
   apps.pop();
 
-  appinfo = []
-  for (x in apps) {
-    apps[x] = apps[x].slice(8);
-    appinfo[x] = []
-    info = await execShellCommand(`adb shell dumpsys package ${apps[x]}`);
+  apps = apps.map(a => a.slice(8).replace(/(\r\n|\n|\r)/gm, ''));
+  // console.log(apps); return [];
 
-    packageName = apps[x].replace(/(\r\n|\n|\r)/gm, '');
+  let appsinfo = await execShellCommand(`adb shell dumpsys package packages | grep -E 'Package \\[|versionCode'`);
+  appsinfo = appsinfo.split('\n');
+  apps.pop();
 
-    appinfo[x]['packageName'] = packageName;
-    appinfo[x]['versionCode'] = info.match(/versionCode=[0-9]*/)[0].slice(12);
-    appinfo[x]['debug'] = info.match(/ DEBUGGABLE /);
+  appinfo = [];
+  for (let i = 0; i < appsinfo.length; i = i + 2) {
+    const packageName = appsinfo[i].slice(11).split(']')[0];
+    if (!apps.includes(packageName)) continue;
 
-    appinfo[x]['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
+    const info = [];
+    info['packageName'] = packageName;
+    info['versionCode'] = appsinfo[i + 1].slice(16).split(' ')[0];
+    // appinfo[x]['debug'] = infoline.match(/ DEBUGGABLE /);
+
+    info['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
       : 'unknown.png';
 
-    if (send === true) {
-      win.webContents.send('list_installed_app',appinfo[x]);
-    }
+    appinfo.push(info);
 
+    if (send === true) {
+      win.webContents.send('list_installed_app', info);
+    }
   }
+
 
   global.installedApps = appinfo;
 
@@ -743,7 +750,7 @@ async function getInstalledAppsWithUpdates() {
 
   const remoteKeys = Object.keys(remotePackages);
 
-  const apps = await getInstalledApps(false);
+  const apps = global.installedApps || await getInstalledApps(false);
   for (const x in apps) {
     const packageName = apps[x]['packageName'];
     console.log('checking ' + packageName);

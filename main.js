@@ -116,7 +116,7 @@ ipcMain.on('check_mount', async (event, arg) => {
     await tools.checkMount();
     event.reply('check_mount', `{"success":${global.mounted}, "mountFolder": "${global.mountFolder}"}`)
     if (global.mounted) {
-        setTimeout(tools.updateRcloneProgress(), 2000);
+        setTimeout(tools.updateRcloneProgress, 2000);
     }
     return
 })
@@ -233,7 +233,7 @@ function createWindow () {
     global.win = new BrowserWindow({
         width: 1000,
         height: 800,
-        title:"Quest-Sidenoder",
+        title: 'Quest-Sidenoder',
         //frame:false,
         webPreferences: {
             nodeIntegration: true,
