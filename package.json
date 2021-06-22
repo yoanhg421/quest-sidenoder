@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SideNoder",
   "main": "main.js",
   "dependencies": {
@@ -41,7 +41,7 @@
     },
     "afterPack": "./removeLocales.js",
     "mac": {
-      "target": "tar.gz"
+      "target": "dir"
     }
   },
   "keywords": [],

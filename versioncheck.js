@@ -1,16 +1,25 @@
 const pkg = require('./package.json');
-global.version = pkg.version
+const fetch = require('node-fetch');
+global.version = pkg.version;
+
 async function checkVersion() {
-    var fetch = require('node-fetch')
-    var compareVersions = require('compare-versions');
-    content = await fetch("https://api.github.com/repos/vKolerts/quest-sidenoder/releases/latest")
-    remoteversion = JSON.parse(await content.text()).name;
-    console.log("Current version: "+pkg.version);
-    console.log("Github version: "+remoteversion);
-    if (compareVersions.compare(remoteversion, pkg.version, '=')) {
-        console.log("Using latest version");
-    } else {
-        console.log("requires update");
-        win.webContents.send('notify_update',{success:true, current: pkg.version, remote: remoteversion});
-    }
+  const compareVersions = require('compare-versions');
+  const res = await fetch('https://api.github.com/repos/vKolerts/quest-sidenoder/releases/latest');
+  const content = JSON.parse(await res.text())
+  const remoteversion = content.name;
+
+  console.log('Current version: ' + pkg.version);
+  console.log('Github version: ' + remoteversion);
+  if (compareVersions.compare(remoteversion, pkg.version, '=')) {
+    console.log('Using latest version');
+  } else {
+    console.log('requires update');
+    win.webContents.send('notify_update', {
+      success: true,
+      current: pkg.version,
+      remote: remoteversion,
+      url: content.html_url,
+      description: content.body,
+    });
+  }
 }
