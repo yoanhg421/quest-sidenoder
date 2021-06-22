@@ -16,7 +16,7 @@ async function readSizeRecursive(item) {
 }
 
 async function getDirSize(el, path) {
-  el.onclick = () => false;
+  el.onclick = () => false;ask_sideload
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
 
   const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
@@ -37,6 +37,8 @@ ipcRenderer.on('get_dir', (event, arg) => {
     loadDir(arg.path, arg.list);
     fixIcons();
   }
+
+  $('#processingModal').modal('hide');
 });
 
 //sort
@@ -104,7 +106,6 @@ function loadDir(path, list) {
           selectBtn = `<a><span class="btn btn-outline-secondary btn-block">${item.versionCode}</span></a>`
         }
 
-        //row = $("#listTable tbody").append("<tr><td class='browse-folder' ><a onclick='getDir(\"" + fullPath + "\")'><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;" + `${name}</a><td></tr>`)
         row = $("#browseCardBody").append(`<div class="col mb-4 listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card h-100 bg-primary text-center">
 

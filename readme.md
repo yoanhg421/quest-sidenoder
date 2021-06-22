@@ -5,8 +5,6 @@
 What makes sidenoder better than other sideloaders ?
 </summary>
 
-
-
 ---
 
 - **Automatically scan** hmd and drive, to **find available updates**.
@@ -126,10 +124,6 @@ Please report any issues here :
 
 https://github.com/vKolerts/quest-sidenoder/issues
 
----
----
----
----
 ---
 ---
 

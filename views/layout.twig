@@ -35,6 +35,18 @@
     .btn-success:hover {
       background: #46ba46;
     }
+    .btn-danger {
+      background: #ec4d49;
+    }
+    .btn-danger:hover {
+      background: #e8241f;
+    }
+    .btn-info {
+      background: #49b;
+    }
+    .btn-info:hover {
+      background: #28b;
+    }
     .badge {
       text-shadow: none;
     }
@@ -79,8 +91,9 @@
   <script>
 
     $(function() {
-      loadInclude('sideloadmodal.twig', 'sideloadmodaldiv');
-      loadInclude('confirmmodal.twig', 'confirmmodaldiv');
+      loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
+      loadInclude('modals/confirm.twig', 'confirmmodaldiv');
+      loadInclude('modals/processing.twig', 'processingmodaldiv');
 
       document.ondragover = document.ondrop = (ev) => {
         ev.preventDefault()
@@ -231,18 +244,16 @@
     // edit btn on browse page
     ipcRenderer.on('check_mount', (event, arg) => {
       if (JSON.parse(arg).success) {
-        $('#browseheader').html(`<span id="mountBadge" class="badge badge-warning badge-md"><a data-path="${JSON.parse(arg).mountFolder}" onclick="getDir(this)"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span>`)
-        $('#mountBadge').removeClass('badge-warning');
-        $('#mountBadge').addClass('badge-success');
+        $('#mountBadge').removeClass('btn-warning');
+        $('#mountBadge').addClass('btn-info');
+        $('#mountBadge').html(`<i id="mountrefresh" class="fa fa-plug"></i> Click to browse mount`)
       }
-    });
 
     // edit btn on installed apps page
-    ipcRenderer.on('check_mount', (event, arg) => {
       if (JSON.parse(arg).success) {
-        $('#updateBadge').removeClass('badge-danger');
-        $('#updateBadge').addClass('badge-success');
-        $('#updateBadge').html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
+        $('#updateBadge').removeClass('btn-danger');
+        $('#updateBadge').addClass('btn-info');
+        $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`)
       }
     });
 
@@ -293,7 +304,7 @@
       else {
         $('#devicebtn').removeClass('btn-success');
         $('#devicebtn').addClass('btn-danger');
-        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-refresh fa-spin"></i> | Quest status:</br>Disconnected.`)
+        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-refresh fa-spin"></i> | QUEST STATUS:</br>DISCONNECTED`)
 
         //$("#installedAppsNav").addClass("disabled");
       }
@@ -456,11 +467,9 @@
 </footer>
 
 
-<div id="sideloadmodaldiv">
-</div>
-
-<div id="confirmmodaldiv">
-</div>
+<div id="sideloadmodaldiv"></div>
+<div id="confirmmodaldiv"></div>
+<div id="processingmodaldiv"></div>
 
 
 

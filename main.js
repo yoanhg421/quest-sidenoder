@@ -138,7 +138,7 @@ ipcMain.on('start_sideload', async (event, arg) => {
 
 
 ipcMain.on('get_dir', async (event, arg) => {
-  console.log("get_dir received");
+  console.log('get_dir received');
   if ((typeof arg === 'string') && arg.endsWith('.apk')) {
     event.reply('ask_sideload', `{"success":true, "path": "${arg}", "update": false}`)
     return
@@ -165,10 +165,10 @@ ipcMain.on('get_dir', async (event, arg) => {
 
 
 
-  response = {}
-  response.success = true
-  response.list = incList
-  response.path = folder
+  response = {};
+  response.success = true;
+  response.list = incList;
+  response.path = folder;
   win.webContents.send('get_dir',response);
   //event.reply('get_dir', response)
 })
@@ -240,9 +240,9 @@ function createWindow () {
       enableRemoteModule:true,
     }
   })
-  win.setMenu(null);
+  // win.setMenu(null);
 
-  win.webContents.openDevTools()
+  // win.webContents.openDevTools()
 
   win.maximize(true)
   win.loadURL(`file://${__dirname}/views/index.twig`)

@@ -1,5 +1,5 @@
 <script>
-        console.log("ONLOAD BROWSE");
+        console.log('ONLOAD BROWSE');
         //open start dir
         ipcRenderer.send('get_dir', '');
         //load in searchform
@@ -9,7 +9,10 @@
 
         // call get_dir when selection is made
         function getDir(elem) {
-            newpath = elem.dataset.path
+            elem.onclick = false;
+            $('#processingModal').modal('show');
+
+            newpath = elem.dataset.path;
             ipcRenderer.send('get_dir', `${newpath}`);
         }
 
@@ -75,14 +78,14 @@
 
 <div class="card text-light bg-primary">
     <div class="card-header">
-        <h2 class="pull-left push-left">
+        <h2 class="pull-left push-left" style="padding-top:10px">
             <i class="fa fa-folder-open" aria-hidden="true"></i>
             <span id="path"></u></span>
         </h2>
         <h2 class="pull-right push-right"  id="browseheader">
         <script>
             if (remote.getGlobal('mounted')) {
-                $('#browseheader').html(`<a data-path="${remote.getGlobal('mountFolder')}" onclick="getDir(this)"><span id="mountBadge" class="btn btn-success btn-md"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span></a>`)
+                $('#browseheader').html(`<a data-path="${remote.getGlobal('mountFolder')}" onclick="getDir(this)"><span id="mountBadge" class="btn btn-info btn-md"><i id="mountrefresh" class="fa fa-plug"></i> Click to browse mount</a></span></a>`)
             }
             else {
                 $('#browseheader').html(`<span id="mountBadge" class="btn btn-danger btn-md">Drive not mounted, browsing local content only</span>`);
