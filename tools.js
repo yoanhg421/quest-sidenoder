@@ -125,7 +125,22 @@ async function getStorageInfo() {
 
   const refree = new RegExp('([0-9(.{1})]+[a-zA-Z%])', 'g');
   const storage = linematch[0].match(refree);
-  return storage;
+
+  if (storage.length == 3) {
+    return {
+      size: storage[0],
+      used: storage[1],
+      free: 0,
+      percent: storage[2],
+    };
+  }
+
+  return {
+    size: storage[0],
+    used: storage[1],
+    free: storage[2],
+    percent: storage[3],
+  };
 }
 
 async function checkUpdateAvailable() {

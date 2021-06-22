@@ -17,13 +17,44 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="https://bootswatch.com/4/sandstone/bootstrap.min.css">
+  <link rel="stylesheet" href="https://bootswatch.com/4/slate/bootstrap.min.css">
+  <!-- <link rel="stylesheet" href="https://bootswatch.com/4/sandstone/bootstrap.min.css"> -->
 
-  <title>Quest-Sideloader-Linux</title>
+  <title>Quest-Sideloader</title>
 
 
   <style>
     a { cursor: pointer; }
+    .btn {
+      text-shadow: none;
+      font-weight: bold;
+    }
+    .btn-success {
+      background: #7C4;
+    }
+    .btn-success:hover {
+      background: #46ba46;
+    }
+    .badge {
+      text-shadow: none;
+    }
+    .badge-success {
+      background: #5a4;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      padding: 15px;
+    }
+    html {
+      position: relative;
+      min-height: 100%;
+    }
+    body {
+      margin-bottom: 120px;
+    }
   </style>
 
   <script>
@@ -47,227 +78,227 @@
 
   <script>
 
-  $(function() {
-    loadInclude('sideloadmodal.twig', 'sideloadmodaldiv');
-    loadInclude('confirmmodal.twig', 'confirmmodaldiv');
+    $(function() {
+      loadInclude('sideloadmodal.twig', 'sideloadmodaldiv');
+      loadInclude('confirmmodal.twig', 'confirmmodaldiv');
 
-    document.ondragover = document.ondrop = (ev) => {
-      ev.preventDefault()
-    }
-
-    document.body.ondrop = (ev) => {
-      if (ev.dataTransfer.files[0].path.endsWith(".apk")) {
-        ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g,"/"));
+      document.ondragover = document.ondrop = (ev) => {
+        ev.preventDefault()
       }
-      ev.preventDefault()
-    }
-  });
 
-  ipcRenderer.on('get_device_info', (event, arg) => {
-    console.log('get_device_info ! ', arg);
-    const {
-      storage,
-      user,
-      fw,
-      battery,
-    } = arg;
-    if (storage) {
-      $('#storageDiv').html(`
-<span class="pull-left push-left">Size: ${arg.storage[0]}</span>
-<span class="pull-right push-right">Available: ${arg.storage[2]}</span>
-<center>Used: ${storage[1]}(${storage[3]})</center>
-            <div class="progress">
-<div class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: ${storage[3]}" aria-valuenow="${storage[3].replace('%', '')}" aria-valuemin="0" aria-valuemax="100"></div>
-</div>`)
-    }
+      document.body.ondrop = (ev) => {
+        if (ev.dataTransfer.files[0].path.endsWith(".apk")) {
+          ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g,"/"));
+        }
+        ev.preventDefault()
+      }
+    });
 
-    if (user) {
-      $('#deviceUserName').html(user.name);
-    }
+    ipcRenderer.on('get_device_info', (event, arg) => {
+      console.log('get_device_info ! ', arg);
+      const {
+        storage,
+        user,
+        fw,
+        battery,
+      } = arg;
+      if (storage) {
+        let bg = 'success';
+        let percent = +storage.percent.replace('%', '');
+        if (percent > 80) bg = 'warning';
+        if (percent > 95) bg = 'danger';
 
-    if (fw) {
-      $('#deviceFwVersion').html(fw.version);
-    }
+        $('#storageDiv').html(`
+        <span class="pull-left push-left">Size: ${storage.size}</span>
+        <span class="pull-right push-right">Available: ${storage.free}</span>
+        <center>Used: ${storage.used}(${storage.percent})</center>
+        <div class="progress" style="border: 1px solid #666;">
+          <div class="progress-bar progress-bar-striped bg-${bg}" role="progressbar" style="width: ${storage.percent};" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>`)
+      }
 
-    if (battery) {
-      $('#deviceBatteryLevel').html(battery.level);
-    }
-  });
+      if (user) {
+        $('#deviceUserName').html(user.name);
+      }
 
-  ipcRenderer.on('notify_update', (event, arg) => {
-    console.log('notify_update msg came ! ');
-    dialog.showMessageBox(null, {
-      type: 'info',
-      buttons: ['Cancel', 'Download'],
-      title: `Update available ${arg.current} to ${arg.remote}`,
-      message: `sidenoder-${arg.remote} is now available on github.`,
-      detail: arg.description,
-    })
-    .then(({ response }) => {
-      if (response === 1) shell.openExternal(arg.url);
-    })
-  });
+      if (fw) {
+        $('#deviceFwVersion').html(fw.version);
+      }
 
-  ipcRenderer.on('ask_sideload', (event, arg) => {
-    console.log('ask_sideload msg came ! ');
-    const { success, path, update } = JSON.parse(arg);
-    if (!success) return;
+      if (battery) {
+        $('#deviceBatteryLevel').html(battery.level);
+      }
+    });
 
-    const lastslashindex = path.lastIndexOf('/');
-    const file= path.substring(lastslashindex  + 1);
+    ipcRenderer.on('notify_update', (event, arg) => {
+      console.log('notify_update msg came ! ');
+      dialog.showMessageBox(null, {
+        type: 'info',
+        buttons: ['Cancel', 'Download'],
+        title: `Update available ${arg.current} to ${arg.remote}`,
+        message: `sidenoder-${arg.remote} is now available on github.`,
+        detail: arg.description,
+      })
+      .then(({ response }) => {
+        if (response === 1) shell.openExternal(arg.url);
+      })
+    });
 
-    $('#confirmSideloadButton').data('path', path);
-    $('#confirmSideloadButton').data('update', !!update);
-    $('#confirmModal').modal('show');
-    $('#confirmModal > div > div > div.modal-body').html('Do you want to sideload: <br><b>' + file + '</b>');
-  });
+    ipcRenderer.on('ask_sideload', (event, arg) => {
+      console.log('ask_sideload msg came ! ');
+      const { success, path, update } = JSON.parse(arg);
+      if (!success) return;
 
+      const lastslashindex = path.lastIndexOf('/');
+      const file= path.substring(lastslashindex  + 1);
 
-  ipcRenderer.on('start_sideload', (event, arg) => {
-    console.log('start_sideload msg came ! ');
-    console.log(arg);
-    const { success, path } = JSON.parse(arg);
-    if (!success) return;
-
-    const lastslashindex = path.lastIndexOf('/');
-    const file= path.substring(lastslashindex  + 1)
-
-    $('#sideloadModal').modal('show');
-    $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('Processing: <br><b>'+file+'</b>')
-  });
+      $('#confirmSideloadButton').data('path', path);
+      $('#confirmSideloadButton').data('update', !!update);
+      $('#confirmModal').modal('show');
+      $('#confirmModal > div > div > div.modal-body').html('Do you want to sideload: <br><b>' + file + '</b>');
+    });
 
 
+    ipcRenderer.on('start_sideload', (event, arg) => {
+      console.log('start_sideload msg came ! ');
+      console.log(arg);
+      const { success, path } = JSON.parse(arg);
+      if (!success) return;
 
-  ipcRenderer.on('sideload_aapt_done', (event, arg) => {
-    $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
-    ipcRenderer.send('get_device_info', '');
-  });
-  ipcRenderer.on('sideload_check_done', (event, arg) => {
-    $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_backup_done', (event, arg) => {
-    $('.backupDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_uninstall_done', (event, arg) => {
-    $('.uninstallDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_restore_done', (event, arg) => {
-    $('.restoreDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_download_done', (event, arg) => {
-    $('.downloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_apk_done', (event, arg) => {
-    $('.apkDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_copy_obb_done', (event, arg) => {
-    $('.copyObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-    $('.downloadObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_move_obb_done', (event, arg) => {
-    $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_done', (event, arg) => {
-    console.log('sideload done received')
-    console.log(arg);
-    if (JSON.parse(arg).success) {
-      $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
-      $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done')
-      $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o')
-    }
-    if (JSON.parse(arg).update === true) {
-      getUpdates();
-    }
-  });
+      const lastslashindex = path.lastIndexOf('/');
+      const file= path.substring(lastslashindex  + 1)
 
-  function checkMount() {
-    $('#mountrefresh').addClass('fa-spin');
-    $('#mountbtn').removeClass('btn-danger');
-    $('#mountbtn').addClass('btn-warning');
-    ipcRenderer.send('mount', 'bla');
-  }
-
-  ipcRenderer.on('log', (event, arg) => {
-    console.log('log came')
-    console.log(arg)
-  });
-
-  // edit btn on browse page
-  ipcRenderer.on('check_mount', (event, arg) => {
-    if (JSON.parse(arg).success) {
-      $('#browseheader').html(`<span id="mountBadge" class="badge badge-warning badge-md"><a data-path="${JSON.parse(arg).mountFolder}" onclick="getDir(this)"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span>`)
-      $('#mountBadge').removeClass('badge-warning');
-      $('#mountBadge').addClass('badge-success');
-    }
-  });
-
-  // edit btn on installed apps page
-  ipcRenderer.on('check_mount', (event, arg) => {
-    if (JSON.parse(arg).success) {
-      $('#updateBadge').removeClass('badge-danger');
-      $('#updateBadge').addClass('badge-success');
-      $('#updateBadge').html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
-    }
-  });
-
-  //edit btn on top
-  ipcRenderer.on('check_mount', (event, arg) => {
-    console.log('check_mount responded: ' + arg); // prints "ping"
-    console.log(JSON.parse(arg));
-    if (JSON.parse(arg).success) {
-      $('#mountrefresh').removeClass('fa-spin');
-      $('#mountbtn').removeClass('btn-warning');
-      $('#mountbtn').removeClass('btn-danger');
-      $('#mountbtn').addClass('btn-success');
-      $('#mountbtn').html(`<i  id="mountrefresh" class="fa fa-check-circle-o"></i> | Mount status:</br>Connected.`)
-      $('#mountbtn').onclick = function() {return false;}
-    }
-    else {
-      $('#mountrefresh').removeClass('fa-spin');
-      $('#mountbtn').removeClass('btn-success');
-      $('#mountbtn').addClass('btn-danger');
-    }
-  });
+      $('#sideloadModal').modal('show');
+      $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('Processing: <br><b>'+file+'</b>')
+    });
 
 
-  function checkDevice() {
-    $('#devicerefresh').addClass('fa-spin');
-    $('#devicebtn').removeClass('btn-danger');
-    $('#devicebtn').addClass('btn-warning');
-    ipcRenderer.send('check_device', 'bla');
-  }
 
-  ipcRenderer.on('check_device', (event, arg) => {
-    console.log('get_device msg came FROM BE to fe:', arg);
-
-    if (arg.success !== false) {
-      console.log('GETDEVICE SUCESS')
-      $('#devicebtn').removeClass('btn-danger');
-      $('#devicebtn').addClass('btn-success');
-      $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-check-circle-o"></i> | Quest status:</br>Connected.`)
-
-      $('.deviceBadge').removeClass('badge-warning');
-      $('.deviceBadge').addClass('badge-success');
-
-      $('#installedAppsNav').removeClass('disabled');
-      $('#installedAppsNav').removeClass('btn-secondary');
-      $('#installedAppsNav').addClass('btn-primary');
+    ipcRenderer.on('sideload_aapt_done', (event, arg) => {
+      $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
       ipcRenderer.send('get_device_info', '');
+    });
+    ipcRenderer.on('sideload_check_done', (event, arg) => {
+      $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_backup_done', (event, arg) => {
+      $('.backupDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_uninstall_done', (event, arg) => {
+      $('.uninstallDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_restore_done', (event, arg) => {
+      $('.restoreDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_download_done', (event, arg) => {
+      $('.downloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_apk_done', (event, arg) => {
+      $('.apkDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_copy_obb_done', (event, arg) => {
+      $('.copyObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+      $('.downloadObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_move_obb_done', (event, arg) => {
+      $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    });
+    ipcRenderer.on('sideload_done', (event, arg) => {
+      console.log('sideload done received')
+      console.log(arg);
+      if (JSON.parse(arg).success) {
+        $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
+        $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done')
+        $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o')
+      }
+      if (JSON.parse(arg).update === true) {
+        getUpdates();
+      }
+    });
+
+    function checkMount() {
+      $('#mountrefresh').addClass('fa-spin');
+      $('#mountbtn').removeClass('btn-danger');
+      $('#mountbtn').addClass('btn-warning');
+      ipcRenderer.send('mount', 'bla');
     }
-    else {
-      $('#devicebtn').removeClass('btn-success');
-      $('#devicebtn').addClass('btn-danger');
-      $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-refresh fa-spin"></i> | Quest status:</br>Disconnected.`)
 
-      //$("#installedAppsNav").addClass("disabled");
+    ipcRenderer.on('log', (event, arg) => {
+      console.log('log came')
+      console.log(arg)
+    });
+
+    // edit btn on browse page
+    ipcRenderer.on('check_mount', (event, arg) => {
+      if (JSON.parse(arg).success) {
+        $('#browseheader').html(`<span id="mountBadge" class="badge badge-warning badge-md"><a data-path="${JSON.parse(arg).mountFolder}" onclick="getDir(this)"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span>`)
+        $('#mountBadge').removeClass('badge-warning');
+        $('#mountBadge').addClass('badge-success');
+      }
+    });
+
+    // edit btn on installed apps page
+    ipcRenderer.on('check_mount', (event, arg) => {
+      if (JSON.parse(arg).success) {
+        $('#updateBadge').removeClass('badge-danger');
+        $('#updateBadge').addClass('badge-success');
+        $('#updateBadge').html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
+      }
+    });
+
+    //edit btn on top
+    ipcRenderer.on('check_mount', (event, arg) => {
+      console.log('check_mount responded: ' + arg); // prints "ping"
+      console.log(JSON.parse(arg));
+      if (JSON.parse(arg).success) {
+        $('#mountrefresh').removeClass('fa-spin');
+        $('#mountbtn').removeClass('btn-warning');
+        $('#mountbtn').removeClass('btn-danger');
+        $('#mountbtn').addClass('btn-success');
+        $('#mountbtn').html(`<i  id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT STATUS:</br>CONNECTED`)
+        $('#mountbtn').onclick = function() {return false;}
+      }
+      else {
+        $('#mountrefresh').removeClass('fa-spin');
+        $('#mountbtn').removeClass('btn-success');
+        $('#mountbtn').addClass('btn-danger');
+      }
+    });
+
+
+    function checkDevice() {
+      $('#devicerefresh').addClass('fa-spin');
+      $('#devicebtn').removeClass('btn-danger');
+      $('#devicebtn').addClass('btn-warning');
+      ipcRenderer.send('check_device', 'bla');
     }
-  });
-  </script>
 
+    ipcRenderer.on('check_device', (event, arg) => {
+      console.log('get_device msg came FROM BE to fe:', arg);
 
+      if (arg.success !== false) {
+        console.log('GETDEVICE SUCESS')
+        $('#devicebtn').removeClass('btn-danger');
+        $('#devicebtn').addClass('btn-success');
+        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-check-circle-o"></i> | QUEST STATUS:</br>CONNECTED`)
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js">// screenshot stuff</script>
-  <script> // screenhot stuff
+        $('.deviceBadge').removeClass('badge-warning');
+        $('.deviceBadge').addClass('badge-success');
+
+        $('#installedAppsNav').removeClass('disabled');
+        $('#installedAppsNav').removeClass('btn-secondary');
+        $('#installedAppsNav').addClass('btn-primary');
+        ipcRenderer.send('get_device_info', '');
+      }
+      else {
+        $('#devicebtn').removeClass('btn-success');
+        $('#devicebtn').addClass('btn-danger');
+        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-refresh fa-spin"></i> | Quest status:</br>Disconnected.`)
+
+        //$("#installedAppsNav").addClass("disabled");
+      }
+    });
+    // screenhot stuff
     async function makeScreenshot(selector = "body") {
       return new Promise((resolve, reject) => {
         let node = document.querySelector(selector);
@@ -347,11 +378,11 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-md navbar-light bg-light">
+<nav class="navbar navbar-expand-md" style="padding: 10px">
 
 {#  <a class="navbar-brand" href="index.twig">Q-S-L</a>#}
 
-  <img src="quest-sidenoder.svg" width="78" height="78" alt="" style="margin-right: 20px">
+  <img src="quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -392,10 +423,10 @@
     </ul>
     <form class="form-inline my-2 my-lg-0">
 
-      <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-lg btn-danger" disabled><i  id="mountrefresh" class="fa fa-refresh"></i> | Mount status:</br>Disconnected.</span>
+      <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled><i  id="mountrefresh" class="fa fa-refresh"></i> | MOUNT STATUS:</br>DISCONNECTED</span>
   &nbsp;
 
-        <span type="button" id="devicebtn" {# onclick="checkDevice()" #} class="btn btn-lg btn-danger"  disabled><i id="devicerefresh" class="fa fa-spin fa-refresh"></i> | Quest status:</br>Disconnected.</span>
+        <span type="button" id="devicebtn" {# onclick="checkDevice()" #} class="btn btn-sm btn-danger"  disabled><i id="devicerefresh" class="fa fa-spin fa-refresh"></i> | QUEST STATUS:</br>DISCONNECTED</span>
 
 
       {# <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button> #}
@@ -406,31 +437,23 @@
 </nav>
 
 
-<div style="padding: 0px 20px">
-
-
-  <p>
-
-  </p>
+<div style="padding: 5px 20px">
   <div class="collapse" id="collapseExample">
     <div class="card card-body">
       If you encounter any issues or bugs, please report them at https://github.com/vKolerts/quest-sidenoder/issues
     </div>
-    <br>
   </div>
 
-
-
 {% block body %}{% endblock %}
-  <hr>
-  <center>
-    <b>sidenoder v{{ version }}</b>
-    <br>
-    This fork https://github.com/vKolerts/quest-sidenoder
-    <br>
-    Main repository https://github.com/whitewhidow/quest-sidenoder
-  </center>
 </div>
+<footer class="footer text-center">
+  <hr>
+  <b>SideNoder v{{ version }}</b>
+  <br>
+  This fork https://github.com/vKolerts/quest-sidenoder
+  <br>
+  Main repository https://github.com/whitewhidow/quest-sidenoder
+</footer>
 
 
 <div id="sideloadmodaldiv">

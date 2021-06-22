@@ -71,22 +71,23 @@
     }
 </style>
 
-<div id="device_infoDiv">
-</div>
+<div id="device_infoDiv"></div>
 
-<div class="card text-white bg-primary">
+<div class="card text-light bg-primary">
     <div class="card-header">
-        <h2 class="pull-left push-left">Browsing <b><u id="path"></u></b></h2>
+        <h2 class="pull-left push-left">
+            <i class="fa fa-folder-open" aria-hidden="true"></i>
+            <span id="path"></u></span>
+        </h2>
         <h2 class="pull-right push-right"  id="browseheader">
         <script>
             if (remote.getGlobal('mounted')) {
-                $('#browseheader').html(`<a data-path="${remote.getGlobal('mountFolder')}" onclick="getDir(this)"><span id="mountBadge" class="badge badge-success badge-md"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span></a>`)
-            } else {
-                $('#browseheader').html(`<span id="mountBadge" class="badge badge-danger badge-md">Drive not mounted, browsing local content only</span>`);
+                $('#browseheader').html(`<a data-path="${remote.getGlobal('mountFolder')}" onclick="getDir(this)"><span id="mountBadge" class="btn btn-success btn-md"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span></a>`)
+            }
+            else {
+                $('#browseheader').html(`<span id="mountBadge" class="btn btn-danger btn-md">Drive not mounted, browsing local content only</span>`);
             }
         </script>
-
-
         </h2>
     </div>
     <div class="card-body">
@@ -96,7 +97,7 @@
         <br>
 
 
-        <div id="browseCardBody" class="row row-cols-2 row-cols-md-6" style="font-size: small">
+        <div id="browseCardBody" class="row row-cols-2 row-cols-md-5">
         </div>
 
         <table class="table table-striped table-condensed text-white" id="listTableStart">

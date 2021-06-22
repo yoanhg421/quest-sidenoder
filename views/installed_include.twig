@@ -1,16 +1,12 @@
 <script>
-        console.log("ONLOAD installed");
-        $("#updateBadge").hide();
-        $("#listTable tbody").html('');
-        ipcRenderer.send('get_installed', '');
+    console.log("ONLOAD installed");
+    $("#updateBadge").hide();
+    $("#listTable tbody").html('');
+    ipcRenderer.send('get_installed', '');
 
 
-        loadInclude('device_info.twig', 'device_infoDiv');
+    loadInclude('device_info.twig', 'device_infoDiv');
 
-</script>
-
-
-<script>
 
     function getUpdates(element = null) {
         if (element) {
@@ -35,10 +31,7 @@
 
 </script>
 
-<div id="device_infoDiv">
-</div>
-
-
+<div id="device_infoDiv"></div>
 
 
 <div class="card text-white bg-primary">
@@ -47,9 +40,9 @@
         <h2 class="pull-right push-right" id="updateheader">
             <script>
                 if (remote.getGlobal('mounted')) {
-                    $('#updateheader').html(`<span id="updateBadge" class="badge badge-success badge-md"><a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a></span>`)
+                    $('#updateheader').html(`<span id="updateBadge" class="btn btn-success btn-md"><a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a></span>`)
                 } else {
-                    $('#updateheader').html(`<span id="updateBadge" class="badge badge-danger badge-md">Drive not mounted, cannot check for updates</span>`);
+                    $('#updateheader').html(`<span id="updateBadge" class="btn btn-danger btn-md">Drive not mounted, cannot check for updates</span>`);
                 }
             </script>
         </h2>
