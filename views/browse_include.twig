@@ -10,10 +10,12 @@
         // call get_dir when selection is made
         function getDir(elem) {
             elem.onclick = false;
-            $('#processingModal').modal('show');
-
             newpath = elem.dataset.path;
-            ipcRenderer.send('get_dir', `${newpath}`);
+            if (!newpath.endsWith('.apk')) {
+                $('#processingModal').modal('show');
+            }
+
+            ipcRenderer.send('get_dir', newpath);
         }
 
 

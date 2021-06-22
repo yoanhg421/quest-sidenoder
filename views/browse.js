@@ -16,7 +16,7 @@ async function readSizeRecursive(item) {
 }
 
 async function getDirSize(el, path) {
-  el.onclick = () => false;ask_sideload
+  el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
 
   const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
