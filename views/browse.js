@@ -91,12 +91,12 @@ function loadDir(path, list) {
       const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
       const steamlink = !item.steamId ? '' : '<a onclick="window.open(\'' + item.infoLink + '\')" title="infolink"><i class="fa fa-steam"></i></a>';
       if (item.imagePath) {
-        if (item.mp) {
-          mpribbon = `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>`
-        }
+        //if (item.mp) {
+          mpribbon = `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>`;
+        /*}
         else {
-          mpribbon = ''
-        }
+          mpribbon = '';
+        }*/
 
         if (item.versionCode !== 'PROCESSING') {
           selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-primary col-8">Select</span></a>

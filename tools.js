@@ -18,7 +18,7 @@ fixPath();
 
 const configLocation = require('path').join(homedir, 'sidenoder-config.json');
 
-if (`${platform}` != 'win64' && `${platform}` != "win32") {
+if (!['win64', 'win32'].includes(platform)) {
   global.nullcmd = '> /dev/null'
   global.nullerror = '2> /dev/null'
 }
@@ -53,6 +53,8 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  connectWireless,
+  disconnectWireless,
   startApp,
   getDeviceInfo,
   getStorageInfo,
@@ -121,6 +123,8 @@ async function getStorageInfo() {
 
   const res = await execShellCommand('adb shell df -h');
   const re = new RegExp('.*/storage/emulated.*');
+  if (!res) return false;
+
   const linematch = res.match(re);
   if (!linematch) return false;
 
@@ -144,21 +148,27 @@ async function getStorageInfo() {
   };
 }
 
-async function startApp(package) {
+async function startApp(package, activity = false) {
   console.log('startApp()', package);
 
-  // const dump = await execShellCommand(`adb shell dumpsys package ${package}`);
-  // const activity = dump.split('\n')[3].split(' ')[9];
-  let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
-  if (!activities) return false;
-  activities = activities.split('\n');
-  console.log({ package, activities });
-  const res = await execShellCommand(`adb shell am start ${activities[0]}`); // TODO activity selection
-  // const res = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
-  // const res = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
-  // const res = await execShellCommand(`adb shell monkey -p ${package} 1`);
-  console.log('start package', package, res);
-  return res;
+  if (!activity) {
+    let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
+    if (!activities) return false;
+
+    activities = activities.split('\n');
+    console.log({ package, activities });
+    if (activities.length > 1) return { activities };
+
+    activity = activity[0];
+  }
+
+  const result = await execShellCommand(`adb shell am start ${activity}`); // TODO activity selection
+  // const result = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
+  // const result = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
+  // const result = await execShellCommand(`adb shell monkey -p ${package} 1`);
+
+  console.log('start package', package, result);
+  return { result };
 }
 
 async function checkUpdateAvailable() {
@@ -183,22 +193,46 @@ async function checkUpdateAvailable() {
 }
 // Implementation ----------------------------------
 
-function getDeviceSync(){
+async function getDeviceIp() {
+  return execShellCommand(`adb shell ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
+}
+
+async function connectWireless() {
+  await execShellCommand(`adb shell setprop service.adb.tcp.port 5555`);
+  const ip = await getDeviceIp();
+  if (!ip) return false;
+
+  await execShellCommand(`adb tcpip 5555`);
+  const res = await execShellCommand(`adb connect ${ip}:5555`);
+  console.log('connectWireless', { ip, res });
+  return ip;
+}
+
+async function disconnectWireless() {
+  const ip = await getDeviceIp();
+  if (!ip) return false;
+
+  const res = await execShellCommand(`adb disconnect ${ip}:5555`);
+  console.log('disconnectWireless', { ip, res });
+  return res;
+}
+
+function getDeviceSync() {
   client.listDevices()
-    .then(function(devices) {
-      console.log('getDevice()')
-      if (devices.length > 0) {
-        global.adbDevice = devices[0].id;
-        win.webContents.send('check_device', `{success:"${devices[0].id}"}`);
-      }
-      else {
-        global.adbDevice = false;
-        win.webContents.send('check_device', { success: false });
-      }
-    })
-    .catch(function(err) {
-      console.error('Something went wrong:', err.stack)
-    });
+  .then((devices) => {
+    console.log('getDevice()', devices)
+    if (devices.length > 0) {
+      global.adbDevice = devices[0].id;
+      win.webContents.send('check_device', {success: devices[0].id });
+    }
+    else {
+      global.adbDevice = false;
+      win.webContents.send('check_device', { success: false });
+    }
+  })
+  .catch((err) => {
+    console.error('Something went wrong:', err.stack)
+  });
 }
 
 
@@ -220,7 +254,7 @@ function execShellCommand(cmd, buffer = 5000) {
         resolve(stdout);
       }
       else {
-        console.error('exec_stderr', stderr);
+        console.error('exec_stderr', cmd, stderr);
         resolve(false);
       }
     });
@@ -231,21 +265,22 @@ function execShellCommand(cmd, buffer = 5000) {
 function trackDevices(){
   console.log('trackDevices()')
   client.trackDevices()
-  .then(function(tracker) {
+  .then((tracker) => {
     tracker.on('add', function(device) {
-      win.webContents.send('check_device',`{success:"${device.id}"}`);
-      global.adbDevice = device.id
-      console.log('Device %s was plugged in', `{success:${device.id}`)
+      win.webContents.send('check_device', { success: device.id });
+      global.adbDevice = device.id;
+      console.log('Device %s was plugged in', { success: device.id });
     })
     tracker.on('remove', function(device) {
-      global.adbDevice = false
+      global.adbDevice = false;
       resp = {success: global.adbDevice}
-      win.webContents.send('check_device',resp);
-      console.log('Device %s was unplugged', resp)
+      win.webContents.send('check_device', resp);
+      console.log('Device %s was unplugged', resp);
+      trackDevices();
     })
     tracker.on('end', function() {
       console.log('Tracking stopped')
-    })
+    });
   })
   .catch(function(err) {
     console.error('Something went wrong:', err.stack)

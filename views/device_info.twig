@@ -3,29 +3,30 @@
 </script>
 
 <div class="row mb-2" style="padding: 0px 40px">
-  <div class="col-2">
-    <small>User:</small>
-    <div style="font-size: x-large;">
-      <i class="fa fa-user-circle-o" aria-hidden="true"></i>
-      <span id="deviceUserName">Unknown</span>
+  <div class="row col-12 col-lg-6">
+    <div class="col-4">
+      <small>User:</small>
+      <div style="font-size: x-large;">
+        <i class="fa fa-user-circle-o" aria-hidden="true"></i>
+        <span id="deviceUserName">Unknown</span>
+      </div>
+    </div>
+    <div class="col-4">
+      <small>FW ver.:</small>
+      <div style="font-size: x-large;">
+        <i class="fa fa-tag" aria-hidden="true"></i>
+        <span id="deviceFwVersion">v.XX</span>
+      </div>
+    </div>
+    <div class="col-4">
+      <small>Battery:</small>
+      <div style="font-size: x-large;">
+        <i class="fa fa-battery-3" aria-hidden="true"></i>
+        <span id="deviceBatteryLevel">XX</span> %
+      </div>
     </div>
   </div>
-  <div class="col-2">
-    <small>FW ver.:</small>
-    <div style="font-size: x-large;">
-      <i class="fa fa-tag" aria-hidden="true"></i>
-      <span id="deviceFwVersion">v.XX</span>
-    </div>
-  </div>
-  <div class="col-2">
-    <small>Battery:</small>
-    <div style="font-size: x-large;">
-      <i class="fa fa-battery-3" aria-hidden="true"></i>
-      <span id="deviceBatteryLevel">XX</span> %
-    </div>
-  </div>
-
-  <div class="col-6">
+  <div class="col-12 col-lg-6">
     <small>Storage info:</small>
     <div id="storageDiv">
       <i class="fa fa-refresh fa-spin"></i> Trying to fetch device storage info
