@@ -10,6 +10,8 @@ ipcRenderer.on('list_installed_app', (event, arg) => {
   else {
     trstring += `<a onclick="uninstall(this, '${arg.packageName}')">
       <h2 class="pull-right push-right"><span class="btn btn-danger btn-lg"> <i id="uninstallBtn" class="fa fa-trash-o" aria-hidden="true"></i> Uninstall</span></h2></a>`
+    trstring += `<a onclick="startApp(this, '${arg.packageName}')">
+      <h2 class="pull-right push-right"><span class="btn btn-info btn-lg"> <i id="uninstallBtn" class="fa fa-play" aria-hidden="true"></i> Start</span></h2></a>`
     // trstring += `<a onclick="backup(this, '${arg.packageName}')">
     //  <h2 class="pull-right push-right"><span class="btn btn-info btn-lg" style="margin-right: 10px;"> <i id="backupBtn" class="fa fa-download" aria-hidden="true"></i> Data</span></h2></a>`
   }
@@ -21,7 +23,7 @@ ipcRenderer.on('list_installed_app', (event, arg) => {
 
 ipcRenderer.on('get_installed', (event, arg) => {
   console.log('get_installed msg came ! ');
-  console.log(arg)
+  console.log(arg);
   if (arg.success) {
     //$("#updateBadge").html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
     $('#updateBadge').show();
@@ -29,8 +31,8 @@ ipcRenderer.on('get_installed', (event, arg) => {
 });
 
 ipcRenderer.on('get_installed_with_updates', (event, arg) => {
-  console.log("get_installed msg came ! ");
-  console.log(arg)
+  console.log('get_installed msg came ! ');
+  console.log(arg);
   if (arg.success) {
     $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`)
     $('#updateBadge').show();

@@ -53,6 +53,7 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  startApp,
   getDeviceInfo,
   getStorageInfo,
   getUserInfo,
@@ -141,6 +142,23 @@ async function getStorageInfo() {
     free: storage[2],
     percent: storage[3],
   };
+}
+
+async function startApp(package) {
+  console.log('startApp()', package);
+
+  // const dump = await execShellCommand(`adb shell dumpsys package ${package}`);
+  // const activity = dump.split('\n')[3].split(' ')[9];
+  let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
+  if (!activities) return false;
+  activities = activities.split('\n');
+  console.log({ package, activities });
+  const res = await execShellCommand(`adb shell am start ${activities[0]}`); // TODO activity selection
+  // const res = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
+  // const res = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
+  // const res = await execShellCommand(`adb shell monkey -p ${package} 1`);
+  console.log('start package', package, res);
+  return res;
 }
 
 async function checkUpdateAvailable() {

@@ -26,6 +26,11 @@
         element.parentElement.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
         ipcRenderer.send('uninstall', packageName);
     }
+    function startApp(element, packageName) {
+        // $(element).children('span').innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
+        // element.parentElement.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
+        ipcRenderer.send('startApp', packageName);
+    }
 
 </script>
 

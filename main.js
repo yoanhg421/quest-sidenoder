@@ -51,8 +51,8 @@ ipcMain.on('test', async (event, arg) => {
   // });
 
   event.reply('log', arg);
-  return
-})
+  return;
+});
 
 ipcMain.on('get_installed', async (event, arg) => {
   console.log('get_installed received');
@@ -60,8 +60,8 @@ ipcMain.on('get_installed', async (event, arg) => {
 
 
   event.reply('get_installed', {success: true, apps: global.installedApps});
-  return
-})
+  return;
+});
 
 ipcMain.on('get_device_info', async (event, arg) => {
   console.log('get_device_info received');
@@ -78,8 +78,8 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
   //console.log(apps)
 
   event.reply('get_installed_with_updates', {"success": true, "apps": global.installedApps});
-  return
-})
+  return;
+});
 
 ipcMain.on('check_device', async (event, arg) => {
   console.log('check_device received');
@@ -118,8 +118,8 @@ ipcMain.on('check_mount', async (event, arg) => {
   if (global.mounted) {
     setTimeout(tools.updateRcloneProgress, 2000);
   }
-  return
-})
+  return;
+});
 
 ipcMain.on('start_sideload', async (event, arg) => {
   console.log("start_sideload received");
@@ -133,8 +133,8 @@ ipcMain.on('start_sideload', async (event, arg) => {
   event.reply('start_sideload', `{"success":true, "path": "${arg.path}"}`)
   tools.sideloadFolder(arg)
   event.reply('check_device', `{success:true}`)
-  return
-})
+  return;
+});
 
 
 ipcMain.on('get_dir', async (event, arg) => {
@@ -185,11 +185,11 @@ ipcMain.on('update', async (event, arg) => {
     event.reply('ask_device', ``)
     return
   }
-  console.log("for path "+path)
+  console.log("for path " + path)
   apkpath = await tools.getApkFromFolder(path);
   event.reply('ask_sideload', `{"success":true, "path": "${apkpath}", "update": true}`)
-  return
-})
+  return;
+});
 
 ipcMain.on('filedrop', async (event, arg) => {
   console.log("filedrop received");
@@ -202,15 +202,22 @@ ipcMain.on('filedrop', async (event, arg) => {
     return
   }
   event.reply('ask_sideload', `{"success":true, "path": "${path}", "update": false}`)
-  return
-})
+  return;
+});
 
 ipcMain.on('uninstall', async (event, arg) => {
   console.log("uninstall received");
   resp = await tools.uninstall(arg);
-  event.reply('uninstall', {"success":true})
-  return
-})
+  event.reply('uninstall', { success: true });
+  return;
+});
+
+ipcMain.on('startApp', async (event, arg) => {
+  console.log('startApp received');
+  resp = await tools.startApp(arg);
+  event.reply('startApp', { success: true });
+  return;
+});
 
 // ipcMain.on('change_config', async (event, arg) => {
 //     console.log("change_config received");
@@ -223,8 +230,8 @@ ipcMain.on('change_config', async (event, { key, val }) => {
   console.log('change_config received', {key, val});
   await tools.changeConfig(key, val)
   event.reply('change_config', {"success":true, config: global.currentConfiguration})
-  return
-})
+  return;
+});
 
 
 
@@ -240,7 +247,7 @@ function createWindow () {
       enableRemoteModule:true,
     }
   })
-  win.setMenu(null);
+  // win.setMenu(null);
 
   // win.webContents.openDevTools()
 
