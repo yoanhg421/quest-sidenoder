@@ -168,10 +168,18 @@ cd quest-sidenoder/
 npm install
 npm start
 ```
+
 <details>
 <summary>Running big sur?</summary>
 For mounting issues with Sidenoder on Osx Big Sur, Please install the latest osxfuse (prerelease) from `https://github.com/osxfuse/osxfuse/releases`
 </details>
+
+
+#### Nightly versions at dev branch ;)
+https://github.com/vKolerts/quest-sidenoder/tree/dev
+
+---
+
 Please report any issues here :
 
 https://github.com/vKolerts/quest-sidenoder/issues
