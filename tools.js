@@ -88,11 +88,11 @@ async function getDeviceInfo() {
 
 async function getFwInfo() {
   console.log('getFwInfo()');
-  const res = await execShellCommand('adb shell getprop ro.vndk.version');
+  const res = await execShellCommand('adb shell getprop ro.build.branch');
   if (!res) return false;
 
   return {
-    version: res.replace('\n', ''),
+    version: res.replace('releases-oculus-', '').replace('\n', ''),
   }
 }
 
