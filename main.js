@@ -244,7 +244,7 @@ function createWindow () {
       enableRemoteModule:true,
     }
   })
-  // win.setMenu(null);
+  win.setMenu(null);
 
   // win.webContents.openDevTools()
 

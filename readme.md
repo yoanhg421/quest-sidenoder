@@ -17,10 +17,8 @@ What makes sidenoder better than other sideloaders ?
 
 ---
 
-
 </details>
 
-![screen](https://github.com/vKolerts/quest-sidenoder/raw/main/.github/screen.gif)
 
 
 <!-- TABLE OF CONTENTS
