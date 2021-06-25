@@ -22,7 +22,6 @@
 
   <title>Quest-Sideloader</title>
 
-
   <style>
     a { cursor: pointer; }
     .btn {
@@ -34,6 +33,18 @@
     }
     .btn-success:hover {
       background: #46ba46;
+    }
+    .btn-danger {
+      background: #ec4d49;
+    }
+    .btn-danger:hover {
+      background: #e8241f;
+    }
+    .btn-info {
+      background: #49b;
+    }
+    .btn-info:hover {
+      background: #28b;
     }
     .badge {
       text-shadow: none;
@@ -79,8 +90,10 @@
   <script>
 
     $(function() {
-      loadInclude('sideloadmodal.twig', 'sideloadmodaldiv');
-      loadInclude('confirmmodal.twig', 'confirmmodaldiv');
+      loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
+      loadInclude('modals/confirm.twig', 'confirmmodaldiv');
+      loadInclude('modals/processing.twig', 'processingmodaldiv');
+      loadInclude('modals/app_start.twig', 'appstartmodaldiv');
 
       document.ondragover = document.ondrop = (ev) => {
         ev.preventDefault()
@@ -146,7 +159,7 @@
 
     ipcRenderer.on('ask_sideload', (event, arg) => {
       console.log('ask_sideload msg came ! ');
-      const { success, path, update } = JSON.parse(arg);
+      const { success, path, update } = arg;
       if (!success) return;
 
       const lastslashindex = path.lastIndexOf('/');
@@ -154,15 +167,15 @@
 
       $('#confirmSideloadButton').data('path', path);
       $('#confirmSideloadButton').data('update', !!update);
+      $('#confirmModalBody').html('Do you want to sideload: <br><b>' + file + '</b>');
       $('#confirmModal').modal('show');
-      $('#confirmModal > div > div > div.modal-body').html('Do you want to sideload: <br><b>' + file + '</b>');
     });
 
 
     ipcRenderer.on('start_sideload', (event, arg) => {
       console.log('start_sideload msg came ! ');
       console.log(arg);
-      const { success, path } = JSON.parse(arg);
+      const { success, path } = arg;
       if (!success) return;
 
       const lastslashindex = path.lastIndexOf('/');
@@ -204,14 +217,14 @@
       $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
     });
     ipcRenderer.on('sideload_done', (event, arg) => {
-      console.log('sideload done received')
-      console.log(arg);
-      if (JSON.parse(arg).success) {
+      console.log('sideload done received', arg);
+      if (arg.success) {
         $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
         $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done')
         $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o')
       }
-      if (JSON.parse(arg).update === true) {
+
+      if (arg.update === true) {
         getUpdates();
       }
     });
@@ -224,38 +237,33 @@
     }
 
     ipcRenderer.on('log', (event, arg) => {
-      console.log('log came')
-      console.log(arg)
+      console.log('log came');
+      console.log(arg);
     });
 
     // edit btn on browse page
-    ipcRenderer.on('check_mount', (event, arg) => {
-      if (JSON.parse(arg).success) {
-        $('#browseheader').html(`<span id="mountBadge" class="badge badge-warning badge-md"><a data-path="${JSON.parse(arg).mountFolder}" onclick="getDir(this)"><i id="mountrefresh" class="fa fa-check-circle-o"></i> Click to browse mount</a></span>`)
-        $('#mountBadge').removeClass('badge-warning');
-        $('#mountBadge').addClass('badge-success');
-      }
-    });
+    ipcRenderer.on('check_mount', (event, {success}) => {
+      if (!success) return;
+
+      $('#mountBadge').removeClass('btn-warning');
+      $('#mountBadge').addClass('btn-info');
+      $('#mountBadge').html(`<i id="mountrefresh" class="fa fa-plug"></i> Click to browse mount`);
 
     // edit btn on installed apps page
-    ipcRenderer.on('check_mount', (event, arg) => {
-      if (JSON.parse(arg).success) {
-        $('#updateBadge').removeClass('badge-danger');
-        $('#updateBadge').addClass('badge-success');
-        $('#updateBadge').html(`<a onclick="getUpdates(this)">Click to check mount for updates [BETA]</a>`)
-      }
+      $('#updateBadge').removeClass('btn-danger');
+      $('#updateBadge').addClass('btn-info');
+      $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`);
     });
 
     //edit btn on top
     ipcRenderer.on('check_mount', (event, arg) => {
-      console.log('check_mount responded: ' + arg); // prints "ping"
-      console.log(JSON.parse(arg));
-      if (JSON.parse(arg).success) {
+      console.log('check_mount responded: ', arg); // prints "ping"
+      if (arg.success) {
         $('#mountrefresh').removeClass('fa-spin');
         $('#mountbtn').removeClass('btn-warning');
         $('#mountbtn').removeClass('btn-danger');
         $('#mountbtn').addClass('btn-success');
-        $('#mountbtn').html(`<i  id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT STATUS:</br>CONNECTED`)
+        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT STATUS:</br>CONNECTED`);
         $('#mountbtn').onclick = function() {return false;}
       }
       else {
@@ -265,22 +273,14 @@
       }
     });
 
-
-    function checkDevice() {
-      $('#devicerefresh').addClass('fa-spin');
-      $('#devicebtn').removeClass('btn-danger');
-      $('#devicebtn').addClass('btn-warning');
-      ipcRenderer.send('check_device', 'bla');
-    }
-
     ipcRenderer.on('check_device', (event, arg) => {
       console.log('get_device msg came FROM BE to fe:', arg);
 
-      if (arg.success !== false) {
-        console.log('GETDEVICE SUCESS')
+      if (!!arg.success) {
+        console.log('GETDEVICE SUCESS');
         $('#devicebtn').removeClass('btn-danger');
         $('#devicebtn').addClass('btn-success');
-        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-check-circle-o"></i> | QUEST STATUS:</br>CONNECTED`)
+        $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | QUEST STATUS:</br>CONNECTED`);
 
         $('.deviceBadge').removeClass('badge-warning');
         $('.deviceBadge').addClass('badge-success');
@@ -289,17 +289,68 @@
         $('#installedAppsNav').removeClass('btn-secondary');
         $('#installedAppsNav').addClass('btn-primary');
         ipcRenderer.send('get_device_info', '');
+
+        if (arg.success.endsWith(':5555')) {
+          $('#wirelessbtn')[0].onclick = disconnectWireless;
+          $('#wirelessbtn').removeClass('btn-danger');
+          $('#wirelessbtn').addClass('btn-success');
+          $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS STATUS:</br>CONNECTED`);
+        }
       }
       else {
         $('#devicebtn').removeClass('btn-success');
         $('#devicebtn').addClass('btn-danger');
-        $('#devicebtn').html(`<i id="devicerefresh" class="fa fa-refresh fa-spin"></i> | Quest status:</br>Disconnected.`)
+        $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | QUEST STATUS:</br>DISCONNECTED`);
 
         //$("#installedAppsNav").addClass("disabled");
+
+        $('#wirelessbtn')[0].onclick = connectWireless;
+        $('#wirelessbtn').removeClass('btn-success');
+        $('#wirelessbtn').addClass('btn-danger');
+        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED`);
+      }
+    });
+
+    function connectWireless() {
+      $('#wirelessrefresh').addClass('fa-spin');
+      $('#wirelessbtn').removeClass('btn-danger');
+      $('#wirelessbtn').addClass('btn-warning');
+      ipcRenderer.send('connect_wireless', '');
+    }
+    function disconnectWireless() {
+      $('#wirelessrefresh').addClass('fa-spin');
+      $('#wirelessbtn').removeClass('btn-success');
+      $('#wirelessbtn').addClass('btn-warning');
+      ipcRenderer.send('disconnect_wireless', '');
+    }
+
+    ipcRenderer.on('connect_wireless', (event, arg) => {
+      console.log('check_wireless msg came FROM BE to fe:', arg);
+      $('#wirelessrefresh').removeClass('fa-spin');
+
+      if (arg.success) {
+        console.log('WIRELESS CONNECTED');
+        $('#wirelessbtn')[0].onclick = disconnectWireless;
+        $('#wirelessbtn').removeClass('btn-danger');
+        $('#wirelessbtn').addClass('btn-success');
+        $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS STATUS:</br>CONNECTED`);
+
+        dialog.showMessageBox(null, {
+          type: 'info',
+          buttons: ['Ok'],
+          title: 'Device connected by TCP',
+          message: 'Please, unplug USB cable for continue used the programm',
+        })
+      }
+      else {
+        $('#wirelessbtn')[0].onclick = connectWireless;
+        $('#wirelessbtn').removeClass('btn-success');
+        $('#wirelessbtn').addClass('btn-danger');
+        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED`);
       }
     });
     // screenhot stuff
-    async function makeScreenshot(selector = "body") {
+    async function makeScreenshot(selector = 'body') {
       return new Promise((resolve, reject) => {
         let node = document.querySelector(selector);
         html2canvas(node, {
@@ -314,9 +365,9 @@
     async function report() {
       const screenshot = await makeScreenshot(); // png dataUrl
       console.log(screenshot)
-      var fs = require("fs");
+      const fs = require('fs');
       const base64Data = screenshot.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-      fs.writeFile("outt.png", base64Data, 'base64', (err) => {
+      fs.writeFile('outt.png', base64Data, 'base64', (err) => {
         console.log(err);
       });
     }
@@ -360,14 +411,13 @@
         });
 
 
-        ipcRenderer.on('rclone_data', (event, arg) => {
-          data=arg;
+        ipcRenderer.on('rclone_data', (event, data) => {
           // console.log('rclone_data received', data);
           if(data.transferring && data.transferring.length > 0) {
-            $(".mountcopystatus").text(`${formatBytes(data.transferring[0].bytes)} of ${formatBytes(data.transferring[0].size)} (${data.transferring[0].percentage}%) - ${formatBytes(data.transferring[0].speedAvg)}/s (${formatEta(data.transferring[0].eta)})`);
+            $('.mountcopystatus').text(`${formatBytes(data.transferring[0].bytes)} of ${formatBytes(data.transferring[0].size)} (${data.transferring[0].percentage}%) - ${formatBytes(data.transferring[0].speedAvg)}/s (${formatEta(data.transferring[0].eta)})`);
           }
           else {
-            $(".mountcopystatus").text('')
+            $('.mountcopystatus').text('');
           }
         });
 
@@ -414,38 +464,41 @@
            Settings
         </a>
       </li>
-      <li class="nav-item">
-        <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-          <i class="fa fa-bug" aria-hidden="true"></i> REPORT AN ISSUE
+      <li class="nav-item" style="display: none">
+        <a class="btn btn-primary" data-toggle="collapse" href="#collapseTweaks" role="button" aria-expanded="false" aria-controls="collapseTweaks">
+          <i class="fa fa-bug" aria-hidden="true"></i> Tweaks
         </a>
       </li>
 
     </ul>
-    <form class="form-inline my-2 my-lg-0">
-
-      <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled><i  id="mountrefresh" class="fa fa-refresh"></i> | MOUNT STATUS:</br>DISCONNECTED</span>
-  &nbsp;
-
-        <span type="button" id="devicebtn" {# onclick="checkDevice()" #} class="btn btn-sm btn-danger"  disabled><i id="devicerefresh" class="fa fa-spin fa-refresh"></i> | QUEST STATUS:</br>DISCONNECTED</span>
-
-
-      {# <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button> #}
-    </form>
-
+    <div class="form-inline my-2 my-lg-0">
+      <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled>
+        <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT STATUS:</br>DISCONNECTED
+      </span>
+      &nbsp;
+      <span type="button" id="devicebtn" class="btn btn-sm btn-danger"  disabled>
+        <i class="fa fa-spin fa-refresh"></i> | QUEST STATUS:</br>DISCONNECTED
+      </span>
+      &nbsp;
+      <span type="button" id="wirelessbtn" onclick="connectWireless()" class="btn btn-sm btn-danger"  disabled>
+        <i id="wirelessrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED
+      </span>
+    </div>
   </div>
   {% endblock %}
 </nav>
 
 
 <div style="padding: 5px 20px">
-  <div class="collapse" id="collapseExample">
+  <div class="collapse" id="collapseTweaks">
     <div class="card card-body">
-      If you encounter any issues or bugs, please report them at https://github.com/vKolerts/quest-sidenoder/issues
+      <input id="mp_name" value="" disabled="disabled" />
+      <label for="mp_name">Multiplayer name</label>
     </div>
   </div>
-
-{% block body %}{% endblock %}
+  {% block body %}{% endblock %}
 </div>
+
 <footer class="footer text-center">
   <hr>
   <b>SideNoder v{{ version }}</b>
@@ -456,11 +509,10 @@
 </footer>
 
 
-<div id="sideloadmodaldiv">
-</div>
-
-<div id="confirmmodaldiv">
-</div>
+<div id="sideloadmodaldiv"></div>
+<div id="confirmmodaldiv"></div>
+<div id="processingmodaldiv"></div>
+<div id="appstartmodaldiv"></div>
 
 
 
@@ -494,7 +546,7 @@
     if (bytes == 0) return '0 B';
 
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
   }
 
 </script>

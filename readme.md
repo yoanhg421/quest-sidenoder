@@ -5,8 +5,6 @@
 What makes sidenoder better than other sideloaders ?
 </summary>
 
-
-
 ---
 
 - **Automatically scan** hmd and drive, to **find available updates**.
@@ -19,10 +17,8 @@ What makes sidenoder better than other sideloaders ?
 
 ---
 
-
 </details>
 
-![screen](https://github.com/vKolerts/quest-sidenoder/raw/main/.github/screen.gif)
 
 
 <!-- TABLE OF CONTENTS
@@ -87,7 +83,7 @@ What makes sidenoder better than other sideloaders ?
 
 #### Run precompiled release on windows:
 1. Download and unpack the latest windows release from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
-2. Run the [windows-install.bat](https://raw.githubusercontent.com/vKolerts/quest-sidenoder/main/windows-install.bat) script and follow the onscreen instructions. This will install:
+2. Run the [windows-install.bat](https://github.com/vKolerts/quest-sidenoder/releases/download/v.0.1.1/windows-install.bat) script and follow the onscreen instructions. This will install:
     * 7ZIP - for unzip archives
     * ADB - for communicate with your device
     * RCLONE - for access to discs
@@ -126,10 +122,6 @@ Please report any issues here :
 
 https://github.com/vKolerts/quest-sidenoder/issues
 
----
----
----
----
 ---
 ---
 
@@ -174,10 +166,18 @@ cd quest-sidenoder/
 npm install
 npm start
 ```
+
 <details>
 <summary>Running big sur?</summary>
 For mounting issues with Sidenoder on Osx Big Sur, Please install the latest osxfuse (prerelease) from `https://github.com/osxfuse/osxfuse/releases`
 </details>
+
+
+#### Nightly versions at dev branch ;)
+https://github.com/vKolerts/quest-sidenoder/tree/dev
+
+---
+
 Please report any issues here :
 
 https://github.com/vKolerts/quest-sidenoder/issues

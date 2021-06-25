@@ -12,11 +12,10 @@
         ipcRenderer.send('check_deps', 'bla');
 
         ipcRenderer.on('check_deps', (event, arg) => {
-            console.log('check_deps msg came: ' + arg); // prints "ping"
-            console.log(JSON.parse(arg));
-            if (JSON.parse(arg).success) {
+            console.log('check_deps msg came: ', arg); // prints "ping"
+            if (arg.success) {
                 $('#adbCheckIndicator').removeClass('badge-danger');
-                $('#adbCheckIndicator').addClass("badge-success");
+                $('#adbCheckIndicator').addClass('badge-success');
                 $('#adbCheckIndicator').html(`<i  id="mountrefresh" class="fa fa-check-circle-o"></i> ADB Installed.`)
                 $('#aaptCheckIndicator').removeClass('badge-danger');
                 $('#aaptCheckIndicator').addClass('badge-success');

@@ -18,7 +18,7 @@ fixPath();
 
 const configLocation = require('path').join(homedir, 'sidenoder-config.json');
 
-if (`${platform}` != 'win64' && `${platform}` != "win32") {
+if (!['win64', 'win32'].includes(platform)) {
   global.nullcmd = '> /dev/null'
   global.nullerror = '2> /dev/null'
 }
@@ -53,6 +53,10 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  connectWireless,
+  disconnectWireless,
+  getActivities,
+  startActivity,
   getDeviceInfo,
   getStorageInfo,
   getUserInfo,
@@ -87,11 +91,11 @@ async function getDeviceInfo() {
 
 async function getFwInfo() {
   console.log('getFwInfo()');
-  const res = await execShellCommand('adb shell getprop ro.vndk.version');
+  const res = await execShellCommand('adb shell getprop ro.build.branch');
   if (!res) return false;
 
   return {
-    version: res.replace('\n', ''),
+    version: res.replace('releases-oculus-', '').replace('\n', ''),
   }
 }
 
@@ -120,6 +124,8 @@ async function getStorageInfo() {
 
   const res = await execShellCommand('adb shell df -h');
   const re = new RegExp('.*/storage/emulated.*');
+  if (!res) return false;
+
   const linematch = res.match(re);
   if (!linematch) return false;
 
@@ -141,6 +147,30 @@ async function getStorageInfo() {
     free: storage[2],
     percent: storage[3],
   };
+}
+
+async function getActivities(package, activity = false) {
+  console.log('getActivities()', package);
+
+  let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
+  if (!activities) return false;
+
+  activities = activities.split('\n');
+  activities.pop();
+  console.log({ package, activities });
+
+  return activities;
+}
+
+async function startActivity(activity) {
+  console.log('startActivity()', activity);
+  const result = await execShellCommand(`adb shell am start ${activity}`); // TODO activity selection
+  // const result = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
+  // const result = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
+  // const result = await execShellCommand(`adb shell monkey -p ${package} 1`);
+
+  console.log('startActivity', activity, result);
+  return result;
 }
 
 async function checkUpdateAvailable() {
@@ -165,22 +195,46 @@ async function checkUpdateAvailable() {
 }
 // Implementation ----------------------------------
 
-function getDeviceSync(){
+async function getDeviceIp() {
+  return execShellCommand(`adb shell ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
+}
+
+async function connectWireless() {
+  await execShellCommand(`adb shell setprop service.adb.tcp.port 5555`);
+  const ip = await getDeviceIp();
+  if (!ip) return false;
+
+  await execShellCommand(`adb tcpip 5555`);
+  const res = await execShellCommand(`adb connect ${ip}:5555`);
+  console.log('connectWireless', { ip, res });
+  return ip;
+}
+
+async function disconnectWireless() {
+  const ip = await getDeviceIp();
+  if (!ip) return false;
+
+  const res = await execShellCommand(`adb disconnect ${ip}:5555`);
+  console.log('disconnectWireless', { ip, res });
+  return res;
+}
+
+function getDeviceSync() {
   client.listDevices()
-    .then(function(devices) {
-      console.log('getDevice()')
-      if (devices.length > 0) {
-        global.adbDevice = devices[0].id;
-        win.webContents.send('check_device', `{success:"${devices[0].id}"}`);
-      }
-      else {
-        global.adbDevice = false;
-        win.webContents.send('check_device', { success: false });
-      }
-    })
-    .catch(function(err) {
-      console.error('Something went wrong:', err.stack)
-    });
+  .then((devices) => {
+    console.log('getDevice()', devices)
+    if (devices.length > 0) {
+      global.adbDevice = devices[0].id;
+      win.webContents.send('check_device', {success: devices[0].id });
+    }
+    else {
+      global.adbDevice = false;
+      win.webContents.send('check_device', { success: false });
+    }
+  })
+  .catch((err) => {
+    console.error('Something went wrong:', err.stack)
+  });
 }
 
 
@@ -190,6 +244,7 @@ function getDeviceSync(){
  * @return {Promise<string>}
  */
 function execShellCommand(cmd, buffer = 5000) {
+  console.log({cmd});
   return new Promise((resolve, reject) => {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
@@ -213,21 +268,23 @@ function execShellCommand(cmd, buffer = 5000) {
 function trackDevices(){
   console.log('trackDevices()')
   client.trackDevices()
-  .then(function(tracker) {
+  .then((tracker) => {
     tracker.on('add', function(device) {
-      win.webContents.send('check_device',`{success:"${device.id}"}`);
-      global.adbDevice = device.id
-      console.log('Device %s was plugged in', `{success:${device.id}`)
+      win.webContents.send('check_device', { success: device.id });
+      global.adbDevice = device.id;
+      console.log('Device %s was plugged in', { success: device.id });
     })
     tracker.on('remove', function(device) {
-      global.adbDevice = false
+      global.adbDevice = false;
       resp = {success: global.adbDevice}
-      win.webContents.send('check_device',resp);
-      console.log('Device %s was unplugged', resp)
+      win.webContents.send('check_device', resp);
+      console.log('Device %s was unplugged', resp);
+      getDeviceSync();
+      trackDevices();
     })
     tracker.on('end', function() {
       console.log('Tracking stopped')
-    })
+    });
   })
   .catch(function(err) {
     console.error('Something went wrong:', err.stack)
@@ -567,7 +624,7 @@ async function sideloadFolder(arg) {
   try {
     //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
     check = await execShellCommand(`adb shell pm list packages ${packageName}`);
-    if (check.startsWith('package:')) {
+    if (check && check.startsWith('package:')) {
       installed = true;
     }
   }
