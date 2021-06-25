@@ -415,18 +415,23 @@ async function getDir(folder) {
   try {
     const files = await fsPromise.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
-    if (files.includes('GameList.txt')) {
-      const list = fs.readFileSync(path.join(folder, 'GameList.txt'), 'utf8').split('\n');
-      for (const line of list) {
-        const meta = line.split(';');
-        gameList[meta[1]] = {
-          simpleName: meta[0],
-          packageName: meta[3],
-          versionCode: meta[4],
-          versionName: meta[5],
-          imagePath: `file://${global.tmpdir}/mnt/Quest Games/.meta/thumbnails/${meta[3]}.jpg`,
+    try {
+      if (files.includes('GameList.txt')) {
+        const list = fs.readFileSync(path.join(folder, 'GameList.txt'), 'utf8').split('\n');
+        for (const line of list) {
+          const meta = line.split(';');
+          gameList[meta[1]] = {
+            simpleName: meta[0],
+            packageName: meta[3],
+            versionCode: meta[4],
+            versionName: meta[5],
+            imagePath: `file://${global.tmpdir}/mnt/Quest Games/.meta/thumbnails/${meta[3]}.jpg`,
+          }
         }
       }
+    }
+    catch (err) {
+      console.error('GameList.txt failed', err);
     }
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
