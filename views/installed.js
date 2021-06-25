@@ -11,7 +11,7 @@ ipcRenderer.on('list_installed_app', (event, arg) => {
     trstring += `<a onclick="uninstall(this, '${arg.packageName}')">
       <h2 class="pull-right push-right"><span class="btn btn-danger btn-lg"> <i id="uninstallBtn" class="fa fa-trash-o" aria-hidden="true"></i> Uninstall</span></h2></a>`
     trstring += `<a onclick="startApp(this, '${arg.packageName}')">
-      <h2 class="pull-right push-right"><span class="btn btn-info btn-lg"> <i id="uninstallBtn" class="fa fa-play" aria-hidden="true"></i> Start</span></h2></a>`
+      <h2 class="pull-right push-right"><span class="btn btn-info btn-lg"> <i id="startBtn" class="fa fa-play" aria-hidden="true"></i> Start</span></h2></a>`
     // trstring += `<a onclick="backup(this, '${arg.packageName}')">
     //  <h2 class="pull-right push-right"><span class="btn btn-info btn-lg" style="margin-right: 10px;"> <i id="backupBtn" class="fa fa-download" aria-hidden="true"></i> Data</span></h2></a>`
   }

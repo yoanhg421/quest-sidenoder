@@ -1,29 +1,50 @@
-<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true"  data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">Confirm</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                ...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                <button type="button" id="confirmSideloadButton" class="btn btn-primary disabled">Yes</button>
-            </div>
+<div class="modal fade" id="appStartModal" tabindex="-1" role="dialog" aria-labelledby="appStartModalLabel" aria-hidden="true"  data-backdrop="static" data-keyboard="false">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="appStartModalLabel">Confirm</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="activi">List of activities</label>
+          <select class="form-control" id="appActivities">
+          </select>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" id="startActivityButton" class="btn btn-primary disabled">Start</button>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-    //setup listener for confirm btn, takes path form data dir, and sends start_sideload
-    $("#confirmSideloadButton").on("click", function(){
-        $('#confirmModal').modal('hide');
-        //
-        data = {path: $("#confirmSideloadButton").data('path'), update: $("#confirmSideloadButton").data('update')}
-        ipcRenderer.send('start_sideload', data);
-    });
+  console.log('ONLOAD APPSTART MODAL');
+
+  ipcRenderer.on('get_activities', (event, arg) => {
+    console.log('get_activities msg came: ', arg); // prints "ping"
+    if (!arg.activities) return;
+
+    let options = '';
+    for (const activity of arg.activities) {
+      options+= `<option value="${activity}">${activity.split('/')[1]}</option>`;
+    }
+
+    $("#appActivities").html(options);
+
+    $('#appStartModal').modal('show');
+  });
+  /*ipcRenderer.on('start_activity', (event, arg) => {
+    console.log('start_activity msg came: ', arg); // prints "ping"
+    $('#appStartModal').modal('hide');
+  });*/
+
+  $("#startActivityButton").on("click", function(){
+    $('#appStartModal').modal('hide');
+    ipcRenderer.send('start_activity', $("#appActivities").val());
+  });
 </script>

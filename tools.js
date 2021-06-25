@@ -55,7 +55,8 @@ module.exports =
   getPackageInfo,
   connectWireless,
   disconnectWireless,
-  startApp,
+  getActivities,
+  startActivity,
   getDeviceInfo,
   getStorageInfo,
   getUserInfo,
@@ -148,27 +149,28 @@ async function getStorageInfo() {
   };
 }
 
-async function startApp(package, activity = false) {
-  console.log('startApp()', package);
+async function getActivities(package, activity = false) {
+  console.log('getActivities()', package);
 
-  if (!activity) {
-    let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
-    if (!activities) return false;
+  let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
+  if (!activities) return false;
 
-    activities = activities.split('\n');
-    console.log({ package, activities });
-    if (activities.length > 1) return { activities };
+  activities = activities.split('\n');
+  activities.pop();
+  console.log({ package, activities });
 
-    activity = activity[0];
-  }
+  return activities;
+}
 
+async function startActivity(activity) {
+  console.log('startActivity()', activity);
   const result = await execShellCommand(`adb shell am start ${activity}`); // TODO activity selection
   // const result = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
   // const result = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
   // const result = await execShellCommand(`adb shell monkey -p ${package} 1`);
 
-  console.log('start package', package, result);
-  return { result };
+  console.log('startActivity', activity, result);
+  return result;
 }
 
 async function checkUpdateAvailable() {
@@ -242,6 +244,7 @@ function getDeviceSync() {
  * @return {Promise<string>}
  */
 function execShellCommand(cmd, buffer = 5000) {
+  console.log({cmd});
   return new Promise((resolve, reject) => {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
@@ -254,7 +257,7 @@ function execShellCommand(cmd, buffer = 5000) {
         resolve(stdout);
       }
       else {
-        console.error('exec_stderr', cmd, stderr);
+        console.error('exec_stderr', stderr);
         resolve(false);
       }
     });
@@ -276,6 +279,7 @@ function trackDevices(){
       resp = {success: global.adbDevice}
       win.webContents.send('check_device', resp);
       console.log('Device %s was unplugged', resp);
+      getDeviceSync();
       trackDevices();
     })
     tracker.on('end', function() {
@@ -620,7 +624,7 @@ async function sideloadFolder(arg) {
   try {
     //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
     check = await execShellCommand(`adb shell pm list packages ${packageName}`);
-    if (check.startsWith('package:')) {
+    if (check && check.startsWith('package:')) {
       installed = true;
     }
   }

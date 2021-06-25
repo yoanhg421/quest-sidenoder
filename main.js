@@ -79,11 +79,18 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
 
 ipcMain.on('check_device', async (event, arg) => {
   console.log('check_device received');
-  event.reply('check_device', { success: !!global.adbDevice });
+  event.reply('check_device', { success: global.adbDevice });
 });
 
 ipcMain.on('connect_wireless', async (event, arg) => {
   console.log('connect_wireless received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('connect_wireless', { success: false });
+    event.reply('ask_device', '');
+    return;
+  }
+
   const ip = await tools.connectWireless();
   event.reply('connect_wireless', { success: !!ip, ip });
   return;
@@ -130,17 +137,16 @@ ipcMain.on('check_mount', async (event, arg) => {
 });
 
 ipcMain.on('start_sideload', async (event, arg) => {
-  console.log("start_sideload received");
+  console.log('start_sideload received');
   if (!global.adbDevice) {
-    console.log("Missing device, sending ask_device")
-    //tools.returnError("This action cannot be performed without a device attached.")
-
-    event.reply('ask_device', ``)
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
     return
   }
+
   event.reply('start_sideload', { success: true, path: arg.path });
   tools.sideloadFolder(arg)
-  event.reply('check_device', { success: true });
+  event.reply('check_device', { success: global.adbDevice });
   return;
 });
 
@@ -183,12 +189,11 @@ ipcMain.on('update', async (event, arg) => {
   console.log('update received');
   let path = arg
   if (!global.adbDevice) {
-    console.log('Missing device, sending ask_device')
-    //tools.returnError("This action cannot be performed without a device attached.")
-
-    event.reply('ask_device', ``)
-    return
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
   }
+
   console.log('for path ' + path)
   apkpath = await tools.getApkFromFolder(path);
   event.reply('ask_sideload', { success: true, path: apkpath, update: true });
@@ -199,8 +204,6 @@ ipcMain.on('filedrop', async (event, path) => {
   console.log('filedrop received');
   if (!global.adbDevice) {
     console.log('Missing device, sending ask_device');
-    //tools.returnError("This action cannot be performed without a device attached.")
-
     event.reply('ask_device', '');
     return;
   }
@@ -216,10 +219,16 @@ ipcMain.on('uninstall', async (event, arg) => {
   return;
 });
 
-ipcMain.on('startApp', async (event, arg) => {
-  console.log('startApp received');
-  resp = await tools.startApp(arg);
-  event.reply('startApp', { success: true });
+ipcMain.on('get_activities', async (event, arg) => {
+  console.log('get_activities received', arg);
+  const activities = await tools.getActivities(arg);
+  event.reply('get_activities', { success: !!activities, activities });
+  return;
+});
+ipcMain.on('start_activity', async (event, arg) => {
+  console.log('start_activity received', arg);
+  const resp = await tools.startActivity(arg);
+  event.reply('start_activity', { success: !!resp });
   return;
 });
 
@@ -256,8 +265,7 @@ function createWindow () {
     mountFolder: global.mountFolder,
     version: global.version,
     currentConfiguration: global.currentConfiguration
-}
-
+  }
 
   //tools.checkUpdateAvailable()
 

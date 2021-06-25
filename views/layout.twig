@@ -93,6 +93,7 @@
       loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
       loadInclude('modals/confirm.twig', 'confirmmodaldiv');
       loadInclude('modals/processing.twig', 'processingmodaldiv');
+      loadInclude('modals/app_start.twig', 'appstartmodaldiv');
 
       document.ondragover = document.ondrop = (ev) => {
         ev.preventDefault()
@@ -166,8 +167,8 @@
 
       $('#confirmSideloadButton').data('path', path);
       $('#confirmSideloadButton').data('update', !!update);
+      $('#confirmModalBody').html('Do you want to sideload: <br><b>' + file + '</b>');
       $('#confirmModal').modal('show');
-      $('#confirmModal > div > div > div.modal-body').html('Do you want to sideload: <br><b>' + file + '</b>');
     });
 
 
@@ -215,16 +216,15 @@
     ipcRenderer.on('sideload_move_obb_done', (event, arg) => {
       $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
     });
-    ipcRenderer.on('sideload_done', (event, {success, update}) => {
-      console.log('sideload done received')
-      console.log(arg);
-      if (success) {
+    ipcRenderer.on('sideload_done', (event, arg) => {
+      console.log('sideload done received', arg);
+      if (arg.success) {
         $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
         $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done')
         $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o')
       }
 
-      if (update === true) {
+      if (arg.update === true) {
         getUpdates();
       }
     });
@@ -247,12 +247,12 @@
 
       $('#mountBadge').removeClass('btn-warning');
       $('#mountBadge').addClass('btn-info');
-      $('#mountBadge').html(`<i id="mountrefresh" class="fa fa-plug"></i> Click to browse mount`)
+      $('#mountBadge').html(`<i id="mountrefresh" class="fa fa-plug"></i> Click to browse mount`);
 
     // edit btn on installed apps page
       $('#updateBadge').removeClass('btn-danger');
       $('#updateBadge').addClass('btn-info');
-      $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`)
+      $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`);
     });
 
     //edit btn on top
@@ -263,7 +263,7 @@
         $('#mountbtn').removeClass('btn-warning');
         $('#mountbtn').removeClass('btn-danger');
         $('#mountbtn').addClass('btn-success');
-        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT STATUS:</br>CONNECTED`)
+        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT STATUS:</br>CONNECTED`);
         $('#mountbtn').onclick = function() {return false;}
       }
       else {
@@ -291,7 +291,7 @@
         ipcRenderer.send('get_device_info', '');
 
         if (arg.success.endsWith(':5555')) {
-          $('#wirelessbtn').onclick = disconnectWireless;
+          $('#wirelessbtn')[0].onclick = disconnectWireless;
           $('#wirelessbtn').removeClass('btn-danger');
           $('#wirelessbtn').addClass('btn-success');
           $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS STATUS:</br>CONNECTED`);
@@ -303,6 +303,11 @@
         $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | QUEST STATUS:</br>DISCONNECTED`);
 
         //$("#installedAppsNav").addClass("disabled");
+
+        $('#wirelessbtn')[0].onclick = connectWireless;
+        $('#wirelessbtn').removeClass('btn-success');
+        $('#wirelessbtn').addClass('btn-danger');
+        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED`);
       }
     });
 
@@ -328,16 +333,7 @@
         $('#wirelessbtn')[0].onclick = disconnectWireless;
         $('#wirelessbtn').removeClass('btn-danger');
         $('#wirelessbtn').addClass('btn-success');
-        $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS STATUS:</br>CONNECTED`)
-
-        $('.deviceBadge').removeClass('badge-warning');
-        $('.deviceBadge').addClass('badge-success');
-
-        $('#installedAppsNav').removeClass('disabled');
-        $('#installedAppsNav').removeClass('btn-secondary');
-        $('#installedAppsNav').addClass('btn-primary');
-
-        ipcRenderer.send('get_device_info', '');
+        $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS STATUS:</br>CONNECTED`);
 
         dialog.showMessageBox(null, {
           type: 'info',
@@ -350,9 +346,7 @@
         $('#wirelessbtn')[0].onclick = connectWireless;
         $('#wirelessbtn').removeClass('btn-success');
         $('#wirelessbtn').addClass('btn-danger');
-        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED`)
-
-        //$("#installedAppsNav").addClass("disabled");
+        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS STATUS:</br>DISCONNECTED`);
       }
     });
     // screenhot stuff
@@ -518,6 +512,7 @@
 <div id="sideloadmodaldiv"></div>
 <div id="confirmmodaldiv"></div>
 <div id="processingmodaldiv"></div>
+<div id="appstartmodaldiv"></div>
 
 
 
