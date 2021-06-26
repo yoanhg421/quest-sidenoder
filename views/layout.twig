@@ -185,8 +185,6 @@
       $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('Processing: <br><b>'+file+'</b>')
     });
 
-
-
     ipcRenderer.on('sideload_aapt_done', (event, arg) => {
       $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
       ipcRenderer.send('get_device_info', '');
@@ -220,8 +218,8 @@
       console.log('sideload done received', arg);
       if (arg.success) {
         $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
-        $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done')
-        $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o')
+        $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');
+        $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o');
       }
 
       if (arg.update === true) {
@@ -414,7 +412,9 @@
         ipcRenderer.on('rclone_data', (event, data) => {
           // console.log('rclone_data received', data);
           if(data.transferring && data.transferring.length > 0) {
-            $('.mountcopystatus').text(`${formatBytes(data.transferring[0].bytes)} of ${formatBytes(data.transferring[0].size)} (${data.transferring[0].percentage}%) - ${formatBytes(data.transferring[0].speedAvg)}/s (${formatEta(data.transferring[0].eta)})`);
+            const transferring = data.transferring[0];
+            let name = transferring.name.split('/').pop();
+            $('.mountcopystatus').html(`${formatBytes(transferring.bytes)} of ${formatBytes(transferring.size)} (${transferring.percentage}%) - ${formatBytes(transferring.speedAvg)}/s (${formatEta(transferring.eta)})<br/> <small>${name}</small>`);
           }
           else {
             $('.mountcopystatus').text('');
