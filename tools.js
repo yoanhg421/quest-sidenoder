@@ -4,7 +4,7 @@ const client = adb.createClient();
 const fs = require('fs');
 const fsExtra = require('fs-extra');
 const fsPromise = fs.promises;
-const platform = require('os').platform;
+const platform = require('os').platform();
 
 
 const fetch = require('node-fetch');
@@ -18,6 +18,7 @@ fixPath();
 
 const configLocation = require('path').join(homedir, 'sidenoder-config.json');
 
+console.log({platform});
 if (!['win64', 'win32'].includes(platform)) {
   global.nullcmd = '> /dev/null'
   global.nullerror = '2> /dev/null'
