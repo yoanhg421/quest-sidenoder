@@ -4,7 +4,7 @@ const client = adb.createClient();
 const fs = require('fs');
 const fsExtra = require('fs-extra');
 const fsPromise = fs.promises;
-const platform = require('os').platform;
+const platform = require('os').platform();
 
 
 const fetch = require('node-fetch');
@@ -18,6 +18,7 @@ fixPath();
 
 const configLocation = require('path').join(homedir, 'sidenoder-config.json');
 
+console.log({platform});
 if (!['win64', 'win32'].includes(platform)) {
   global.nullcmd = '> /dev/null'
   global.nullerror = '2> /dev/null'
@@ -91,7 +92,7 @@ async function getDeviceInfo() {
 
 async function getFwInfo() {
   console.log('getFwInfo()');
-  const res = await execShellCommand('adb shell getprop ro.build.branch');
+  const res = await execShellCommand('adb shell "getprop ro.build.branch"');
   if (!res) return false;
 
   return {
@@ -101,7 +102,7 @@ async function getFwInfo() {
 
 async function getBatteryInfo() {
   console.log('getBatteryInfo()');
-  const res = await execShellCommand('adb shell dumpsys battery | grep level');
+  const res = await execShellCommand('adb shell "dumpsys battery | grep level"');
   if (!res) return false;
 
   return {
@@ -111,7 +112,7 @@ async function getBatteryInfo() {
 
 async function getUserInfo() {
   console.log('getUserInfo()');
-  const res = await execShellCommand('adb shell dumpsys user | grep UserInfo');
+  const res = await execShellCommand('adb shell "dumpsys user | grep UserInfo"');
   if (!res) return false;
 
   return {
@@ -122,7 +123,7 @@ async function getUserInfo() {
 async function getStorageInfo() {
   console.log('getStorageInfo()');
 
-  const res = await execShellCommand('adb shell df -h');
+  const res = await execShellCommand('adb shell "df -h"');
   const re = new RegExp('.*/storage/emulated.*');
   if (!res) return false;
 
@@ -152,7 +153,7 @@ async function getStorageInfo() {
 async function getActivities(package, activity = false) {
   console.log('getActivities()', package);
 
-  let activities = await execShellCommand(`adb shell dumpsys package | grep -Eo "^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+" | grep -oE "[^[:space:]]+$"`);
+  let activities = await execShellCommand(`adb shell "dumpsys package | grep -Eo '^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+' | grep -oE '[^[:space:]]+$'"`);
   if (!activities) return false;
 
   activities = activities.split('\n');
@@ -164,10 +165,7 @@ async function getActivities(package, activity = false) {
 
 async function startActivity(activity) {
   console.log('startActivity()', activity);
-  const result = await execShellCommand(`adb shell am start ${activity}`); // TODO activity selection
-  // const result = await execShellCommand(`adb shell am start ${package}/$(adb shell cmd package resolve-activity -c android.intent.category.LAUNCHER ${package} | sed -n '/name=/s/^.*name=//p')`);
-  // const result = await execShellCommand(`adb shell monkey -p ${package} -c android.intent.category.MAIN 1 -c android.intent.category.LAUNCHER 1  -c android.intent.category.MONKEY 1`);
-  // const result = await execShellCommand(`adb shell monkey -p ${package} 1`);
+  const result = await execShellCommand(`adb shell "am start ${activity}"`); // TODO activity selection
 
   console.log('startActivity', activity, result);
   return result;
@@ -196,11 +194,14 @@ async function checkUpdateAvailable() {
 // Implementation ----------------------------------
 
 async function getDeviceIp() {
-  return execShellCommand(`adb shell ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
+  let ip = await execShellCommand(`adb shell "ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'"`);
+  if (ip) return ip;
+
+  return execShellCommand(`adb shell "ip addr show wlan0  | grep 'inet ' | cut -d ' ' -f 6 | cut -d / -f 1"`);
 }
 
 async function connectWireless() {
-  await execShellCommand(`adb shell setprop service.adb.tcp.port 5555`);
+  // await execShellCommand(`adb shell "setprop service.adb.tcp.port 5555"`);
   const ip = await getDeviceIp();
   if (!ip) return false;
 
@@ -249,16 +250,16 @@ function execShellCommand(cmd, buffer = 5000) {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
         console.error('exec_error', error);
-        //console.warn(error);
+        // return resolve(error);
       }
 
       if (stdout) {
         console.log('exec_stdout', stdout);
-        resolve(stdout);
+        return resolve(stdout);
       }
       else {
         console.error('exec_stderr', stderr);
-        resolve(false);
+        return resolve(false);
       }
     });
   });
@@ -348,7 +349,7 @@ async function checkDeps(){
     return;
   }
   //wtf werkt nie
-  //win.webContents.send('check_deps',`{"success":true}`);
+  //win.webContents.send('check_deps',{ success: true });
   return;
 }
 
@@ -361,20 +362,42 @@ function returnError(message){
 }
 
 
+async function killRClone(){
+  const killCmd = (['win64', 'win32'].includes(platform))
+    ? `taskkill.exe /F /IM rclone.exe /T` // TODO: need test
+    : `killall -9 rclone`;
+  console.log('try kill rclone');
+  return new Promise((res, rej) => {
+    exec(killCmd, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`error: ${error.message}`, error);
+        return rej(error);
+      }
+
+      if (stderr) {
+        console.log('stderr:', stderr);
+        return rej(stderr);
+      }
+
+      console.log('stdout:', stdout);
+      return res(stdout);
+    });
+  })
+}
 
 
 async function mount(){
   if (await checkMount(mountFolder)) {
-    return;
+    // return;
+    await killRClone();
   }
 
-  if (`${global.platform}` != 'win64' && `${global.platform}` != 'win32') {
+  if (!['win64', 'win32'].includes(platform)) {
     await execShellCommand(`umount ${mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${mountFolder} ${global.nullerror}`);
     await fs.mkdir(mountFolder, {}, ()=>{}) // folder must exist on windows
   }
-
-  if (`${global.platform}` == 'win64' || `${global.platform}` == 'win32') {
+  else {
     await execShellCommand(`rmdir "${mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
@@ -391,7 +414,7 @@ async function mount(){
   //console.log(cpath);
 
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
-
+  console.log('start rclone');
   exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
@@ -415,18 +438,23 @@ async function getDir(folder) {
   try {
     const files = await fsPromise.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
-    if (files.includes('GameList.txt')) {
-      const list = fs.readFileSync(path.join(folder, 'GameList.txt'), 'utf8').split('\n');
-      for (const line of list) {
-        const meta = line.split(';');
-        gameList[meta[1]] = {
-          simpleName: meta[0],
-          packageName: meta[3],
-          versionCode: meta[4],
-          versionName: meta[5],
-          imagePath: `file://${global.tmpdir}/mnt/Quest Games/.meta/thumbnails/${meta[3]}.jpg`,
+    try {
+      if (files.includes('GameList.txt')) {
+        const list = fs.readFileSync(path.join(folder, 'GameList.txt'), 'utf8').split('\n');
+        for (const line of list) {
+          const meta = line.split(';');
+          gameList[meta[1]] = {
+            simpleName: meta[0],
+            packageName: meta[3],
+            versionCode: meta[4],
+            versionName: meta[5],
+            imagePath: `file://${global.tmpdir}/mnt/Quest Games/.meta/thumbnails/${meta[3]}.jpg`,
+          }
         }
       }
+    }
+    catch (err) {
+      console.error('GameList.txt failed', err);
     }
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
@@ -570,6 +598,7 @@ async function sideloadFolder(arg) {
   }
   else {
     returnError('not an apk file');
+    return;
   }
 
   console.log('start sideload: ' + apkfile);
@@ -583,47 +612,48 @@ async function sideloadFolder(arg) {
 
   packageName = '';
   try {
-    console.log('attempting to read package info')
+    console.log('attempting to read package info', { fromremote });
 
-    if (apkfile.match(/-packageName-([a-zA-Z\d\_.]*)/)) {
-      packageName = apkfile.match(/-packageName-([a-zA-Z\d\_.]*)/)[1]
-    }
-    else {
-      //TODO: copy
-      if (fromremote) {
-        tempapk = global.tmpdir + '/' + path.basename(apkfile);
-        console.log('is remote, copying to '+ tempapk)
+    if (fromremote) {
+      tempapk = global.tmpdir + '/' + path.basename(apkfile);
+      console.log('is remote, copying to '+ tempapk)
 
-        if (fs.existsSync(`${tempapk}`)) {
-          console.log('is remote, ' + tempapk + 'already exists, using')
-        }
-        else {
-          await fsExtra.copyFile(apkfile, tempapk);
-        }
-
-        packageinfo = await getPackageInfo(tempapk);
+      if (fs.existsSync(tempapk)) {
+        console.log('is remote, ' + tempapk + 'already exists, using');
       }
       else {
-        packageinfo = await getPackageInfo(apkfile);
+        await fsExtra.copyFile(apkfile, tempapk);
       }
 
-      packageName = packageinfo.packageName;
+      packageinfo = await getPackageInfo(tempapk);
+    }
+    else {
+      packageinfo = await getPackageInfo(apkfile);
     }
 
+    packageName = packageinfo.packageName;
+    console.log({ packageinfo, packageName });
 
-    win.webContents.send('sideload_aapt_done', `{"success":true}`);
+
+    win.webContents.send('sideload_aapt_done', { success: true });
     console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
     console.log(e);
     returnError(e);
+    return;
+  }
+
+  if (!packageName) {
+    returnError(new Error('Can`t parse packageName of ' + apkfile));
+    return;
   }
 
   console.log('checking if installed');
   installed = false;
   try {
-    //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
-    check = await execShellCommand(`adb shell pm list packages ${packageName}`);
+    //await execShellCommand(`adb shell "pm uninstall -k '${packageinfo.packageName}'"`);
+    check = await execShellCommand(`adb shell "pm list packages ${packageName}"`);
     if (check && check.startsWith('package:')) {
       installed = true;
     }
@@ -632,7 +662,7 @@ async function sideloadFolder(arg) {
     console.log(e);
   }
 
-  win.webContents.send('sideload_check_done', `{"success":true}`);
+  win.webContents.send('sideload_check_done', { success: true });
 
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
@@ -648,7 +678,7 @@ async function sideloadFolder(arg) {
       //console.log(e);
     }
   }
-  win.webContents.send('sideload_backup_done', `{"success":true}`);
+  win.webContents.send('sideload_backup_done', { success: true });
 
 
   if (installed) {
@@ -662,13 +692,13 @@ async function sideloadFolder(arg) {
     }
   }
 
-  win.webContents.send('sideload_uninstall_done', `{"success":true}`);
+  win.webContents.send('sideload_uninstall_done', { success: true });
 
   if (installed) {
     console.log('doing adb push appdata (ignore error)');
     try {
-      //await execShellCommand(`adb shell mkdir -p /sdcard/Android/data/${packageName}/`);
-      //await execShellCommand(`adb push ${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/`, 100000);
+      //await execShellCommand(`adb shell "mkdir -p /sdcard/Android/data/${packageName}/"`);
+      //await execShellCommand(`adb push "${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/"`, 100000);
       await execShellCommand(`adb push ${global.tmpdir}/sidenoder_restore_backup/${packageName}/ /sdcard/Android/data/`, 100000);
 
       /*try {
@@ -683,7 +713,7 @@ async function sideloadFolder(arg) {
       //console.log(e);
     }
   }
-  win.webContents.send('sideload_restore_done', `{"success":true}`);
+  win.webContents.send('sideload_restore_done', { success: true });
 
 
 
@@ -700,23 +730,21 @@ async function sideloadFolder(arg) {
         await fsExtra.copyFile(apkfile, tempapk);
       }
 
-      win.webContents.send('sideload_download_done', `{"success":true}`);
+      win.webContents.send('sideload_download_done', { success: true });
       await execShellCommand(`adb install -g -d "${tempapk}"`);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
     else {
-      win.webContents.send('sideload_download_done', `{"success":true}`);
+      win.webContents.send('sideload_download_done', { success: true });
       await execShellCommand(`adb install -g -d "${apkfile}"`);
     }
 
-    win.webContents.send('sideload_apk_done', `{"success":true}`);
+    win.webContents.send('sideload_apk_done', { success: true });
   }
   catch (e) {
     console.log(e);
   }
-
-
 
   try {
     await fsPromise.readdir(location + '/' + packageName, { withFileTypes: true });
@@ -776,19 +804,19 @@ async function sideloadFolder(arg) {
         }
       }
 
-      win.webContents.send('sideload_copy_obb_done',`{"success":true}`);
+      win.webContents.send('sideload_copy_obb_done',{ success: true });
       console.log('doing shell mv');
       await execShellCommand(`adb shell mv "/sdcard/Download/obb/${obbFolder}" "/sdcard/Android/obb/${obbFolder}"`);
-      win.webContents.send('sideload_move_obb_done',`{"success":true}`);
+      win.webContents.send('sideload_move_obb_done',{ success: true });
     }
   }
   else {
-    win.webContents.send('sideload_download_obb_done',`{"success":true}`);
-    win.webContents.send('sideload_copy_obb_done',`{"success":true}`);
-    win.webContents.send('sideload_move_obb_done',`{"success":true}`);
+    win.webContents.send('sideload_download_obb_done',{ success: true });
+    win.webContents.send('sideload_copy_obb_done',{ success: true });
+    win.webContents.send('sideload_move_obb_done',{ success: true });
   }
 
-  win.webContents.send('sideload_done',`{"success":true, "update": ${arg.update}}`);
+  win.webContents.send('sideload_done', { success: true, update: arg.update });
   console.log('DONE');
   return;
 }
@@ -814,7 +842,7 @@ async function getPackageInfo(apkPath) {
 }
 
 async function getInstalledApps(send = true) {
-  let apps = await execShellCommand(`adb shell cmd package list packages -3 --show-versioncode`);
+  let apps = await execShellCommand(`adb shell "cmd package list packages -3 --show-versioncode"`);
   apps = apps.split('\n');
   apps.pop();
   appinfo = [];
@@ -930,12 +958,12 @@ function updateRcloneProgress() {
   .then(response => response.json())
   .then(data => {
     //console.log('sending rclone data');
-    win.webContents.send('rclone_data',data);
+    win.webContents.send('rclone_data', data);
     setTimeout(updateRcloneProgress, 2000);
   })
   .catch((error) => {
     //console.error('Fetch-Error:', error);
-    win.webContents.send('rclone_data','');
+    win.webContents.send('rclone_data', '');
     setTimeout(updateRcloneProgress, 2000);
   });
 }

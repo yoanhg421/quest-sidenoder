@@ -1,5 +1,7 @@
 @echo off
 
+mkdir sideloader_deps 2> NUL
+
 IF EXIST "%~dp0sidenoder.exe" (
   echo .
 ) else (
