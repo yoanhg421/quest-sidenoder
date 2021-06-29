@@ -43,8 +43,8 @@
     $('#appStartModal').modal('hide');
   });*/
 
-  $("#startActivityButton").on("click", function(){
+  $('#startActivityButton').on('click', function(){
     $('#appStartModal').modal('hide');
-    ipcRenderer.send('start_activity', $("#appActivities").val());
+    ipcRenderer.send('start_activity', $('#appActivities').val());
   });
 </script>

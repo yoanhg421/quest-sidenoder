@@ -240,6 +240,14 @@ ipcMain.on('change_config', async (event, { key, val }) => {
 });
 
 
+ipcMain.on('open_debug', async (event, arg) => {
+  console.log('open_debug received', arg);
+  global.win.webContents.openDevTools();
+  event.reply('open_debug', { success: true });
+  return;
+});
+
+
 
 
 function createWindow () {
@@ -254,10 +262,7 @@ function createWindow () {
     }
   })
   win.setMenu(null);
-
-  win.webContents.openDevTools()
-
-  win.maximize(true)
+  win.maximize(true);
   win.loadURL(`file://${__dirname}/views/index.twig`)
   twig.view = {
     tmpdir: global.tmpdir,

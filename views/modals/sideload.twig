@@ -1,50 +1,118 @@
 <!-- Modal -->
 <div class="modal fade" id="sideloadModal" tabindex="-1" role="dialog" aria-labelledby="sideloadModalLabel" aria-hidden="true"  data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="sideloadModalLabel"><i id="sideloadRefresh" class="fa fa-refresh fa-spin"></i> Sideloading</h5>
-                <span class="mountcopystatus"></span>
-            </div>
-            <div class="modal-body">
-                <span id="sideloadText"></span>
-                <br>
-                <span class="deviceBadge badge badge-warning badge-md">Check device</span>
-                <br>
-                <span class="aaptDoneBadge badge badge-warning badge-md">Read Packageinfo</span>
-                <br>
-                <span class="checkDoneBadge badge badge-warning badge-md">Check if installed</span>
-                <br>
-                <span class="backupDoneBadge badge badge-warning badge-md">Backup Appdata</span>
-                <br>
-                <span class="uninstallDoneBadge badge badge-warning badge-md">Uninstall APK</span>
-                <br>
-                <span class="restoreDoneBadge badge badge-warning badge-md">Restore Appdata</span>
-                <br>
-                <span class="downloadDoneBadge badge badge-warning badge-md">Download APK</span>
-                <br>
-                <span class="apkDoneBadge badge badge-warning badge-md">Install APK</span>
-                <br>
-                <span class="downloadObbDoneBadge badge badge-warning badge-md">Download OBB's</span>
-                <br>
-                <span class="copyObbDoneBadge badge badge-warning badge-md">Copy OBB's</span>
-                <br>
-                <span class="moveObbDoneBadge badge badge-warning badge-md">Move OBB's</span>
-                <br>
-                <span class="sideloadDoneBadge badge badge-warning badge-md">Sideload finished</span>
-                <br>
-            </div>
-            <div class="modal-footer">
-                {# <button type="button" class="btn btn-secondary disabled" data-dismiss="modal">Close</button> #}
-                <button type="button" id="sideloadDoneBtn" class="btn btn-primary disabled">Please wait for the process to finish</button>
-            </div>
-        </div>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sideloadModalLabel"><i id="sideloadRefresh" class="fa fa-refresh fa-spin"></i> Sideloading</h5>
+        <span class="mountcopystatus"></span>
+      </div>
+      <div class="modal-body">
+        <span id="sideloadText"></span>
+        <br>
+        <span class="deviceBadge badge badge-warning badge-md">Check device</span>
+        <br>
+        <span class="aaptDoneBadge badge badge-warning badge-md">Read Packageinfo</span>
+        <br>
+        <span class="checkDoneBadge badge badge-warning badge-md">Check if installed</span>
+        <br>
+        <span class="backupDoneBadge badge badge-warning badge-md">Backup Appdata</span>
+        <br>
+        <span class="uninstallDoneBadge badge badge-warning badge-md">Uninstall APK</span>
+        <br>
+        <span class="restoreDoneBadge badge badge-warning badge-md">Restore Appdata</span>
+        <br>
+        <span class="downloadDoneBadge badge badge-warning badge-md">Download APK</span>
+        <br>
+        <span class="apkDoneBadge badge badge-warning badge-md">Install APK</span>
+        <br>
+        <span class="downloadObbDoneBadge badge badge-warning badge-md">Download OBB's</span>
+        <br>
+        <span class="copyObbDoneBadge badge badge-warning badge-md">Copy OBB's</span>
+        <br>
+        <span class="moveObbDoneBadge badge badge-warning badge-md">Move OBB's</span>
+        <br>
+        <span class="sideloadDoneBadge badge badge-warning badge-md">Sideload finished</span>
+        <br>
+      </div>
+      <div class="modal-footer">
+        {# <button type="button" class="btn btn-secondary disabled" data-dismiss="modal">Close</button> #}
+        <button type="button" id="sideloadDoneBtn" class="btn btn-primary disabled">Please wait for the process to finish</button>
+      </div>
     </div>
+  </div>
 </div>
 <script>
-    $("#sideloadDoneBtn").on("click", function(){
-        $('#sideloadModal').modal('hide');
-        $('.modal-backdrop').remove();
-        loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
-    });
+  $('#sideloadDoneBtn').on('click', function(){
+    $('#sideloadModal').modal('hide');
+    $('.modal-backdrop').remove();
+    loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
+  });
+
+  ipcRenderer.on('start_sideload', (event, arg) => {
+    console.log('start_sideload msg came ! ');
+    console.log(arg);
+    const { success, path } = arg;
+    if (!success) return;
+
+    const lastslashindex = path.lastIndexOf('/');
+    const file= path.substring(lastslashindex  + 1)
+
+    $('#sideloadModal').modal('show');
+    $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('Processing: <br><b>'+file+'</b>')
+  });
+
+  ipcRenderer.on('sideload_aapt_done', (event, arg) => {
+    $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    ipcRenderer.send('get_device_info', '');
+  });
+  ipcRenderer.on('sideload_check_done', (event, arg) => {
+    $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_backup_done', (event, arg) => {
+    $('.backupDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_uninstall_done', (event, arg) => {
+    $('.uninstallDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_restore_done', (event, arg) => {
+    $('.restoreDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_download_done', (event, arg) => {
+    $('.downloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_apk_done', (event, arg) => {
+    $('.apkDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_copy_obb_done', (event, arg) => {
+    $('.copyObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+    $('.downloadObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_move_obb_done', (event, arg) => {
+    $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  });
+  ipcRenderer.on('sideload_done', (event, arg) => {
+    console.log('sideload done received', arg);
+    if (arg.success) {
+      $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
+      $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');
+      $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o');
+    }
+
+    if (arg.update === true) {
+      getUpdates();
+    }
+  });
+
+
+  ipcRenderer.on('rclone_data', (event, data) => {
+    // console.log('rclone_data received', data);
+    if(data.transferring && data.transferring.length > 0) {
+      const transferring = data.transferring[0];
+      let name = transferring.name.split('/').pop();
+      $('.mountcopystatus').html(`${formatBytes(transferring.bytes)} of ${formatBytes(transferring.size)} (${transferring.percentage}%) - ${formatBytes(transferring.speedAvg)}/s (${formatEta(transferring.eta)})<br/> <small>${name}</small>`);
+    }
+    else {
+      $('.mountcopystatus').text('');
+    }
+  });
 </script>

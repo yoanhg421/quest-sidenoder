@@ -292,28 +292,29 @@ function trackDevices(){
   })
 }
 
-// async function checkMount(){
-//     console.log("checkMount()")
-//     try {
-//         await fsPromise.readdir(`${mountFolder}`);
-//         list = await getDir(`${mountFolder}`);
-//         if (list.length > 0) {
-//             global.mounted = true
-//             updateRcloneProgress();
-//             return true
-//         }
-//         global.mounted = false
-//         return false;
-//     }
-//     catch (e) {
-//         console.log("entering catch block");
-//         console.log(e);
-//         console.log("leaving catch block");
-//         global.mounted = false
-//         return false
-//     }
-//     return false;
-// }
+/*async function checkMount(){
+  console.log('checkMount()')
+  try {
+    await fsPromise.readdir(global.mountFolder);
+    list = await getDir(global.mountFolder);
+    if (list.length > 0) {
+      global.mounted = true
+      updateRcloneProgress();
+      return true
+    }
+    global.mounted = false
+    return false;
+  }
+  catch (e) {
+    console.log('entering catch block');
+    console.log(e);
+    console.log('leaving catch block');
+    global.mounted = false
+    return false
+  }
+
+  return false;
+}*/
 
 async function checkMount() {
   console.log('checkMount()')
@@ -337,7 +338,7 @@ async function checkDeps(){
     exists = await commandExists('adb');
   }
   catch (e) {
-    returnError('ADB global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
+    returnError('ADB global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
 
@@ -345,7 +346,7 @@ async function checkDeps(){
     exists = await commandExists('rclone');
   }
   catch (e) {
-    returnError('RCLONE global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
+    returnError('RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
   //wtf werkt nie
@@ -387,18 +388,18 @@ async function killRClone(){
 
 
 async function mount(){
-  if (await checkMount(mountFolder)) {
+  if (await checkMount(global.mountFolder)) {
     // return;
     await killRClone();
   }
 
   if (!['win64', 'win32'].includes(platform)) {
-    await execShellCommand(`umount ${mountFolder} ${global.nullerror}`);
-    await execShellCommand(`fusermount -uz ${mountFolder} ${global.nullerror}`);
-    await fs.mkdir(mountFolder, {}, ()=>{}) // folder must exist on windows
+    await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
+    await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
+    await fs.mkdir(global.mountFolder, {}, ()=>{}) // folder must exist on windows
   }
   else {
-    await execShellCommand(`rmdir "${mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
+    await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
   const epath = require('path').join(__dirname , 'a.enc'); // 'a'
@@ -415,7 +416,7 @@ async function mount(){
 
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
   console.log('start rclone');
-  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${mountFolder}`, (error, stdout, stderr) => {
+  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
       if (error.message.search('transport endpoint is not connected')) {

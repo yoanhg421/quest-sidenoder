@@ -1,5 +1,41 @@
 <script>
-    ipcRenderer.send('get_device_info', '');
+  console.log('ONLOAD DEVICE');
+  ipcRenderer.send('get_device_info', '');
+  ipcRenderer.on('get_device_info', (event, arg) => {
+    console.log('get_device_info ! ', arg);
+    const {
+      storage,
+      user,
+      fw,
+      battery,
+    } = arg;
+    if (storage) {
+      let bg = 'success';
+      let percent = +storage.percent.replace('%', '');
+      if (percent > 80) bg = 'warning';
+      if (percent > 95) bg = 'danger';
+
+      $('#storageDiv').html(`
+      <span class="pull-left push-left">Size: ${storage.size}</span>
+      <span class="pull-right push-right">Available: ${storage.free}</span>
+      <center>Used: ${storage.used}(${storage.percent})</center>
+      <div class="progress" style="border: 1px solid #666;">
+        <div class="progress-bar progress-bar-striped bg-${bg}" role="progressbar" style="width: ${storage.percent};" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>`)
+    }
+
+    if (user) {
+      $('#deviceUserName').html(user.name);
+    }
+
+    if (fw) {
+      $('#deviceFwVersion').html(fw.version);
+    }
+
+    if (battery) {
+      $('#deviceBatteryLevel').html(battery.level);
+    }
+  });
 </script>
 
 <div class="row mb-2" style="padding: 0px 40px">
