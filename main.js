@@ -212,6 +212,41 @@ ipcMain.on('filedrop', async (event, path) => {
   return;
 });
 
+ipcMain.on('enable_mtp', async (event, arg) => {
+  console.log('enable_mtp received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
+  }
+
+  res = await tools.enableMTP();
+  event.reply('enable_mtp', { success: !!res });
+  return;
+});
+
+ipcMain.on('mp_name', async (event, { cmd, val }) => {
+  console.log('mp_name received', { cmd, val });
+
+  if (cmd == 'get') {
+    const name = await tools.multiplayerNameGet();
+    event.reply('mp_name', { cmd, name });
+  }
+
+  if (cmd == 'set') {
+    if (!global.adbDevice) {
+      console.log('Missing device, sending ask_device');
+      event.reply('ask_device', '');
+      return;
+    }
+
+    const res = await tools.multiplayerNameSet(val);
+    event.reply('mp_name', { cmd, res });
+  }
+
+  return;
+});
+
 ipcMain.on('uninstall', async (event, arg) => {
   console.log('uninstall received');
   resp = await tools.uninstall(arg);

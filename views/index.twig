@@ -9,6 +9,7 @@
 
         ipcRenderer.send('check_deps', 'bla');
 
+        ipcRenderer.removeAllListeners('check_deps');
         ipcRenderer.on('check_deps', (event, arg) => {
             console.log('check_deps msg came: ', arg); // prints "ping"
             if (arg.success) {

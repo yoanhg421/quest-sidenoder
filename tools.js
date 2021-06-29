@@ -56,6 +56,7 @@ module.exports =
   getPackageInfo,
   connectWireless,
   disconnectWireless,
+  enableMTP,
   getActivities,
   startActivity,
   getDeviceInfo,
@@ -67,6 +68,8 @@ module.exports =
   reloadConfig,
   execShellCommand,
   updateRcloneProgress,
+  multiplayerNameGet,
+  multiplayerNameSet,
   // ...
 }
 
@@ -118,6 +121,18 @@ async function getUserInfo() {
   return {
     name: res.split(':')[1],
   }
+}
+
+async function multiplayerNameGet() {
+  console.log('multiplayerNameGet()');
+  return execShellCommand('adb shell settings get global username');
+}
+
+async function multiplayerNameSet(name) {
+  console.log('multiplayerNameSet()', name);
+  const res = await execShellCommand('adb shell settings put global username ' + name);
+
+  return res;
 }
 
 async function getStorageInfo() {
@@ -220,6 +235,12 @@ async function disconnectWireless() {
   return res;
 }
 
+async function enableMTP() {
+  const res = await execShellCommand(`adb shell svc usb setFunctions mtp`);
+  console.log('disconnectWireless', { res });
+  return res;
+}
+
 function getDeviceSync() {
   client.listDevices()
   .then((devices) => {
@@ -283,8 +304,8 @@ function trackDevices(){
       resp = {success: global.adbDevice}
       win.webContents.send('check_device', resp);
       console.log('Device %s was unplugged', resp);
-      getDeviceSync();
-      trackDevices();
+      // getDeviceSync();
+      // trackDevices();
     })
     tracker.on('end', function() {
       console.log('Tracking stopped')

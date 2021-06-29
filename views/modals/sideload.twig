@@ -99,12 +99,20 @@
   </div>
 </div>
 <script>
-  $('#sideloadDoneBtn').on('click', function(){
-    $('#sideloadModal').modal('hide');
-    $('.modal-backdrop').remove();
-    loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
+  ipcRenderer.removeAllListeners('rclone_data');
+  ipcRenderer.on('rclone_data', (event, data) => {
+    // console.log('rclone_data received', data);
+    if(data.transferring && data.transferring.length > 0) {
+      const transferring = data.transferring[0];
+      let name = transferring.name.split('/').pop();
+      $('.mountcopystatus').html(`${formatBytes(transferring.bytes)} of ${formatBytes(transferring.size)} (${transferring.percentage}%) - ${formatBytes(transferring.speedAvg)}/s (${formatEta(transferring.eta)})<br/> <small>${name}</small>`);
+    }
+    else {
+      $('.mountcopystatus').text('');
+    }
   });
 
+  ipcRenderer.removeAllListeners('start_sideload');
   ipcRenderer.on('start_sideload', (event, arg) => {
     console.log('start_sideload msg came ! ');
     console.log(arg);
@@ -118,6 +126,7 @@
     $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('pending: <br/><b>'+file+'</b>')
   });
 
+  ipcRenderer.removeAllListeners('sideload_process');
   ipcRenderer.on('sideload_process', (event, arg) => {
     console.log('sideload_process', arg);
 
@@ -202,15 +211,9 @@
     badge.removeClass('badge-warning').addClass('badge-' + state);
   }
 
-  ipcRenderer.on('rclone_data', (event, data) => {
-    // console.log('rclone_data received', data);
-    if(data.transferring && data.transferring.length > 0) {
-      const transferring = data.transferring[0];
-      let name = transferring.name.split('/').pop();
-      $('.mountcopystatus').html(`${formatBytes(transferring.bytes)} of ${formatBytes(transferring.size)} (${transferring.percentage}%) - ${formatBytes(transferring.speedAvg)}/s (${formatEta(transferring.eta)})<br/> <small>${name}</small>`);
-    }
-    else {
-      $('.mountcopystatus').text('');
-    }
+  $('#sideloadDoneBtn').on('click', function(){
+    $('#sideloadModal').modal('hide');
+    $('.modal-backdrop').remove();
+    loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
   });
 </script>

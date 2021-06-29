@@ -1,7 +1,12 @@
 <script>
   console.log('ONLOAD DEVICE');
-  ipcRenderer.send('get_device_info', '');
+  let timer = null;
+  ipcRenderer.removeAllListeners('get_device_info');
   ipcRenderer.on('get_device_info', (event, arg) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => ipcRenderer.send('get_device_info', ''), 30000);
+    if (!remote.getGlobal('adbDevice')) return;
+
     console.log('get_device_info ! ', arg);
     const {
       storage,
@@ -35,8 +40,6 @@
     if (battery) {
       $('#deviceBatteryLevel').html(battery.level);
     }
-
-    setTimeout(()=>ipcRenderer.send('get_device_info', ''), 30000);
   });
 </script>
 

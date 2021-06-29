@@ -171,8 +171,7 @@
         $('#devicebtn').addClass('btn-success');
         $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | QUEST:</br>CONNECTED`);
 
-        $('#installedAppsNav').removeClass('disabled');
-        ipcRenderer.send('get_device_info', '');
+        $('.adbdev').removeClass('disabled').removeAttr('disabled');
 
         if (arg.success.endsWith(':5555')) {
           $('#wirelessbtn')[0].onclick = disconnectWireless;
@@ -180,13 +179,16 @@
           $('#wirelessbtn').addClass('btn-success');
           $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
         }
+
+        ipcRenderer.send('get_device_info', '');
+        ipcRenderer.send('mp_name', { cmd: 'get' });
       }
       else {
         $('#devicebtn').removeClass('btn-success');
         $('#devicebtn').addClass('btn-danger');
         $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | QUEST:</br>DISCONNECTED`);
 
-        $('#installedAppsNav').addClass('disabled');
+        $('.adbdev').addClass('disabled').attr('disabled', 'disabled');
 
         $('#wirelessbtn')[0].onclick = connectWireless;
         $('#wirelessbtn').removeClass('btn-success');
@@ -316,9 +318,14 @@
         </a>
       </li>
       <li class="nav-item">
-        <a id="installedAppsNav" class="btn btn-primary disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+        <a id="installedAppsNav" class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
           <i class="fa fa-list" aria-hidden="true"></i>
            Installed
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Tweaks">
+          <i class="fa fa-bug" aria-hidden="true"></i>
         </a>
       </li>
       <li class="nav-item">
@@ -326,13 +333,8 @@
           <i class="fa fa-cog" aria-hidden="true"></i>
         </a>
       </li>
-      <li class="nav-item" style="display: none">
-        <a class="btn btn-primary" data-toggle="collapse" href="#collapseTweaks" role="button" aria-expanded="false" aria-controls="collapseTweaks">
-          <i class="fa fa-bug" aria-hidden="true"></i> Tweaks
-        </a>
-      </li>
-
     </ul>
+
     <div class="form-inline my-2 my-lg-0">
       <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled>
         <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED
@@ -352,13 +354,6 @@
 
 
 <div style="padding: 5px 20px">
-  <div class="collapse" id="collapseTweaks">
-    <div class="card card-body">
-      <input id="mp_name" value="" disabled="disabled" />
-      <label for="mp_name">Multiplayer name</label>
-    </div>
-  </div>
-
   <div id="device_infoDiv"></div>
 
   {% block body %}{% endblock %}
