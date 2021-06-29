@@ -786,11 +786,13 @@ async function sideloadFolder(arg) {
         win.webContents.send('sideload_process', res);
       }
 
+      res.apk = 'processing';
       await execShellCommand(`adb install -g -d "${tempapk}"`);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
     else {
+      res.apk = 'processing';
       await execShellCommand(`adb install -g -d "${apkfile}"`);
     }
 
@@ -869,7 +871,7 @@ async function sideloadFolder(arg) {
 
           await execShellCommand(`adb push "${tempobb}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
           //TODO: check settings
-          //execShellCommand(`rm "${tempobb}"`);
+          execShellCommand(`rm -r "${tempobb}"`);
         }
         else {
           await execShellCommand(`adb push "${item}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);

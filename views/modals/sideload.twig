@@ -176,6 +176,12 @@
     if (arg.update) {
       getUpdates();
     }
+
+
+    if (arg.error) {
+      $('#sideloadError').text(arg.error);
+      $('#sideloadErrorArea').show();
+    }
   });
 
   function badgeState(badge, text) {
