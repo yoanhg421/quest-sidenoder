@@ -250,15 +250,18 @@ function execShellCommand(cmd, buffer = 5000) {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
         console.error('exec_error', error);
+        global.adbError = error;
         // return resolve(error);
       }
 
       if (stdout) {
         console.log('exec_stdout', stdout);
+        global.adbError = null;
         return resolve(stdout);
       }
       else {
         console.error('exec_stderr', stderr);
+        global.adbError = stderr;
         return resolve(false);
       }
     });
@@ -592,7 +595,24 @@ async function getDirListing(folder){
 
 async function sideloadFolder(arg) {
   location = arg.path;
-  console.log('sideloadFolder()')
+  console.log('sideloadFolder()', arg);
+  let res = {
+    device: 'done',
+    aapt: false,
+    check: false,
+    backup: false,
+    uninstall: false,
+    restore: false,
+    download: false,
+    apk: false,
+    download_obb: false,
+    push_obb: false,
+    done: false,
+    update: false,
+  }
+
+  win.webContents.send('sideload_process', res);
+
   if (location.endsWith('.apk')) {
     apkfile = location;
     location=path.dirname(location);
@@ -616,6 +636,9 @@ async function sideloadFolder(arg) {
     console.log('attempting to read package info', { fromremote });
 
     if (fromremote) {
+      res.download = 'processing';
+      win.webContents.send('sideload_process', res);
+
       tempapk = global.tmpdir + '/' + path.basename(apkfile);
       console.log('is remote, copying to '+ tempapk)
 
@@ -624,6 +647,9 @@ async function sideloadFolder(arg) {
       }
       else {
         await fsExtra.copyFile(apkfile, tempapk);
+        res.download = 'done';
+        res.aapt = 'processing';
+        win.webContents.send('sideload_process', res);
       }
 
       packageinfo = await getPackageInfo(tempapk);
@@ -632,11 +658,12 @@ async function sideloadFolder(arg) {
       packageinfo = await getPackageInfo(apkfile);
     }
 
+    res.aapt = 'processing';
+    win.webContents.send('sideload_process', res);
+
     packageName = packageinfo.packageName;
     console.log({ packageinfo, packageName });
 
-
-    win.webContents.send('sideload_aapt_done', { success: true });
     console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
@@ -649,6 +676,11 @@ async function sideloadFolder(arg) {
     returnError(new Error('Can`t parse packageName of ' + apkfile));
     return;
   }
+
+
+  res.aapt = 'done';
+  res.check = 'processing';
+  win.webContents.send('sideload_process', res);
 
   console.log('checking if installed');
   installed = false;
@@ -663,7 +695,9 @@ async function sideloadFolder(arg) {
     console.log(e);
   }
 
-  win.webContents.send('sideload_check_done', { success: true });
+  res.check = 'done';
+  res.backup = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
@@ -674,26 +708,38 @@ async function sideloadFolder(arg) {
       }
 
       await execShellCommand(`adb pull "/sdcard/Android/data/${packageName}" "${global.tmpdir}/sidenoder_restore_backup"`, 100000);
+      res.backup = 'done';
     }
     catch (e) {
+      res.backup = 'fail';
       //console.log(e);
     }
   }
-  win.webContents.send('sideload_backup_done', { success: true });
+  else {
+    res.backup = 'skip';
+  }
 
+  res.uninstall = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb uninstall (ignore error)');
     try {
       //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
       await execShellCommand(`adb uninstall "${packageName}"`);
+      res.uninstall = 'done';
     }
     catch (e) {
       //console.log(e);
+      res.uninstall = 'fail';
     }
   }
+  else {
+    res.uninstall = 'skip';
+  }
 
-  win.webContents.send('sideload_uninstall_done', { success: true });
+  res.restore = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb push appdata (ignore error)');
@@ -702,6 +748,7 @@ async function sideloadFolder(arg) {
       //await execShellCommand(`adb push "${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/"`, 100000);
       await execShellCommand(`adb push ${global.tmpdir}/sidenoder_restore_backup/${packageName}/ /sdcard/Android/data/`, 100000);
 
+      res.restore = 'done';
       /*try {
         //TODO: check settings
         //fs.rmdirSync(`${global.tmpdir}/sidenoder_restore_backup/${packageName}/`, { recursive: true });
@@ -712,36 +759,44 @@ async function sideloadFolder(arg) {
     }
     catch (e) {
       //console.log(e);
+      res.restore = 'fail';
     }
   }
-  win.webContents.send('sideload_restore_done', { success: true });
+  else {
+    res.restore = 'skip';
+  }
 
-
+  win.webContents.send('sideload_process', res);
 
   console.log('doing adb install');
   try {
     if (fromremote) {
       tempapk = global.tmpdir + '/' + path.basename(apkfile);
-      console.log('is remote, copying to ' + tempapk)
+      console.log('is remote, copying to ' + tempapk);
 
       if (fs.existsSync(tempapk)) {
         console.log('is remote, ' + tempapk + ' already exists, using')
       }
       else {
+        res.download = 'processing';
+        win.webContents.send('sideload_process', res);
+
         await fsExtra.copyFile(apkfile, tempapk);
+        res.download = 'done';
+        win.webContents.send('sideload_process', res);
       }
 
-      win.webContents.send('sideload_download_done', { success: true });
       await execShellCommand(`adb install -g -d "${tempapk}"`);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
     else {
-      win.webContents.send('sideload_download_done', { success: true });
       await execShellCommand(`adb install -g -d "${apkfile}"`);
     }
 
-    win.webContents.send('sideload_apk_done', { success: true });
+    res.apk = 'done';
+    res.remove_obb = 'processing';
+    win.webContents.send('sideload_process', res);
   }
   catch (e) {
     console.log(e);
@@ -749,11 +804,15 @@ async function sideloadFolder(arg) {
 
   try {
     await fsPromise.readdir(location + '/' + packageName, { withFileTypes: true });
-    obbFolder = packageName
+    obbFolder = packageName;
     console.log('DATAFOLDER to copy:' + obbFolder);
   }
   catch (error) {
-    obbFolder = false
+    obbFolder = false;
+    res.remove_obb = 'skip';
+    res.download_obb = 'skip';
+    res.push_obb = 'skip';
+    win.webContents.send('sideload_process', res);
   }
 
   obbFiles = [];
@@ -761,14 +820,23 @@ async function sideloadFolder(arg) {
     console.log('doing obb rm');
     try {
       await execShellCommand(`adb shell rm -r "/sdcard/Android/obb/${obbFolder}"`);
+      res.remove_obb = 'done';
     }
     catch (e) {
+      res.remove_obb = 'skip';
       //console.log(e);
     }
+
+    res.download_obb = 'processing';
+    win.webContents.send('sideload_process', res);
 
     obbFiles = await getObbs(location + '/' + obbFolder);
     if (obbFiles.length > 0) {
       console.log('obbFiles: ', obbFiles.length);
+
+      res.download_obb = (fromremote ? '0' : obbFiles.length) + '/' + obbFiles.length;
+      res.push_obb = '0/' + obbFiles.length;
+      win.webContents.send('sideload_process', res);
 
       if (!fs.existsSync(global.tmpdir + '/' + packageName)) {
         fs.mkdirSync(global.tmpdir + '/' + packageName);
@@ -781,9 +849,8 @@ async function sideloadFolder(arg) {
       for (const item of obbFiles) {
         console.log('obb File: ' + item)
         console.log('doing obb push');
-        var n = item.lastIndexOf('/');
-        var name = item.substring(n + 1);
-
+        let n = item.lastIndexOf('/');
+        let name = item.substring(n + 1);
 
         if (fromremote) {
           tempobb = global.tmpdir + '/' + packageName + '/' + path.basename(item);
@@ -796,28 +863,31 @@ async function sideloadFolder(arg) {
             await fsExtra.copyFile(item, tempobb);
           }
 
-          await execShellCommand(`adb push "${tempobb}" "/sdcard/Download/obb/${obbFolder}/${name}" ${nullcmd}`);
+          res.download_obb = (+res.download_obb.split('/')[0] + 1) + '/' + obbFiles.length;
+          win.webContents.send('sideload_process', res);
+
+
+          await execShellCommand(`adb push "${tempobb}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
           //TODO: check settings
           //execShellCommand(`rm "${tempobb}"`);
         }
         else {
-          await execShellCommand(`adb push "${item}" "/sdcard/Download/obb/${obbFolder}/${name}" ${nullcmd}`);
+          await execShellCommand(`adb push "${item}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
         }
-      }
 
-      win.webContents.send('sideload_copy_obb_done',{ success: true });
-      console.log('doing shell mv');
-      await execShellCommand(`adb shell mv "/sdcard/Download/obb/${obbFolder}" "/sdcard/Android/obb/${obbFolder}"`);
-      win.webContents.send('sideload_move_obb_done',{ success: true });
+        res.push_obb = (+res.push_obb.split('/')[0] + 1) + '/' + obbFiles.length;
+        win.webContents.send('sideload_process', res);
+      }
     }
   }
   else {
-    win.webContents.send('sideload_download_obb_done',{ success: true });
-    win.webContents.send('sideload_copy_obb_done',{ success: true });
-    win.webContents.send('sideload_move_obb_done',{ success: true });
+    res.download_obb = 'skip';
+    res.push_obb = 'skip';
   }
 
-  win.webContents.send('sideload_done', { success: true, update: arg.update });
+  res.done = 'done';
+  res.update = arg.update;
+  win.webContents.send('sideload_process', res);
   console.log('DONE');
   return;
 }

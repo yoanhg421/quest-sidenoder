@@ -171,9 +171,6 @@
         $('#devicebtn').addClass('btn-success');
         $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | QUEST:</br>CONNECTED`);
 
-        $('.deviceBadge').removeClass('badge-warning');
-        $('.deviceBadge').addClass('badge-success');
-
         $('#installedAppsNav').removeClass('disabled');
         ipcRenderer.send('get_device_info', '');
 

@@ -8,31 +8,88 @@
       </div>
       <div class="modal-body">
         <span id="sideloadText"></span>
-        <br>
-        <span class="deviceBadge badge badge-warning badge-md">Check device</span>
-        <br>
-        <span class="aaptDoneBadge badge badge-warning badge-md">Read Packageinfo</span>
-        <br>
-        <span class="checkDoneBadge badge badge-warning badge-md">Check if installed</span>
-        <br>
-        <span class="backupDoneBadge badge badge-warning badge-md">Backup Appdata</span>
-        <br>
-        <span class="uninstallDoneBadge badge badge-warning badge-md">Uninstall APK</span>
-        <br>
-        <span class="restoreDoneBadge badge badge-warning badge-md">Restore Appdata</span>
-        <br>
-        <span class="downloadDoneBadge badge badge-warning badge-md">Download APK</span>
-        <br>
-        <span class="apkDoneBadge badge badge-warning badge-md">Install APK</span>
-        <br>
-        <span class="downloadObbDoneBadge badge badge-warning badge-md">Download OBB's</span>
-        <br>
-        <span class="copyObbDoneBadge badge badge-warning badge-md">Copy OBB's</span>
-        <br>
-        <span class="moveObbDoneBadge badge badge-warning badge-md">Move OBB's</span>
-        <br>
-        <span class="sideloadDoneBadge badge badge-warning badge-md">Sideload finished</span>
-        <br>
+        <br/>
+        <div class="row">
+          <div class="col-4">
+            Check device:
+          </div>
+          <div><span id="deviceBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Read Packageinfo:
+          </div>
+          <div><span id="aaptDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Check if installed:
+          </div>
+          <div><span id="checkDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Backup Appdata:
+          </div>
+          <div><span id="backupDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Uninstall APK:
+          </div>
+          <div><span id="uninstallDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Restore Appdata:
+          </div>
+          <div><span id="restoreDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Download APK:
+          </div>
+          <div><span id="downloadDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Install APK:
+          </div>
+          <div><span id="apkDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Remove OBB's:
+          </div>
+          <div><span id="removeObbDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Download OBB's:
+          </div>
+          <div><span id="downloadObbDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Copy OBB's:
+          </div>
+          <div><span id="copyObbDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            Sideload finished:
+          </div>
+          <div><span id="sideloadDoneBadge" class="badge badge-warning">pending</span></div>
+        </div>
+        <div id="sideloadErrorArea" style="display: none">
+          <a class="btn btn-sm btn-primary" data-toggle="collapse" href="#collapseError" aria-expanded="false" aria-controls="collapseError">
+            <i class="fa fa-angle-down" aria-hidden="true"></i> Error:
+          </a>
+          <div class="collapse" id="collapseError">
+            <pre id="sideloadError">
+            </pre>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         {# <button type="button" class="btn btn-secondary disabled" data-dismiss="modal">Close</button> #}
@@ -58,51 +115,86 @@
     const file= path.substring(lastslashindex  + 1)
 
     $('#sideloadModal').modal('show');
-    $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('Processing: <br><b>'+file+'</b>')
+    $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('pending: <br/><b>'+file+'</b>')
   });
 
-  ipcRenderer.on('sideload_aapt_done', (event, arg) => {
-    $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_check_done', (event, arg) => {
-    $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_backup_done', (event, arg) => {
-    $('.backupDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_uninstall_done', (event, arg) => {
-    $('.uninstallDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_restore_done', (event, arg) => {
-    $('.restoreDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_download_done', (event, arg) => {
-    $('.downloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_apk_done', (event, arg) => {
-    $('.apkDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_copy_obb_done', (event, arg) => {
-    $('.copyObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-    $('.downloadObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_move_obb_done', (event, arg) => {
-    $('.moveObbDoneBadge').removeClass('badge-warning').addClass('badge-success');
-  });
-  ipcRenderer.on('sideload_done', (event, arg) => {
-    console.log('sideload done received', arg);
-    ipcRenderer.send('get_device_info', '');
-    if (arg.success) {
-      $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
+  ipcRenderer.on('sideload_process', (event, arg) => {
+    console.log('sideload_process', arg);
+
+    if (arg.device) {
+      badgeState($('#deviceBadge'), arg.device);
+    }
+
+    if (arg.aapt) {
+      badgeState($('#aaptDoneBadge'), arg.aapt);
+    }
+
+    if (arg.check) {
+      badgeState($('#checkDoneBadge'), arg.check);
+    }
+
+    if (arg.backup) {
+      badgeState($('#backupDoneBadge'), arg.backup);
+    }
+
+    if (arg.uninstall) {
+      badgeState($('#uninstallDoneBadge'), arg.uninstall);
+    }
+
+    if (arg.restore) {
+      badgeState($('#restoreDoneBadge'), arg.restore);
+    }
+
+    if (arg.download) {
+      badgeState($('#downloadDoneBadge'), arg.download);
+    }
+
+    if (arg.apk) {
+      badgeState($('#apkDoneBadge'), arg.apk);
+    }
+
+    if (arg.remove_obb) {
+      badgeState($('#removeObbDoneBadge'), arg.remove_obb);
+    }
+
+    if (arg.download_obb) {
+      badgeState($('#downloadObbDoneBadge'), arg.download_obb);
+    }
+
+    if (arg.push_obb) {
+      badgeState($('#copyObbDoneBadge'), arg.push_obb);
+    }
+
+    if (arg.done) {
+      badgeState($('#sideloadDoneBadge'), arg.done);
+      ipcRenderer.send('get_device_info', '');
+
       $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');
       $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o');
     }
 
-    if (arg.update === true) {
+    if (arg.update) {
       getUpdates();
     }
   });
 
+  function badgeState(badge, text) {
+    badge.text(text);
+    if (!badge.hasClass('badge-warning')) return;
+
+    let state = '';
+    if (text === 'done') state = 'success';
+    else if (text === 'skip') state = 'secondary';
+    else if (text === 'error') state = 'danger';
+    else if (text.includes('/')) {
+      const parts = text.split('/');
+      if (parts[0] == parts[1]) state = 'success';
+      else return;
+    }
+    else return;
+
+    badge.removeClass('badge-warning').addClass('badge-' + state);
+  }
 
   ipcRenderer.on('rclone_data', (event, data) => {
     // console.log('rclone_data received', data);
