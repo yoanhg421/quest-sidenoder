@@ -89,6 +89,7 @@
       loadInclude('modals/confirm.twig', 'confirmmodaldiv');
       loadInclude('modals/processing.twig', 'processingmodaldiv');
       loadInclude('modals/app_start.twig', 'appstartmodaldiv');
+      loadInclude('device_info.twig', 'device_infoDiv');
 
       document.ondragover = document.ondrop = (ev) => {
         ev.preventDefault()
@@ -360,6 +361,9 @@
       <label for="mp_name">Multiplayer name</label>
     </div>
   </div>
+
+  <div id="device_infoDiv"></div>
+
   {% block body %}{% endblock %}
 </div>
 

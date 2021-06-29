@@ -63,7 +63,6 @@
 
   ipcRenderer.on('sideload_aapt_done', (event, arg) => {
     $('.aaptDoneBadge').removeClass('badge-warning').addClass('badge-success');
-    ipcRenderer.send('get_device_info', '');
   });
   ipcRenderer.on('sideload_check_done', (event, arg) => {
     $('.checkDoneBadge').removeClass('badge-warning').addClass('badge-success');
@@ -92,6 +91,7 @@
   });
   ipcRenderer.on('sideload_done', (event, arg) => {
     console.log('sideload done received', arg);
+    ipcRenderer.send('get_device_info', '');
     if (arg.success) {
       $('.sideloadDoneBadge').removeClass('badge-warning').addClass('badge-success');
       $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');

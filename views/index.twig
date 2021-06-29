@@ -5,9 +5,7 @@
 <script>
     $(document).ready(function() {
         console.log('ONLOAD INDEX');
-        console.log('sending check_deps')
-
-        loadInclude('device_info.twig', 'device_infoDiv');
+        console.log('sending check_deps');
 
         ipcRenderer.send('check_deps', 'bla');
 
@@ -36,8 +34,6 @@
 {% block body %}
 
 <div id="mainbody">
-
-    <div id="device_infoDiv"></div>
 
     <div class="card text-white bg-primary">
         <div class="card-header">
