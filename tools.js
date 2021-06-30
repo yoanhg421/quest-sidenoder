@@ -11,7 +11,8 @@ const fetch = require('node-fetch');
 const path = require('path');
 const commandExists = require('command-exists');
 const util = require('util');
-const ApkReader = require('node-apk-parser');
+// const ApkReader = require('node-apk-parser');
+const ApkReader = require('adbkit-apkreader');
 
 const fixPath = require('fix-path');
 fixPath();
@@ -796,24 +797,26 @@ async function sideloadFolder(arg) {
       console.log('is remote, copying to ' + tempapk);
 
       if (fs.existsSync(tempapk)) {
-        console.log('is remote, ' + tempapk + ' already exists, using')
+        console.log('is remote, ' + tempapk + ' already exists, using');
       }
       else {
         res.download = 'processing';
         win.webContents.send('sideload_process', res);
 
         await fsExtra.copyFile(apkfile, tempapk);
-        res.download = 'done';
-        win.webContents.send('sideload_process', res);
       }
 
+      res.download = 'done';
       res.apk = 'processing';
+      win.webContents.send('sideload_process', res);
       await execShellCommand(`adb install -g -d "${tempapk}"`);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
     else {
+      res.download = 'skip';
       res.apk = 'processing';
+      win.webContents.send('sideload_process', res);
       await execShellCommand(`adb install -g -d "${apkfile}"`);
     }
 
@@ -918,20 +921,25 @@ async function sideloadFolder(arg) {
 
 
 async function getPackageInfo(apkPath) {
-  reader = await ApkReader.readFile(`${apkPath}`)
-  manifest = await reader.readManifestSync()
+  const reader = await ApkReader.open(apkPath);
+  const manifest = await reader.readManifest();
 
-  console.log(util.inspect(manifest.versionCode, { depth: null }))
-  console.log(util.inspect(manifest.versionName, { depth: null }))
-  console.log(util.inspect(manifest.package, { depth: null }))
+  // reader = await ApkReader.readFile(`${apkPath}`)
+  // manifest = await reader.readManifestSync()
+
+  // console.log(manifest);
+  console.log(manifest.versionCode);
+  console.log(manifest.versionName);
+  console.log(manifest.package);
 
   //console.log(manifest)
 
   info = {
-    packageName : util.inspect(manifest.package, { depth: null }).replace(/\'/g,""),
-    versionCode : util.inspect(manifest.versionCode, { depth: null }).replace(/\'/g,""),
-    versionName : util.inspect(manifest.versionName, { depth: null }).replace(/\'/g,"")
+    packageName: manifest.package,
+    versionCode: manifest.versionCode,
+    versionName: manifest.versionName,
   };
+
   return info;
 }
 
