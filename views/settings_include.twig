@@ -2,15 +2,20 @@
   $(document).ready(function () {
     console.log('ONLOAD settings');
     if (remote.getGlobal('currentConfiguration').autoMount) {
-      $('#customSwitch1').prop("checked", true);
+      $('#autoMount').prop("checked", true);
     }
-    $('#customSwitch1').on('change.bootstrapSwitch', function (e) {
+    $('#autoMount').on('change.bootstrapSwitch', function (e) {
       ipcRenderer.send('change_config', {key: 'autoMount', val: e.target.checked});
     });
 
     $('#cfgSection').val(remote.getGlobal('currentConfiguration').cfgSection);
     $('#cfgSection').on('change', function (e) {
       ipcRenderer.send('change_config', {key: 'cfgSection', val: e.target.value});
+    });
+
+
+    $('#debugTool').on('click', function (e) {
+      ipcRenderer.send('open_debug', '');
     });
   });
 </script>
@@ -22,7 +27,7 @@
   <div class="card-body">
     <div class="card-text col-6">
       <div class="form-group">
-        <label for="cfgSection">Select rclone mirror(click on mount status button to remount):</label>
+        <label for="cfgMirror">Select rclone mirror(click on mount status button to remount):</label>
         <select class="form-control" id="cfgSection">
           <!-- <option value="VRP-mirror02">VRP-mirror02</option> -->
           <option value="VRP-mirror03">VRP-mirror03</option>
@@ -36,8 +41,8 @@
       </div>
 
       <div class="form-check">
-        <label for="customSwitch1" class="form-check-label">
-          <input class="form-check-input" type="checkbox" id="customSwitch1">
+        <label for="autoMount" class="form-check-label">
+          <input class="form-check-input" type="checkbox" id="autoMount">
           Automatically mount drive on startup (if not already mounted)
         </label>
       </div>

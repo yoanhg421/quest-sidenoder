@@ -11,7 +11,8 @@ const fetch = require('node-fetch');
 const path = require('path');
 const commandExists = require('command-exists');
 const util = require('util');
-const ApkReader = require('node-apk-parser');
+// const ApkReader = require('node-apk-parser');
+const ApkReader = require('adbkit-apkreader');
 
 const fixPath = require('fix-path');
 fixPath();
@@ -56,6 +57,7 @@ module.exports =
   getPackageInfo,
   connectWireless,
   disconnectWireless,
+  enableMTP,
   getActivities,
   startActivity,
   getDeviceInfo,
@@ -67,6 +69,8 @@ module.exports =
   reloadConfig,
   execShellCommand,
   updateRcloneProgress,
+  multiplayerNameGet,
+  multiplayerNameSet,
   // ...
 }
 
@@ -118,6 +122,18 @@ async function getUserInfo() {
   return {
     name: res.split(':')[1],
   }
+}
+
+async function multiplayerNameGet() {
+  console.log('multiplayerNameGet()');
+  return execShellCommand('adb shell settings get global username');
+}
+
+async function multiplayerNameSet(name) {
+  console.log('multiplayerNameSet()', name);
+  const res = await execShellCommand('adb shell settings put global username ' + name);
+
+  return res;
 }
 
 async function getStorageInfo() {
@@ -220,6 +236,12 @@ async function disconnectWireless() {
   return res;
 }
 
+async function enableMTP() {
+  const res = await execShellCommand(`adb shell svc usb setFunctions mtp`);
+  console.log('disconnectWireless', { res });
+  return res;
+}
+
 function getDeviceSync() {
   client.listDevices()
   .then((devices) => {
@@ -250,15 +272,18 @@ function execShellCommand(cmd, buffer = 5000) {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
         console.error('exec_error', error);
+        global.adbError = error;
         // return resolve(error);
       }
 
       if (stdout) {
         console.log('exec_stdout', stdout);
+        global.adbError = null;
         return resolve(stdout);
       }
       else {
         console.error('exec_stderr', stderr);
+        global.adbError = stderr;
         return resolve(false);
       }
     });
@@ -280,8 +305,8 @@ function trackDevices(){
       resp = {success: global.adbDevice}
       win.webContents.send('check_device', resp);
       console.log('Device %s was unplugged', resp);
-      getDeviceSync();
-      trackDevices();
+      // getDeviceSync();
+      // trackDevices();
     })
     tracker.on('end', function() {
       console.log('Tracking stopped')
@@ -292,28 +317,29 @@ function trackDevices(){
   })
 }
 
-// async function checkMount(){
-//     console.log("checkMount()")
-//     try {
-//         await fsPromise.readdir(`${mountFolder}`);
-//         list = await getDir(`${mountFolder}`);
-//         if (list.length > 0) {
-//             global.mounted = true
-//             updateRcloneProgress();
-//             return true
-//         }
-//         global.mounted = false
-//         return false;
-//     }
-//     catch (e) {
-//         console.log("entering catch block");
-//         console.log(e);
-//         console.log("leaving catch block");
-//         global.mounted = false
-//         return false
-//     }
-//     return false;
-// }
+/*async function checkMount(){
+  console.log('checkMount()')
+  try {
+    await fsPromise.readdir(global.mountFolder);
+    list = await getDir(global.mountFolder);
+    if (list.length > 0) {
+      global.mounted = true
+      updateRcloneProgress();
+      return true
+    }
+    global.mounted = false
+    return false;
+  }
+  catch (e) {
+    console.log('entering catch block');
+    console.log(e);
+    console.log('leaving catch block');
+    global.mounted = false
+    return false
+  }
+
+  return false;
+}*/
 
 async function checkMount() {
   console.log('checkMount()')
@@ -337,7 +363,7 @@ async function checkDeps(){
     exists = await commandExists('adb');
   }
   catch (e) {
-    returnError('ADB global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
+    returnError('ADB global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
 
@@ -345,7 +371,7 @@ async function checkDeps(){
     exists = await commandExists('rclone');
   }
   catch (e) {
-    returnError('RCLONE global installation not found, please read the <a href="https://github.com/whitewhidow/quest-sidenoder#running-the-compiled-version">README on github</a>.')
+    returnError('RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
     return;
   }
   //wtf werkt nie
@@ -387,18 +413,18 @@ async function killRClone(){
 
 
 async function mount(){
-  if (await checkMount(mountFolder)) {
+  if (await checkMount(global.mountFolder)) {
     // return;
     await killRClone();
   }
 
   if (!['win64', 'win32'].includes(platform)) {
-    await execShellCommand(`umount ${mountFolder} ${global.nullerror}`);
-    await execShellCommand(`fusermount -uz ${mountFolder} ${global.nullerror}`);
-    await fs.mkdir(mountFolder, {}, ()=>{}) // folder must exist on windows
+    await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
+    await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
+    await fs.mkdir(global.mountFolder, {}, ()=>{}) // folder must exist on windows
   }
   else {
-    await execShellCommand(`rmdir "${mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
+    await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
   const epath = require('path').join(__dirname , 'a.enc'); // 'a'
@@ -415,7 +441,7 @@ async function mount(){
 
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
   console.log('start rclone');
-  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${mountFolder}`, (error, stdout, stderr) => {
+  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
       if (error.message.search('transport endpoint is not connected')) {
@@ -591,7 +617,24 @@ async function getDirListing(folder){
 
 async function sideloadFolder(arg) {
   location = arg.path;
-  console.log('sideloadFolder()')
+  console.log('sideloadFolder()', arg);
+  let res = {
+    device: 'done',
+    aapt: false,
+    check: false,
+    backup: false,
+    uninstall: false,
+    restore: false,
+    download: false,
+    apk: false,
+    download_obb: false,
+    push_obb: false,
+    done: false,
+    update: false,
+  }
+
+  win.webContents.send('sideload_process', res);
+
   if (location.endsWith('.apk')) {
     apkfile = location;
     location=path.dirname(location);
@@ -615,6 +658,9 @@ async function sideloadFolder(arg) {
     console.log('attempting to read package info', { fromremote });
 
     if (fromremote) {
+      res.download = 'processing';
+      win.webContents.send('sideload_process', res);
+
       tempapk = global.tmpdir + '/' + path.basename(apkfile);
       console.log('is remote, copying to '+ tempapk)
 
@@ -623,6 +669,9 @@ async function sideloadFolder(arg) {
       }
       else {
         await fsExtra.copyFile(apkfile, tempapk);
+        res.download = 'done';
+        res.aapt = 'processing';
+        win.webContents.send('sideload_process', res);
       }
 
       packageinfo = await getPackageInfo(tempapk);
@@ -631,11 +680,12 @@ async function sideloadFolder(arg) {
       packageinfo = await getPackageInfo(apkfile);
     }
 
+    res.aapt = 'processing';
+    win.webContents.send('sideload_process', res);
+
     packageName = packageinfo.packageName;
     console.log({ packageinfo, packageName });
 
-
-    win.webContents.send('sideload_aapt_done', { success: true });
     console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
@@ -648,6 +698,11 @@ async function sideloadFolder(arg) {
     returnError(new Error('Can`t parse packageName of ' + apkfile));
     return;
   }
+
+
+  res.aapt = 'done';
+  res.check = 'processing';
+  win.webContents.send('sideload_process', res);
 
   console.log('checking if installed');
   installed = false;
@@ -662,7 +717,9 @@ async function sideloadFolder(arg) {
     console.log(e);
   }
 
-  win.webContents.send('sideload_check_done', { success: true });
+  res.check = 'done';
+  res.backup = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
@@ -673,26 +730,38 @@ async function sideloadFolder(arg) {
       }
 
       await execShellCommand(`adb pull "/sdcard/Android/data/${packageName}" "${global.tmpdir}/sidenoder_restore_backup"`, 100000);
+      res.backup = 'done';
     }
     catch (e) {
+      res.backup = 'fail';
       //console.log(e);
     }
   }
-  win.webContents.send('sideload_backup_done', { success: true });
+  else {
+    res.backup = 'skip';
+  }
 
+  res.uninstall = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb uninstall (ignore error)');
     try {
       //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
       await execShellCommand(`adb uninstall "${packageName}"`);
+      res.uninstall = 'done';
     }
     catch (e) {
       //console.log(e);
+      res.uninstall = 'fail';
     }
   }
+  else {
+    res.uninstall = 'skip';
+  }
 
-  win.webContents.send('sideload_uninstall_done', { success: true });
+  res.restore = 'processing';
+  win.webContents.send('sideload_process', res);
 
   if (installed) {
     console.log('doing adb push appdata (ignore error)');
@@ -701,6 +770,7 @@ async function sideloadFolder(arg) {
       //await execShellCommand(`adb push "${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/"`, 100000);
       await execShellCommand(`adb push ${global.tmpdir}/sidenoder_restore_backup/${packageName}/ /sdcard/Android/data/`, 100000);
 
+      res.restore = 'done';
       /*try {
         //TODO: check settings
         //fs.rmdirSync(`${global.tmpdir}/sidenoder_restore_backup/${packageName}/`, { recursive: true });
@@ -711,36 +781,48 @@ async function sideloadFolder(arg) {
     }
     catch (e) {
       //console.log(e);
+      res.restore = 'fail';
     }
   }
-  win.webContents.send('sideload_restore_done', { success: true });
+  else {
+    res.restore = 'skip';
+  }
 
-
+  win.webContents.send('sideload_process', res);
 
   console.log('doing adb install');
   try {
     if (fromremote) {
       tempapk = global.tmpdir + '/' + path.basename(apkfile);
-      console.log('is remote, copying to ' + tempapk)
+      console.log('is remote, copying to ' + tempapk);
 
       if (fs.existsSync(tempapk)) {
-        console.log('is remote, ' + tempapk + ' already exists, using')
+        console.log('is remote, ' + tempapk + ' already exists, using');
       }
       else {
+        res.download = 'processing';
+        win.webContents.send('sideload_process', res);
+
         await fsExtra.copyFile(apkfile, tempapk);
       }
 
-      win.webContents.send('sideload_download_done', { success: true });
+      res.download = 'done';
+      res.apk = 'processing';
+      win.webContents.send('sideload_process', res);
       await execShellCommand(`adb install -g -d "${tempapk}"`);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
     else {
-      win.webContents.send('sideload_download_done', { success: true });
+      res.download = 'skip';
+      res.apk = 'processing';
+      win.webContents.send('sideload_process', res);
       await execShellCommand(`adb install -g -d "${apkfile}"`);
     }
 
-    win.webContents.send('sideload_apk_done', { success: true });
+    res.apk = 'done';
+    res.remove_obb = 'processing';
+    win.webContents.send('sideload_process', res);
   }
   catch (e) {
     console.log(e);
@@ -748,11 +830,15 @@ async function sideloadFolder(arg) {
 
   try {
     await fsPromise.readdir(location + '/' + packageName, { withFileTypes: true });
-    obbFolder = packageName
+    obbFolder = packageName;
     console.log('DATAFOLDER to copy:' + obbFolder);
   }
   catch (error) {
-    obbFolder = false
+    obbFolder = false;
+    res.remove_obb = 'skip';
+    res.download_obb = 'skip';
+    res.push_obb = 'skip';
+    win.webContents.send('sideload_process', res);
   }
 
   obbFiles = [];
@@ -760,14 +846,23 @@ async function sideloadFolder(arg) {
     console.log('doing obb rm');
     try {
       await execShellCommand(`adb shell rm -r "/sdcard/Android/obb/${obbFolder}"`);
+      res.remove_obb = 'done';
     }
     catch (e) {
+      res.remove_obb = 'skip';
       //console.log(e);
     }
+
+    res.download_obb = 'processing';
+    win.webContents.send('sideload_process', res);
 
     obbFiles = await getObbs(location + '/' + obbFolder);
     if (obbFiles.length > 0) {
       console.log('obbFiles: ', obbFiles.length);
+
+      res.download_obb = (fromremote ? '0' : obbFiles.length) + '/' + obbFiles.length;
+      res.push_obb = '0/' + obbFiles.length;
+      win.webContents.send('sideload_process', res);
 
       if (!fs.existsSync(global.tmpdir + '/' + packageName)) {
         fs.mkdirSync(global.tmpdir + '/' + packageName);
@@ -780,9 +875,8 @@ async function sideloadFolder(arg) {
       for (const item of obbFiles) {
         console.log('obb File: ' + item)
         console.log('doing obb push');
-        var n = item.lastIndexOf('/');
-        var name = item.substring(n + 1);
-
+        let n = item.lastIndexOf('/');
+        let name = item.substring(n + 1);
 
         if (fromremote) {
           tempobb = global.tmpdir + '/' + packageName + '/' + path.basename(item);
@@ -795,28 +889,31 @@ async function sideloadFolder(arg) {
             await fsExtra.copyFile(item, tempobb);
           }
 
-          await execShellCommand(`adb push "${tempobb}" "/sdcard/Download/obb/${obbFolder}/${name}" ${nullcmd}`);
+          res.download_obb = (+res.download_obb.split('/')[0] + 1) + '/' + obbFiles.length;
+          win.webContents.send('sideload_process', res);
+
+
+          await execShellCommand(`adb push "${tempobb}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
           //TODO: check settings
-          //execShellCommand(`rm "${tempobb}"`);
+          execShellCommand(`rm -r "${tempobb}"`);
         }
         else {
-          await execShellCommand(`adb push "${item}" "/sdcard/Download/obb/${obbFolder}/${name}" ${nullcmd}`);
+          await execShellCommand(`adb push "${item}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
         }
-      }
 
-      win.webContents.send('sideload_copy_obb_done',{ success: true });
-      console.log('doing shell mv');
-      await execShellCommand(`adb shell mv "/sdcard/Download/obb/${obbFolder}" "/sdcard/Android/obb/${obbFolder}"`);
-      win.webContents.send('sideload_move_obb_done',{ success: true });
+        res.push_obb = (+res.push_obb.split('/')[0] + 1) + '/' + obbFiles.length;
+        win.webContents.send('sideload_process', res);
+      }
     }
   }
   else {
-    win.webContents.send('sideload_download_obb_done',{ success: true });
-    win.webContents.send('sideload_copy_obb_done',{ success: true });
-    win.webContents.send('sideload_move_obb_done',{ success: true });
+    res.download_obb = 'skip';
+    res.push_obb = 'skip';
   }
 
-  win.webContents.send('sideload_done', { success: true, update: arg.update });
+  res.done = 'done';
+  res.update = arg.update;
+  win.webContents.send('sideload_process', res);
   console.log('DONE');
   return;
 }
@@ -824,20 +921,25 @@ async function sideloadFolder(arg) {
 
 
 async function getPackageInfo(apkPath) {
-  reader = await ApkReader.readFile(`${apkPath}`)
-  manifest = await reader.readManifestSync()
+  const reader = await ApkReader.open(apkPath);
+  const manifest = await reader.readManifest();
 
-  console.log(util.inspect(manifest.versionCode, { depth: null }))
-  console.log(util.inspect(manifest.versionName, { depth: null }))
-  console.log(util.inspect(manifest.package, { depth: null }))
+  // reader = await ApkReader.readFile(`${apkPath}`)
+  // manifest = await reader.readManifestSync()
+
+  // console.log(manifest);
+  console.log(manifest.versionCode);
+  console.log(manifest.versionName);
+  console.log(manifest.package);
 
   //console.log(manifest)
 
   info = {
-    packageName : util.inspect(manifest.package, { depth: null }).replace(/\'/g,""),
-    versionCode : util.inspect(manifest.versionCode, { depth: null }).replace(/\'/g,""),
-    versionName : util.inspect(manifest.versionName, { depth: null }).replace(/\'/g,"")
+    packageName: manifest.package,
+    versionCode: manifest.versionCode,
+    versionName: manifest.versionName,
   };
+
   return info;
 }
 

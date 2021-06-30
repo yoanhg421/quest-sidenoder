@@ -1,0 +1,46 @@
+<div class="card text-white bg-primary">
+  <div class="card-header">
+    <h2 class="">Tweaks</h2>
+  </div>
+  <div class="card-body">
+    <div class="card-text col-6">
+      <div class="form-group">
+        <a id="enableMTP" class="adbdev btn btn-primary" title="mount as usb storage">
+          <i class="fa fa-plug" aria-hidden="true"></i> Enable MTP mode
+        </a>
+        <a id="debugTool" class="btn btn-primary">
+          <i class="fa fa-bug" aria-hidden="true"></i> Open debug tools
+        </a>
+      </div>
+
+      <div class="form-group">
+        <label for="mp_name">Multiplayer name:</label>
+        <input id="mp_name" class="adbdev form-control" value="" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  console.log('ONLOAD tweaks');
+  ipcRenderer.removeAllListeners('mp_name');
+  ipcRenderer.send('mp_name', { cmd: 'get' });
+  ipcRenderer.on('mp_name', (event, arg) => {
+    console.log('mp_name ! ', arg);
+    if (arg.cmd == 'set') $('#mp_name').addClass('is-valid');
+    if (arg.cmd == 'get') $('#mp_name').val(arg.name);
+  });
+
+  $('#mp_name').on('change', function (e) {
+    $(e.target).removeClass('is-valid');
+    ipcRenderer.send('mp_name', { cmd: 'set', val: e.target.value });
+  });
+
+  $('#enableMTP').on('click', function (e) {
+    ipcRenderer.send('enable_mtp', '');
+  });
+
+  $('#debugTool').on('click', function (e) {
+    ipcRenderer.send('open_debug', '');
+  });
+</script>

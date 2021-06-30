@@ -1,10 +1,11 @@
 {
   "name": "sidenoder",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "SideNoder",
   "main": "main.js",
   "dependencies": {
-    "adbkit": "^2.11.1",
+    "adbkit": "^2.0.17",
+    "adbkit-apkreader": "^3.2.0",
     "command-exists": "^1.2.9",
     "compare-versions": "^3.6.0",
     "electron-squirrel-startup": "^1.0.0",
@@ -12,7 +13,6 @@
     "fix-path": "^3.0.0",
     "fs-extra": "^9.0.1",
     "jquery": "^3.5.1",
-    "node-apk-parser": "^0.2.3",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {

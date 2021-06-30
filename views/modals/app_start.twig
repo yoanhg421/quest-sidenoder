@@ -25,6 +25,7 @@
 <script>
   console.log('ONLOAD APPSTART MODAL');
 
+  ipcRenderer.removeAllListeners('get_activities');
   ipcRenderer.on('get_activities', (event, arg) => {
     console.log('get_activities msg came: ', arg); // prints "ping"
     if (!arg.activities) return;
@@ -43,8 +44,8 @@
     $('#appStartModal').modal('hide');
   });*/
 
-  $("#startActivityButton").on("click", function(){
+  $('#startActivityButton').on('click', function(){
     $('#appStartModal').modal('hide');
-    ipcRenderer.send('start_activity', $("#appActivities").val());
+    ipcRenderer.send('start_activity', $('#appActivities').val());
   });
 </script>

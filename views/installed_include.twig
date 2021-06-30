@@ -4,7 +4,6 @@
   $('#listTable tbody').html('');
   ipcRenderer.send('get_installed', '');
 
-  loadInclude('device_info.twig', 'device_infoDiv');
   // loadInclude('searchform.twig', 'searchformdiv');
 
   function getUpdates() {
@@ -32,9 +31,6 @@
   }
 
 </script>
-
-<div id="device_infoDiv"></div>
-
 
 <div class="card text-white bg-primary">
   <div class="card-header">

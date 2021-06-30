@@ -41,33 +41,6 @@ ipcRenderer.on('get_dir', (event, arg) => {
   $('#processingModal').modal('hide');
 });
 
-//sort
-$(document).on('click', '.set-sort', (el) => {
-  $('#browseCardBody .listitem').sort(sortBy($(el.target).data('key'), $(el.target).data('asc') == '1')).appendTo('#browseCardBody');
-  $('#listTable tbody .listitem').sort(sortBy($(el.target).data('key'), $(el.target).data('asc') == '1')).appendTo('#listTable');
-
-  //TODO: sort doesnt work on regular folders, only cards
-});
-//sort
-function sortBy(key, asc) {
-  return ((a, b) => {
-    var valA = $(a).data(key);
-    var valB = $(b).data(key);
-    if (valA < valB) {
-      return asc ? -1 : 1;
-    }
-
-    if (valA > valB) {
-      return asc ? 1 : -1;
-    }
-
-    return 0;
-  });
-}
-
-
-
-
 function loadDir(path, list) {
   let UpDir = path.substr(0, path.lastIndexOf("/"));
   $('#listTableStart tbody').html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
@@ -150,6 +123,22 @@ function loadDir(path, list) {
 }
 
 
+//sort
+function sortBy(key, asc) {
+  return ((a, b) => {
+    var valA = $(a).data(key);
+    var valB = $(b).data(key);
+    if (valA < valB) {
+      return asc ? -1 : 1;
+    }
+
+    if (valA > valB) {
+      return asc ? 1 : -1;
+    }
+
+    return 0;
+  });
+}
 
 
 function fixIcons() {
