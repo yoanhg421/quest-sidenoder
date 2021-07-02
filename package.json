@@ -4,7 +4,7 @@
   "description": "SideNoder",
   "main": "main.js",
   "dependencies": {
-    "adbkit": "^2.0.17",
+    "adbkit": "^2.11.1",
     "adbkit-apkreader": "^3.2.0",
     "command-exists": "^1.2.9",
     "compare-versions": "^3.6.0",

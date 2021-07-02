@@ -106,12 +106,12 @@ ipcMain.on('disconnect_wireless', async (event, arg) => {
 ipcMain.on('check_deps', async (event, arg) => {
   console.log('check_deps received');
 
-  await tools.checkDeps()
+  const res = await tools.checkDeps();
 
   // IF DEPS OK LAUNCH CHECKDIVICES OTHERWISE NO
-  tools.trackDevices()
+  tools.trackDevices();
 
-  event.reply('check_deps', { success: true })
+  event.reply('check_deps', res);
 });
 
 ipcMain.on('mount', async (event, arg) => {
@@ -152,7 +152,7 @@ ipcMain.on('start_sideload', async (event, arg) => {
 
 
 ipcMain.on('get_dir', async (event, arg) => {
-  console.log('get_dir received');
+  console.log('get_dir received', arg);
   if ((typeof arg === 'string') && arg.endsWith('.apk')) {
     event.reply('ask_sideload', { success: true, path: arg, update: false });
     return;
