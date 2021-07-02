@@ -103,11 +103,13 @@ What makes sidenoder better than other sideloaders ?
 1. Install ADB, RCLONE and OSXFUSE:
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install rclone
+curl https://rclone.org/install.sh | sudo bash
 brew install android-platform-tools
 Beta OSX fuse from https://osxfuse.github.io
 ```
+~~brew install rclone~~
 ~~brew install osxfuse~~
+
 2. Download and unpack the latest mac release (.App / .dmg) from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
 3. Run the .App or .dmg
 
