@@ -299,7 +299,7 @@ function createWindow () {
   win.setMenu(null);
   win.maximize(true);
   win.loadURL(`file://${__dirname}/views/index.twig`)
-  twig.view = {
+  global.twig.view = {
     tmpdir: global.tmpdir,
     platform: global.platform,
     mountFolder: global.mountFolder,

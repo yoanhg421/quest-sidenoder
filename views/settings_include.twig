@@ -2,7 +2,7 @@
   $(document).ready(function () {
     console.log('ONLOAD settings');
     if (remote.getGlobal('currentConfiguration').autoMount) {
-      $('#autoMount').prop("checked", true);
+      $('#autoMount').prop('checked', true);
     }
     $('#autoMount').on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key: 'autoMount', val: e.target.checked});

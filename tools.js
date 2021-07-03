@@ -542,9 +542,9 @@ async function checkDeps(){
 }
 
 function returnError(message){
-  console.log('returnError()')
+  console.log('returnError()');
   global.win.loadURL(`file://${__dirname}/views/error.twig`)
-  twig.view = {
+  global.twig.view = {
     message: message,
   }
 }
