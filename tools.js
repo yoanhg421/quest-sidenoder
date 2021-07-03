@@ -529,11 +529,9 @@ async function checkDeps(){
   res.adb = await adb.version();
 
   try {
-    throw exists = global.currentConfiguration.rclonePath || await commandExists('rclone');
+    res.rclone = global.currentConfiguration.rclonePath || await commandExists('rclone');
   }
   catch (e) {
-    returnError(`RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
-      <br/>Or if you have problem with global installation - try to manualy download latest <a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`);
     return res;
   }
 

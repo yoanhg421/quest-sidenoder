@@ -307,7 +307,8 @@ function createWindow () {
     currentConfiguration: global.currentConfiguration
   }
 
-  //tools.checkUpdateAvailable()
+  //tools.checkUpdateAvailable();
+  global.win.webContents.openDevTools();
 
   setTimeout(function(){ checkVersion(); }, 2000);
   //
