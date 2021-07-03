@@ -15,13 +15,13 @@
             if (arg.success) {
                 $('#adbCheckIndicator').removeClass('badge-danger');
                 $('#adbCheckIndicator').addClass('badge-success');
-                $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Installed.`)
+                $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb})`);
                 $('#aaptCheckIndicator').removeClass('badge-danger');
                 $('#aaptCheckIndicator').addClass('badge-success');
-                $('#aaptCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> AAPT Installed.`)
+                $('#aaptCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> AAPT Installed`);
                 $('#rcloneCheckIndicator').removeClass('badge-danger');
                 $('#rcloneCheckIndicator').addClass('badge-success');
-                $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed.`)
+                $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed`);
             }
         });
 

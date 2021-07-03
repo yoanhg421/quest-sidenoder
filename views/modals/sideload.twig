@@ -4,7 +4,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="sideloadModalLabel"><i id="sideloadRefresh" class="fa fa-refresh fa-spin"></i> Sideloading</h5>
-        <span class="mountcopystatus"></span>
+        <small class="mountcopystatus"></small>
       </div>
       <div class="modal-body">
         <span id="sideloadText"></span>
@@ -99,17 +99,22 @@
   </div>
 </div>
 <script>
-  ipcRenderer.removeAllListeners('rclone_data');
-  ipcRenderer.on('rclone_data', (event, data) => {
-    // console.log('rclone_data received', data);
-    if(data.transferring && data.transferring.length > 0) {
-      const transferring = data.transferring[0];
-      let name = transferring.name.split('/').pop();
-      $('.mountcopystatus').html(`${formatBytes(transferring.bytes)} of ${formatBytes(transferring.size)} (${transferring.percentage}%) - ${formatBytes(transferring.speedAvg)}/s (${formatEta(transferring.eta)})<br/> <small>${name}</small>`);
+  ipcRenderer.removeAllListeners('process_data');
+  ipcRenderer.on('process_data', (event, data) => {
+    console.log('process_data received', data);
+    if (!data)  return $('.mountcopystatus').text('');
+
+    let line = `${data.cmd}: ${formatBytes(data.bytes)}`;
+    if (data.size) {
+      line+= ` of ${formatBytes(data.size)} (${data.percentage}%)`;
     }
-    else {
-      $('.mountcopystatus').text('');
+
+    if (data.speedAvg) {
+      line+= ` - ${formatBytes(data.speedAvg)}/s (${formatEta(data.eta)})`;
     }
+
+    const name = data.name.split('/').pop();
+    $('.mountcopystatus').html(`${line}<br/> ${name}`);
   });
 
   ipcRenderer.removeAllListeners('start_sideload');

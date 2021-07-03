@@ -1,6 +1,7 @@
 const exec = require('child_process').exec;
-const adb = require('adbkit')
-const client = adb.createClient();
+const adbkit = require('adbkit')
+const ApkReader = require('adbkit-apkreader');
+const adb = adbkit.createClient();
 const fs = require('fs');
 const fsExtra = require('fs-extra');
 const fsPromise = fs.promises;
@@ -12,7 +13,6 @@ const path = require('path');
 const commandExists = require('command-exists');
 const util = require('util');
 // const ApkReader = require('node-apk-parser');
-const ApkReader = require('adbkit-apkreader');
 
 const fixPath = require('fix-path');
 fixPath();
@@ -96,7 +96,7 @@ async function getDeviceInfo() {
 
 async function getFwInfo() {
   console.log('getFwInfo()');
-  const res = await execShellCommand('adb shell "getprop ro.build.branch"');
+  const res = await adbShell('getprop ro.build.branch');
   if (!res) return false;
 
   return {
@@ -106,7 +106,7 @@ async function getFwInfo() {
 
 async function getBatteryInfo() {
   console.log('getBatteryInfo()');
-  const res = await execShellCommand('adb shell "dumpsys battery | grep level"');
+  const res = await adbShell('dumpsys battery | grep level');
   if (!res) return false;
 
   return {
@@ -116,7 +116,7 @@ async function getBatteryInfo() {
 
 async function getUserInfo() {
   console.log('getUserInfo()');
-  const res = await execShellCommand('adb shell "dumpsys user | grep UserInfo"');
+  const res = await adbShell('dumpsys user | grep UserInfo');
   if (!res) return false;
 
   return {
@@ -126,12 +126,12 @@ async function getUserInfo() {
 
 async function multiplayerNameGet() {
   console.log('multiplayerNameGet()');
-  return execShellCommand('adb shell settings get global username');
+  return adbShell('settings get global username');
 }
 
 async function multiplayerNameSet(name) {
   console.log('multiplayerNameSet()', name);
-  const res = await execShellCommand('adb shell settings put global username ' + name);
+  const res = await adbShell('settings put global username ' + name);
 
   return res;
 }
@@ -139,7 +139,7 @@ async function multiplayerNameSet(name) {
 async function getStorageInfo() {
   console.log('getStorageInfo()');
 
-  const res = await execShellCommand('adb shell "df -h"');
+  const res = await adbShell('df -h');
   const re = new RegExp('.*/storage/emulated.*');
   if (!res) return false;
 
@@ -169,7 +169,7 @@ async function getStorageInfo() {
 async function getActivities(package, activity = false) {
   console.log('getActivities()', package);
 
-  let activities = await execShellCommand(`adb shell "dumpsys package | grep -Eo '^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+' | grep -oE '[^[:space:]]+$'"`);
+  let activities = await adbShell(`dumpsys package | grep -Eo '^[[:space:]]+[0-9a-f]+[[:space:]]+${package}/[^[:space:]]+' | grep -oE '[^[:space:]]+$'`);
   if (!activities) return false;
 
   activities = activities.split('\n');
@@ -181,7 +181,7 @@ async function getActivities(package, activity = false) {
 
 async function startActivity(activity) {
   console.log('startActivity()', activity);
-  const result = await execShellCommand(`adb shell "am start ${activity}"`); // TODO activity selection
+  const result = await adbShell(`am start ${activity}`); // TODO activity selection
 
   console.log('startActivity', activity, result);
   return result;
@@ -210,54 +210,78 @@ async function checkUpdateAvailable() {
 // Implementation ----------------------------------
 
 async function getDeviceIp() {
-  let ip = await execShellCommand(`adb shell "ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'"`);
-  if (ip) return ip;
+  // let ip = await adb.getDHCPIpAddress(global.adbDevice);
+  // if (ip) return ip;
 
-  return execShellCommand(`adb shell "ip addr show wlan0  | grep 'inet ' | cut -d ' ' -f 6 | cut -d / -f 1"`);
+  let ip = await adbShell(`ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
+  console.log(ip);
+  if (ip) return ip.replace('\n', '');
+
+  ip = await adbShell(`ip addr show wlan0  | grep 'inet ' | cut -d ' ' -f 6 | cut -d / -f 1`);
+  console.log(ip);
+  if (ip) return ip.replace('\n', '');
+  return false;
 }
 
 async function connectWireless() {
-  // await execShellCommand(`adb shell "setprop service.adb.tcp.port 5555"`);
+  // await adbShell(`setprop service.adb.tcp.port 5555`);
+
   const ip = await getDeviceIp();
+  console.log({ ip });
   if (!ip) return false;
 
-  await execShellCommand(`adb tcpip 5555`);
-  const res = await execShellCommand(`adb connect ${ip}:5555`);
-  console.log('connectWireless', { ip, res });
-  return ip;
+  try {
+    // await execShellCommand(`adb tcpip 5555`);
+    // const res = await execShellCommand(`adb connect ${ip}:5555`);
+    await adb.tcpip(global.adbDevice);
+    const res = await adb.connect(ip, 5555);
+    console.log('connectWireless', { ip, res });
+    return ip;
+  }
+  catch (err) {
+    console.error('connectWireless', err);
+    return false;
+  }
 }
 
 async function disconnectWireless() {
   const ip = await getDeviceIp();
   if (!ip) return false;
 
-  const res = await execShellCommand(`adb disconnect ${ip}:5555`);
+  // const res = await execShellCommand(`adb disconnect ${ip}:5555`);
+  // const res = await adb.disconnect(ip, 5555);
+  const res = await adb.usb(global.adbDevice);
   console.log('disconnectWireless', { ip, res });
+  await getDeviceSync();
   return res;
 }
 
 async function enableMTP() {
-  const res = await execShellCommand(`adb shell svc usb setFunctions mtp`);
-  console.log('disconnectWireless', { res });
+  const res = await adbShell(`svc usb setFunctions mtp`);
+  console.log('enableMTP', { res });
   return res;
 }
 
-function getDeviceSync() {
-  client.listDevices()
-  .then((devices) => {
-    console.log('getDevice()', devices)
-    if (devices.length > 0) {
+async function getDeviceSync(attempt = 0) {
+  try {
+    const devices = await adb.listDevices();
+    console.log({ devices });
+    global.adbDevice = false;
+    for (const device of devices) {
+      if (device.type == 'offline') continue;
       global.adbDevice = devices[0].id;
-      win.webContents.send('check_device', {success: devices[0].id });
     }
-    else {
-      global.adbDevice = false;
-      win.webContents.send('check_device', { success: false });
+
+    win.webContents.send('check_device', { success: global.adbDevice });
+    if (!global.adbDevice && attempt <= 2) {
+      return setTimeout(()=> getDeviceSync(attempt + 1), 200);
     }
-  })
-  .catch((err) => {
-    console.error('Something went wrong:', err.stack)
-  });
+
+    return global.adbDevice;
+  }
+  catch (err) {
+    console.error('Something went wrong:', err.stack);
+  }
 }
 
 
@@ -266,6 +290,144 @@ function getDeviceSync() {
  * @param cmd {string}
  * @return {Promise<string>}
  */
+async function adbShell(cmd) {
+  console.log('adbShell', global.adbDevice, { cmd });
+  try {
+    const r = await adb.shell(global.adbDevice, cmd);
+    let res = await adbkit.util.readAll(r);
+    res = await res.toString();
+    console.log('adbShell', { res });
+    // adb.util.readAll;
+    return res;
+  }
+  catch (err) {
+    console.error('adb_stderr', err);
+    global.adbError = err;
+    return false;
+  }
+}
+
+async function adbPull(orig, dest, sync = false) {
+  console.log('adbPull', orig, dest);
+  const transfer = sync
+    ? await sync.pull(orig)
+    : await adb.pull(global.adbDevice, orig);
+  return new Promise(function(resolve, reject) {
+    transfer.on('progress', (stats) => {
+      console.log(orig + ' pulled', stats);
+      const res = {
+        cmd: 'pull',
+        bytes: stats.bytesTransferred,
+        size: 0,
+        percentage: 0,
+        speedAvg: 0,
+        eta: 0,
+        name: orig,
+      }
+      win.webContents.send('process_data', res);
+    });
+    transfer.on('end', () => {
+      console.log(orig, 'pull complete');
+      win.webContents.send('process_data', false);
+      resolve(true);
+    });
+    transfer.on('error', (err) => {
+      console.error('adb_pull_stderr', err);
+      win.webContents.send('process_data', false);
+      reject(err);
+    });
+    transfer.pipe(fs.createWriteStream(dest));
+  });
+}
+
+async function adbPullFolder(orig, dest, sync = false) {
+  let need_close = false;
+  if (!sync) {
+    need_close = true;
+    sync = await adb.syncService(global.adbDevice);
+  }
+
+  console.log('pullFolder', orig, dest);
+  const files = await sync.readdir(orig);
+  for (const file of files) {
+    const new_orig = path.join(orig, file.name);
+    const new_dest = path.join(dest, file.name);
+    if (file.isFile()) {
+      await adbPull(new_orig, new_dest, sync);
+      continue;
+    }
+
+    fs.mkdirSync(new_dest);
+    await adbPullFolder(new_orig, new_dest, sync);
+  }
+
+  if (need_close) sync.end();
+
+  return true;
+}
+
+async function adbPush(orig, dest, sync = false) {
+  console.log('adbPush', orig, dest);
+  const transfer = sync
+    ? await sync.pushFile(orig, dest)
+    : await adb.push(global.adbDevice, orig, dest);
+  const stats = fs.lstatSync(orig);
+  const size = stats.size;
+
+  return new Promise(function(resolve, reject) {
+    transfer.on('progress', (stats) => {
+      const res = {
+        cmd: 'push',
+        bytes: stats.bytesTransferred,
+        size,
+        percentage: (stats.bytesTransferred * 100 / size).toFixed(2),
+        speedAvg: 0,
+        eta: 0,
+        name: orig,
+      }
+      win.webContents.send('process_data', res);
+      console.log(orig + ' pushed', stats);
+    });
+    transfer.on('end', () => {
+      console.log(orig, 'push complete');
+      win.webContents.send('process_data', false);
+      resolve(true);
+    });
+    transfer.on('error', (err) => {
+      console.error('adb_push_stderr', err);
+      win.webContents.send('process_data', false);
+      reject(err);
+    });
+  });
+}
+
+async function adbPushFolder(orig, dest, sync = false) {
+  console.log('pushFolder', orig, dest);
+
+  let need_close = false;
+  if (!sync) {
+    need_close = true;
+    sync = await adb.syncService(global.adbDevice);
+  }
+
+  await adbShell(`mkdir ${dest}`);
+  const files = fs.readdirSync(orig, { withFileTypes: true });
+  for (const file of files) {
+    const new_orig = path.join(orig, file.name);
+    const new_dest = path.join(dest, file.name);
+    if (file.isFile()) {adbPushFolder
+      await adbPush(new_orig, new_dest, sync);
+      continue;
+    }
+
+    await adbPushFolder(new_orig, new_dest, sync);
+  }
+
+  if (need_close) sync.end();
+
+  return true;
+}
+
 function execShellCommand(cmd, buffer = 5000) {
   console.log({cmd});
   return new Promise((resolve, reject) => {
@@ -291,30 +453,29 @@ function execShellCommand(cmd, buffer = 5000) {
 }
 
 
-function trackDevices(){
-  console.log('trackDevices()')
-  client.trackDevices()
-  .then((tracker) => {
-    tracker.on('add', function(device) {
-      win.webContents.send('check_device', { success: device.id });
-      global.adbDevice = device.id;
+async function trackDevices() {
+  await getDeviceSync();
+
+  console.log('trackDevices()');
+  try {
+    const tracker = await adb.trackDevices()
+    tracker.on('add', async (device) => {
       console.log('Device %s was plugged in', { success: device.id });
-    })
-    tracker.on('remove', function(device) {
-      global.adbDevice = false;
-      resp = {success: global.adbDevice}
-      win.webContents.send('check_device', resp);
-      console.log('Device %s was unplugged', resp);
-      // getDeviceSync();
-      // trackDevices();
-    })
-    tracker.on('end', function() {
+      await getDeviceSync();
+    });
+
+    tracker.on('remove', async (device) => {
+      console.log('Device %s was unplugged', device.id);
+      await getDeviceSync();
+    });
+
+    tracker.on('end', () => {
       console.log('Tracking stopped')
     });
-  })
-  .catch(function(err) {
-    console.error('Something went wrong:', err.stack)
-  })
+  }
+  catch(err) {
+    console.error('Something went wrong:', err.stack);
+  }
 }
 
 /*async function checkMount(){
@@ -358,25 +519,26 @@ async function checkMount() {
 }
 
 async function checkDeps(){
-  console.log('checkDeps()')
-  try {
-    exists = await commandExists('adb');
-  }
-  catch (e) {
-    returnError('ADB global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
-    return;
-  }
+  console.log('checkDeps()');
+  let res = {
+    adb: null,
+    rclone: null,
+    success: false,
+  };
+    // exists = await commandExists('adb');
+  res.adb = await adb.version();
 
   try {
-    exists = await commandExists('rclone');
+    throw exists = global.currentConfiguration.rclonePath || await commandExists('rclone');
   }
   catch (e) {
-    returnError('RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
-    return;
+    returnError(`RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
+      <br/>Or if you have problem with global installation - try to manualy download latest <a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`);
+    return res;
   }
-  //wtf werkt nie
-  //win.webContents.send('check_deps',{ success: true });
-  return;
+
+  res.success = true;
+  return res;
 }
 
 function returnError(message){
@@ -440,8 +602,9 @@ async function mount(){
   //console.log(cpath);
 
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
+  const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
-  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
+  exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
       if (error.message.search('transport endpoint is not connected')) {
@@ -705,36 +868,25 @@ async function sideloadFolder(arg) {
   win.webContents.send('sideload_process', res);
 
   console.log('checking if installed');
-  installed = false;
-  try {
-    //await execShellCommand(`adb shell "pm uninstall -k '${packageinfo.packageName}'"`);
-    check = await execShellCommand(`adb shell "pm list packages ${packageName}"`);
-    if (check && check.startsWith('package:')) {
-      installed = true;
-    }
-  }
-  catch (e) {
-    console.log(e);
-  }
+  installed = await adb.isInstalled(global.adbDevice, packageName);
 
   res.check = 'done';
   res.backup = 'processing';
   win.webContents.send('sideload_process', res);
+  const backup_path = `${global.tmpdir}/sidenoder_restore_backup/${packageName}`;
 
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
     try {
 
-      if (!fs.existsSync(global.tmpdir + '/sidenoder_restore_backup')){
-        fs.mkdirSync(global.tmpdir + '/sidenoder_restore_backup');
-      }
-
-      await execShellCommand(`adb pull "/sdcard/Android/data/${packageName}" "${global.tmpdir}/sidenoder_restore_backup"`, 100000);
+      if (fs.existsSync(backup_path)) fs.rmdirSync(backup_path, { recursive: true });
+      fs.mkdirSync(backup_path, { recursive: true });
+      await adbPullFolder(`/sdcard/Android/data/${packageName}`, backup_path);
       res.backup = 'done';
     }
     catch (e) {
+      console.error('backup', e);
       res.backup = 'fail';
-      //console.log(e);
     }
   }
   else {
@@ -747,12 +899,11 @@ async function sideloadFolder(arg) {
   if (installed) {
     console.log('doing adb uninstall (ignore error)');
     try {
-      //await execShellCommand(`adb shell pm uninstall -k "${packageinfo.packageName}"`);
-      await execShellCommand(`adb uninstall "${packageName}"`);
+      await adb.uninstall(global.adbDevice, packageName);
       res.uninstall = 'done';
     }
     catch (e) {
-      //console.log(e);
+      console.error('uninstall', e);
       res.uninstall = 'fail';
     }
   }
@@ -768,19 +919,19 @@ async function sideloadFolder(arg) {
     try {
       //await execShellCommand(`adb shell "mkdir -p /sdcard/Android/data/${packageName}/"`);
       //await execShellCommand(`adb push "${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/"`, 100000);
-      await execShellCommand(`adb push ${global.tmpdir}/sidenoder_restore_backup/${packageName}/ /sdcard/Android/data/`, 100000);
+      await adbPushFolder(backup_path, `/sdcard/Android/data/${packageName}`);
 
       res.restore = 'done';
       /*try {
         //TODO: check settings
-        //fs.rmdirSync(`${global.tmpdir}/sidenoder_restore_backup/${packageName}/`, { recursive: true });
+        fs.rmdirSync(`${global.tmpdir}/sidenoder_restore_backup/${packageName}/`, { recursive: true });
       }
       catch (err) {
-        //console.error(`Error while deleting ${dir}.`);
+        console.error(`Error while deleting ${dir}.`);
       }*/
     }
     catch (e) {
-      //console.log(e);
+      console.error('restore', e);
       res.restore = 'fail';
     }
   }
@@ -809,7 +960,8 @@ async function sideloadFolder(arg) {
       res.download = 'done';
       res.apk = 'processing';
       win.webContents.send('sideload_process', res);
-      await execShellCommand(`adb install -g -d "${tempapk}"`);
+      // await execShellCommand(`adb install -g -d "${tempapk}"`);
+      await adb.install(global.adbDevice, tempapk);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
@@ -817,7 +969,8 @@ async function sideloadFolder(arg) {
       res.download = 'skip';
       res.apk = 'processing';
       win.webContents.send('sideload_process', res);
-      await execShellCommand(`adb install -g -d "${apkfile}"`);
+      // await execShellCommand(`adb install -g -d "${apkfile}"`);
+      await adb.install(global.adbDevice, apkfile);
     }
 
     res.apk = 'done';
@@ -845,7 +998,7 @@ async function sideloadFolder(arg) {
   if ( obbFolder ) {
     console.log('doing obb rm');
     try {
-      await execShellCommand(`adb shell rm -r "/sdcard/Android/obb/${obbFolder}"`);
+      await adbShell(`rm -r "/sdcard/Android/obb/${obbFolder}"`);
       res.remove_obb = 'done';
     }
     catch (e) {
@@ -893,12 +1046,12 @@ async function sideloadFolder(arg) {
           win.webContents.send('sideload_process', res);
 
 
-          await execShellCommand(`adb push "${tempobb}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
+          await adbPush(tempobb, `/sdcard/Android/obb/${obbFolder}/${name}`);
           //TODO: check settings
           execShellCommand(`rm -r "${tempobb}"`);
         }
         else {
-          await execShellCommand(`adb push "${item}" "/sdcard/Android/obb/${obbFolder}/${name}" ${nullcmd}`);
+          await adbPush(item, `/sdcard/Android/obb/${obbFolder}/${name}`);
         }
 
         res.push_obb = (+res.push_obb.split('/')[0] + 1) + '/' + obbFiles.length;
@@ -944,7 +1097,7 @@ async function getPackageInfo(apkPath) {
 }
 
 async function getInstalledApps(send = true) {
-  let apps = await execShellCommand(`adb shell "cmd package list packages -3 --show-versioncode"`);
+  let apps = await adbShell(`cmd package list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   apps.pop();
   appinfo = [];
@@ -1051,7 +1204,7 @@ async function getApkFromFolder(folder){
 }
 
 async function uninstall(packageName){
-  resp = await execShellCommand(`adb uninstall ${packageName}`)
+  resp = await adb.uninstall(global.adbDevice, packageName);
 }
 
 
@@ -1059,19 +1212,34 @@ function updateRcloneProgress() {
   const response = fetch('http://127.0.0.1:5572/core/stats', {method: 'POST'})
   .then(response => response.json())
   .then(data => {
+    if (!data.transferring || !data.transferring[0]) throw 'no data';
+    const transferring = data.transferring[0];
+    const res = {
+      cmd: 'download',
+      bytes: transferring.bytes,
+      size: transferring.size,
+      percentage: transferring.percentage,
+      speedAvg: transferring.speedAvg,
+      eta: transferring.eta,
+      name: transferring.name,
+    }
     //console.log('sending rclone data');
-    win.webContents.send('rclone_data', data);
+    win.webContents.send('process_data', res);
     setTimeout(updateRcloneProgress, 2000);
   })
   .catch((error) => {
     //console.error('Fetch-Error:', error);
-    win.webContents.send('rclone_data', '');
+    win.webContents.send('process_data', '');
     setTimeout(updateRcloneProgress, 2000);
   });
 }
 
 function reloadConfig() {
-  const defaultConfig = { autoMount: false, cfgSection: 'VRP-mirror10' };
+  const defaultConfig = {
+    autoMount: false,
+    cfgSection: 'VRP-mirror10',
+    rclonePath: '',
+  };
   try {
     if (fs.existsSync(configLocation)) {
       console.log('Config exist, using ' + configLocation);

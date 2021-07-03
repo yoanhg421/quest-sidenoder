@@ -108,6 +108,7 @@ brew install android-platform-tools
 Beta OSX fuse from https://osxfuse.github.io
 ```
 ~~brew install rclone~~
+
 ~~brew install osxfuse~~
 
 2. Download and unpack the latest mac release (.App / .dmg) from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
