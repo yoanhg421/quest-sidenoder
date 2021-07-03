@@ -529,10 +529,11 @@ async function checkDeps(){
   res.adb = await adb.version();
 
   try {
-    exists = await commandExists('rclone');
+    throw exists = global.currentConfiguration.rclonePath || await commandExists('rclone');
   }
   catch (e) {
-    returnError('RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.')
+    returnError(`RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
+      <br/>Or if you have problem with global installation - try to manualy download latest <a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`);
     return res;
   }
 
@@ -601,8 +602,9 @@ async function mount(){
   //console.log(cpath);
 
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
+  const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
-  exec(`rclone ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
+  exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log(`error: ${error.message}`);
       if (error.message.search('transport endpoint is not connected')) {
@@ -1233,7 +1235,11 @@ function updateRcloneProgress() {
 }
 
 function reloadConfig() {
-  const defaultConfig = { autoMount: false, cfgSection: 'VRP-mirror10' };
+  const defaultConfig = {
+    autoMount: false,
+    cfgSection: 'VRP-mirror10',
+    rclonePath: '',
+  };
   try {
     if (fs.existsSync(configLocation)) {
       console.log('Config exist, using ' + configLocation);

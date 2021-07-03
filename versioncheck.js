@@ -12,7 +12,8 @@ async function checkVersion() {
   console.log('Github version: ' + remoteversion);
   if (compareVersions.compare(remoteversion, pkg.version, '=')) {
     console.log('Using latest version');
-  } else {
+  }
+  else {
     console.log('requires update');
     win.webContents.send('notify_update', {
       success: true,

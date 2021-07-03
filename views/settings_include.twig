@@ -4,19 +4,44 @@
     if (remote.getGlobal('currentConfiguration').autoMount) {
       $('#autoMount').prop("checked", true);
     }
-    $('#autoMount').on('change.bootstrapSwitch', function (e) {
+    $('#autoMount').on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key: 'autoMount', val: e.target.checked});
     });
 
     $('#cfgSection').val(remote.getGlobal('currentConfiguration').cfgSection);
-    $('#cfgSection').on('change', function (e) {
+    $('#cfgSection').on('change', (e) => {
       ipcRenderer.send('change_config', {key: 'cfgSection', val: e.target.value});
     });
 
 
-    $('#debugTool').on('click', function (e) {
+    $('#debugTool').on('click', (e) => {
       ipcRenderer.send('open_debug', '');
     });
+
+    async function setRclone() {
+      const file = await dialog.showOpenDialog(null, {
+        title: 'RClone custom path',
+        message: 'Browse to rclone',
+        properties: ['openFile'],
+        filters: [{
+          name: 'Exe', extensions: ['exe'],
+          name: 'All', extensions: ['*'],
+        }],
+      });
+      if (file.canceled) return;
+      const rclonePath = file.filePaths[0];
+      $('#rclonePath').val(rclonePath);
+      ipcRenderer.send('change_config', {key: 'rclonePath', val: rclonePath});
+      return rclonePath;
+    }
+
+    $('#rclonePath').val(remote.getGlobal('currentConfiguration').rclonePath);
+    $('#rclonePath').on('change', (e) => {
+      ipcRenderer.send('change_config', {key: 'rclonePath', val: e.target.value});
+    });
+    $('#rclonePathBtn').on('click', (e) => setRclone());
+
+    // setRclone();
   });
 </script>
 
@@ -26,7 +51,7 @@
   </div>
   <div class="card-body">
     <div class="card-text col-6">
-      <div class="form-group">
+      <div class="form-group mb-3">
         <label for="cfgMirror">Select rclone mirror(click on mount status button to remount):</label>
         <select class="form-control" id="cfgSection">
           <!-- <option value="VRP-mirror02">VRP-mirror02</option> -->
@@ -40,7 +65,14 @@
         </select>
       </div>
 
-      <div class="form-check">
+      <div class="form-group mb-4">
+        <label for="rclonePath"><a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> custom path:</label>
+        <div class="input-group">
+          <input id="rclonePath" class="form-control" value="" />
+          <a class="btn btn-primary" id="rclonePathBtn">Browse</a>
+        </div>
+      </div>
+      <div class="form-check mb-3">
         <label for="autoMount" class="form-check-label">
           <input class="form-check-input" type="checkbox" id="autoMount">
           Automatically mount drive on startup (if not already mounted)
