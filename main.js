@@ -1,6 +1,6 @@
 const { app, BrowserWindow, powerSaveBlocker } = require('electron')
 
-app.disableHardwareAcceleration()
+app.disableHardwareAcceleration();
 
 global.twig = require('electron-twig');
 global.tmpdir = require('os').tmpdir();
@@ -14,6 +14,11 @@ global.mounted = false;
 global.updateAvailable = false;
 global.installedApps = [];
 global.currentConfiguration = {};
+global.locale = 'en-US';
+app.on('ready', () => {
+
+  global.locale = app.getLocale();
+})
 
 
 eval(require('fs').readFileSync(__dirname+'/versioncheck.js')+'');
@@ -164,8 +169,9 @@ ipcMain.on('get_dir', async (event, arg) => {
 
   const list = await tools.getDir(folder);
 
-  incList = []
-  list.forEach((item) => {
+  incList = [];
+  if (!list) incList = [{name: 'ERROR: Browse failed'}];
+  else list.forEach((item) => {
     if (!item.isFile) {
       incList.push(item);
     }
@@ -274,6 +280,14 @@ ipcMain.on('change_config', async (event, { key, val }) => {
   return;
 });
 
+ipcMain.on('app_info', async (event, arg) => {
+  console.log('app_info received', arg);
+  const res = await tools.appInfo(arg);
+  console.log({ res });
+  event.reply('app_info', res);
+  return;
+});
+
 
 ipcMain.on('open_debug', async (event, arg) => {
   console.log('open_debug received', arg);
@@ -308,7 +322,7 @@ function createWindow () {
   }
 
   //tools.checkUpdateAvailable();
-  global.win.webContents.openDevTools();
+  // global.win.webContents.openDevTools();
 
   setTimeout(function(){ checkVersion(); }, 2000);
   //

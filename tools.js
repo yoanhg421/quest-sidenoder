@@ -17,7 +17,8 @@ const util = require('util');
 const fixPath = require('fix-path');
 fixPath();
 
-const configLocation = require('path').join(homedir, 'sidenoder-config.json');
+const configLocation = path.join(homedir, 'sidenoder-config.json');
+const STEAM_IDS = require('./steamids.js');
 
 console.log({platform});
 if (!['win64', 'win32'].includes(platform)) {
@@ -36,6 +37,8 @@ fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json')
 .catch(err => {
   console.error('can`t get quest_icons', err);
 })
+
+
 
 
 module.exports =
@@ -71,6 +74,7 @@ module.exports =
   updateRcloneProgress,
   multiplayerNameGet,
   multiplayerNameSet,
+  appInfo,
   // ...
 }
 
@@ -502,6 +506,25 @@ async function trackDevices() {
   return false;
 }*/
 
+async function appInfo({steamId}) {
+  if (steamId) {
+    try {
+      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${steamId}`, {
+        headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
+      });
+      const json = await resp.json();
+      // console.log({ json });
+      return json && json[steamId];
+    }
+    catch (err) {
+      console.error('appInfo', { steamId }, err);
+      return false;
+    }
+  }
+
+  return;
+}
+
 async function checkMount() {
   console.log('checkMount()')
   try {
@@ -587,8 +610,8 @@ async function mount(){
     await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
-  const epath = require('path').join(__dirname , 'a.enc'); // 'a'
-  const cpath = require('path').join(global.tmpdir, 'sidenoder_a');
+  const epath = path.join(__dirname , 'a.enc'); // 'a'
+  const cpath = path.join(global.tmpdir, 'sidenoder_a');
   const data = fs.readFileSync(epath, 'utf-8');
   const buff = Buffer.from(data, 'base64');
   const cfg = buff.toString('ascii');
@@ -649,8 +672,7 @@ async function getDir(folder) {
       let steamId = false,
         oculusId = false,
         imagePath = false,
-        versionCode = 'PROCESSING',
-        infoLink = false,
+        versionCode = '',
         simpleName = fileName,
         packageName = false,
         mp = false;
@@ -664,34 +686,18 @@ async function getDir(folder) {
         // imagePath = gameMeta.imagePath;
       }
 
-      if ((new RegExp('.*\ -steam-')).test(fileName)) {
-        //steamId = fileEnt.name.split('steam-')[1]
-        steamId = fileName.match(/-steam-([0-9]*)/)[1]
-        simpleName = simpleName.split(' -steam-')[0]
-        imagePath = 'https://cdn.cloudflare.steamstatic.com/steam/apps/' + steamId + '/header.jpg'
-        infoLink = 'https://store.steampowered.com/app/' + steamId + '/'
-      }
-
-      if ((new RegExp(".*\ -oculus-")).test(fileName)) {
-        //oculusId = fileEnt.name.split('oculus-')[1]
-        oculusId = fileName.match(/-oculus-([0-9]*)/)[1]
-        simpleName = simpleName.split(' -oculus-')[0]
-        imagePath = 'https://vrdb.app/oculus/images/' + oculusId + '.jpg'
-        infoLink = 'https://www.oculus.com/experiences/quest/' + oculusId + '/'
-      }
-
-      if ((new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
+      if (!versionCode && (new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
         versionCode = fileName.match(/.*v([0-9]+)\+[0-9].*/)[1]
       }
 
-      if ((new RegExp('.*\ -versionCode-')).test(fileName)) {
+      if (!versionCode && (new RegExp('.*\ -versionCode-')).test(fileName)) {
         versionCode = fileName.match(/-versionCode-([0-9]*)/)[1]
-        simpleName = simpleName.split(' -versionCode-')[0]
+        if (!simpleName) simpleName = simpleName.split(' -versionCode-')[0]
       }
 
-      if ((new RegExp('.*\ -packageName-')).test(fileName)) {
+      if (!packageName && (new RegExp('.*\ -packageName-')).test(fileName)) {
         packageName = fileName.match(/-packageName-([a-zA-Z.]*)/)[1];
-        simpleName = simpleName.split(' -packageName-')[0];
+        if (!simpleName) simpleName = simpleName.split(' -packageName-')[0];
       }
 
       if (packageName) {
@@ -699,15 +705,10 @@ async function getDir(folder) {
           imagePath = `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`;
         else if (!imagePath)
           imagePath = 'unknown.png';
+
+        steamId = STEAM_IDS[packageName];
       }
 
-      if ((new RegExp('.*\ -MP-')).test(fileName)) {
-        mp = true;
-      }
-
-      if ((new RegExp('.*\ -NA-')).test(fileName)) {
-        na = true;
-      }
 
 
       simpleName = await cleanUpFoldername(simpleName);
@@ -721,7 +722,6 @@ async function getDir(folder) {
         versionCode,
         packageName,
         mp,
-        infoLink,
         info,
         createdAt: new Date(info.mtimeMs),
         filePath: folder + '/' + fileName.replace(/\\/g, '/'),

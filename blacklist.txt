@@ -1,18 +1,25 @@
+1976 Back To Midway v10+1.1 -QU/**
 1976 Back To Midway v8+1 -QU/**
 2MD - VR Football Unleashed v45+1.07 -QU/**
 2MD - VR Football Unleashed v53+1.11 -QU/**
 2MD - VR Football Unleashed v57+1.13 -QU/**
 2MD - VR Football Unleashed v61+1.13.2 -QU/**
+2MD - VR Football Unleashed v65+1.21 -QU/**
+2MD VR Football Unleashed v88+1.3 -QU/**
+51 Aliens TV v4+0.4 -QU/**
 Accounting+ v1.24.35-Q2Patched -QuestUnderground/**
 Accounting+ v35+1.24.35 -QU/**
 Acron - Attack of the Squirrels! v114094392+1.14.94392 -QU/**
 Acron - Attack of the Squirrels v1.14.94392.114094392 -QuestUnderground/**
+Active Shooter Survival v9+21.5.24 -QU/**
 AFFECTED - The Manor v82+1.28 -QU/**
 A Fishermans Tale v16+1.064 -QU/**
 Air Brigade 2 v0.2/**
 Air Brigade 2 v20+0.2 -unknown/**
+Alienation v23+1.293 -QU/**
 All Hail the Cook-o-tron v7+1.2.3 -VRP/**
 ALTDEUS - Beyond Chronos v434+1.0.434 -QU/**
+ALTDEUS - Beyond Chronos v447+1.1.477 -QU/**
 A Lullaby of Colors v1+1.2.2 -unknown/**
 A Lullaby of Colors v1.2.2/**
 A Moment in Cannes v0.3.22/**
@@ -23,9 +30,11 @@ Apex Construct v45+45.0 -VRP/**
 APK_packagenames.txt2MD - VR Football Unleashed v45+1.07 -QU/**
 Apollo 11 v22+2.3 -Q2Patched-90Hz-CustomRes -QU/**
 Apollo 11 v2.3.22 -Q2Patched-90Hz-CustomRes -QuestUnderground/**
+Arcaxer v120+1.36.12 -QU/**
 Arcaxer v91+1.29.0 -VRP/**
 Arizona Sunshine + DLC unlocked [1.6.21686] S2.11/**
 Arizona Sunshine v21686+1.6 -QU (with DLC, v.2)/**
+A Rogue Escape v104+1.0 -QU/**
 Artifact v1.0.6/**
 Artifact v17+1.0.6 -unknown/**
 ArtPlunge v201801250+201801250 -unknown/**
@@ -37,6 +46,7 @@ AUDICA v128543601+1.0.3.2 -QU (with DLC)/**
 AUDICA v128543601+1.0.3.2 (with DLC)/**
 Audioshield v118+118 -QU/**
 Audioshield v118 -QuestUnderground/**
+Audio Trip v121+1.0.2710 -QU/**
 Audio Trip v63+1.0.2526 -QU/**
 Audio Trip v66+1.0.2597 -QU/**
 Axegend v1+3.0.5 -unknown/**
@@ -44,10 +54,12 @@ Axegend v3.0.5 -unknown/**
 Axegend v3.0.5 -unknown -NA-/**
 Baba Yaga v3500+1.0.3500 -QU/**
 Baby Hands v8+0.02 -VRP/**
+Bacon Roll v3+1.15.30 -QU/**
 Bait! v112063217+1.12.63217 -unknown/**
 Bait! v1.2/**
 Ballista v20.42/**
 Ballista v42+20.42 -QU (b)/**
+Ballooning Adventures v5+1.1.2 -QU/**
 BanditSix v1.1.0.130/**
 BanditSix v130+1.1.0 -unknown/**
 Bang Squash v1.0/**
@@ -59,11 +71,19 @@ BATTLESCAR - Punk Was Invented By Girls v1045+10453082 -QU/**
 BATTLESCAR - Punk Was Invented By Girls v953+_953_2896 -QU/**
 BATTLESCAR - Punk Was Invented By Girls v953+_953_2896 -QU -NA-/**
 Beat Arena v38+1.1.0 -QU/**
+Beat Arena v39+1.2.0 -QU/**
+Beat Blaster v9+1.0 -QU/**
 Beat Saber v1.13.0-147 -VRP (with DLC)/**
 Beat Saber v147+1.13.0 -QU (with DLC)/**
 Beat Saber v147+1.13.0 -QU (with DLC, BMBF)/**
+Beat Saber v157+1.13.2 (BMBF included, only autoinstalls with Rookie)/**
 Beat Saber v157+1.13.2 -QU (manual install, see notes)/**
 Beat Saber v184+1.14.0 -QU (with DLC)/**
+Beat Saber v215+1.16.1 (w. DLC, No BMBF) -QU (do not use)/**
+Beat Saber v215+1.16.1 (w. DLC, No BMBF) -QU (Kala zipped)/**
+Beat Saber v218+1.16.2 -QU/**
+Beat Saber v218+1.16.2 -QU (w, DLC, No BMBF)/**
+Big Breezy Boat v189+1.0.189 -QU/**
 Bionic Hunter v4+2.3 -unknown/**
 Blair Witch v49+1.46 -QU/**
 Blaston [1.5.99686.105099686] S2.11/**
@@ -71,26 +91,42 @@ Blaston v106102642+1.6.102642 -QU/**
 Blaston v1061102642+1.6.102642 -QU/**
 Blaston v107105626+1.7.105626 -QU/**
 Blaston v108106957+1.8.106957 -QU/**
+Blaston v110114633+1.10.114633 -QU/**
+Blaston v111117314+1.11.117314 -QU/**
+Blaston v112117917+1.12.117917 -QU/**
 Blockami VR v1.00/**
 Blockami VR v1+0.1 -unknown/**
+Blueplanet VR Explore v7+7 -QU/**
 Bodyguard 2 v1+1.5 -unknown/**
 Bodyguard 2 v1.5.0 -unknown/**
 Bonfire v1.0.466-Q2Patched -QuestUnderground/**
 Bonfire v542+1.0.542 -QU/**
+Bonsai Desk v52+0.1.6 -QU/**
+BoomBox v1+1 -QU/**
 BOW MAN v224+1.4.0-224 -QU/**
 Box VR v1.18.188/**
 Box VR v188+1.18 -unknown/**
+Breakout VR v3+1.0 -QU/**
+BricksVR v27+0.2.31 -QU/**
 B-Team v20.03.19.356857 -QuestUnderground/**
 B-Team v68+20.03.19.356857 -QU/**
+Cake Mouse v5+0.23 -QU/**
+Candy Puzzle v3+1.01 -QU/**
+Can You Do It  v6+1.15 -QU/**
 Captain Hardcore v0.3/**
 Captain Hardcore v1+0.3.1 -VRP/**
+Captain Hardcore v1+0.4 -VRP/**
+Carly and the Reaperman v1221116207+1.22.116207 -QU/**
 Car Parking Simulator v1.6.1/**
 Car Parking Simulator v7+1.6.1 -unknown/**
+Car Parking Simulator v9+1.6.3 -QU/**
 Catan VR v11832+1.1.832 -QU/**
+Catan VR v11837+1.1.837 -QU/**
 Cat Dissection v1.0/**
 Cat Dissection v1+1.0 -unknown/**
 Cave Digger Riches v2.11-Q2Patched -QuestUnderground/**
 Cave Digger v71+2.17 -QU/**
+Cave Digger v72+2.18 -QU/**
 Chunky v0.9/**
 Chupa Chupa VR v1+2.0 -VRP/**
 Chupa Chupa VR v2.0 -VRP/**
@@ -105,46 +141,64 @@ Coaster Combat v708443+1.0 -QU/**
 Color Space [1.2.1.305] S2.11/**
 Color Space v1.2.1 -QuestUnderground/**
 Color Space v308+1.4.1 -QU/**
+Color Space v316+1.5.3 -QU/**
 Contractors v59+1.3 -QU/**
 Contractors v60+1.3 -QU/**
+Contractors v79+1.3 -QU/**
+Contractors v80+1.3 -QU/**
 Contractors VR v56+1.2 -QU/**
 Control Tower VR v0.61/**
 Control Tower VR v18+0.61 -unknown/**
 Cook-Out [1.4.98367.104098367]/**
 Cook-Out v105099727+1.5.99727 -QU/**
 Cook-Out v106106840+1.6.106840 -QU/**
+Cook-Out v108112973+1.8.112973 -QU/**
+Cook-Out v109115949+1.9.115949 -QU/**
+Cook-Out v109116135+1.9.116135 -QU/**
 Cosmodread v10007+1.0.0.7 -QU/**
+Cosmodread v10014+1.0.0.14 -QU/**
 Counter Fight ICHIRAN v94+1.1.0 -QU/**
 Counter Fight ICHIRAN v96+1.1.0_96/**
+Counter Fight ICHIRAN v96+1.1.0_96 -QU/**
 Counter Fight v1+1.5.0 -unknown/**
 Counter Fight v1.5.0/**
+Cover Drive Cricket v169+1.0.1 -QU/**
 Crashland v66+1.01/**
+Crashland v72+1.016 -QU/**
 Crazy Kung Fu v0.34/**
 Crazy Kung Fu v1+0.34 -unknown/**
+Crazy Kung Fu v5+0.63.10 -QU/**
+Creed - Rise to Glory v247262+1 -QU/**
 Creed v187321+1 -QU/**
 Crisis VRigade 2 v55+1.17 -QU/**
+Crisis VRigade 2 v62+1.24 -QU/**
 Crisis VRigade v1+1.18 -VRP/**
 Crop Craze - VR Farming Simulator v130+1.3.0 -VRP/**
+Cubism v103+1.3.1 -QU/**
 Cubism v1.1.0.56 -QU/**
 Cubism v56+1.1.0 -QU/**
 Cubism v74+1.2.0 -QU/**
 Cubism v77+1.2.1 -QU/**
+Cubism v99+1.3.0 -QU/**
 Custom Home Mapper v1+0.1 -unknown/**
 Custom Home Mapper v2.3/**
 Cyber Cycle v0.1/**
 Cyber Cycle v1+0.1 -unknown/**
 CYBER TENNIS v152+1.6.4 -unknown/**
+Cyber Tennis v161+1.6.6 -QU/**
 Dance Central v121011401+1.2.1 -QU/**
 Dance Central v121011401+1.2.1 -QU (b)/**
 Dance Central v1.2.1 -QuestUnderground/**
 Dance Dance Maker v0.9/**
 Dance Dance Maker v9+0.9 -unknown/**
+David Slade Mysteries - Case Files v11+2.5a -QU/**
 David Slade Mysteries Case Files v4+2.1c -QU/**
 David Slade Mysteries Case Files v5+2.1d -QU/**
 David Slade Mysteries v1+1.1 -DollarVR/**
 David Slade Mysteries v1+1.1 -DollarVR -NA-/**
 Dead and Buried II [2.0.8396.3008396] S2.11/**
 Dead and Buried II v3008396+2.0.8396 -QU/**
+Dead Effect 2 VR v1700000087+210517.1355 -QU/**
 Dead Shot Heroes v1+2.1.3 -unknown/**
 Dead Shot Heroes v2.1.3/**
 Death Horizon - Reloaded v0.9.24.92 -QuestUnderground/**
@@ -159,8 +213,12 @@ Deep Water Solo Climbing v1+0.1 -unknown/**
 Deisim v1.31.1 -VRP/**
 Deisim v30+1.31.1 -VRP/**
 Deisim v34+1.31.4 -VRP/**
+Deisim v48+1.33.2 -QU/**
+Demeo v102113053+1.2.113053 -QU/**
+Demeo v103117757+1.3.117757 -QU/**
 Descent Alps v0.0.4/**
 Descent Alps v1+0.0.4 -unknown/**
+Descent Alps v22+0.4.1 -QU/**
 Disc Benders Ace Run v1.0.0/**
 Disc Benders Ace Run v1+1.0 -unknown/**
 DiscGolfVR v1+0.1 -unknown/**
@@ -175,6 +233,7 @@ Doom3Quest v16+0.2.0 -DrBeef/**
 Down the Rabbit Hole v427+01.01 -QU/**
 Down the Rabbit Hole v428+01.01 -QU/**
 Down the Rabbit Hole v429+01.02 -QU/**
+Down the Rabbit Hole v430+01.03 -QU/**
 DrakaVR v1/**
 DrakaVR v1+1 -unknown/**
 Dreadhalls v10619+1.6.19 -QU/**
@@ -183,6 +242,7 @@ DroneLight 0.1/**
 DroneLight v1+0.1 -unknown/**
 Drop Dead - Dual Strike Edition v1724091000 /**
 Drop Dead - Dual Strike Edition v1724091000+1.3.7 -QU/**
+Drop Dead - Dual Strike v1727241558+1.3.8 -QU/**
 Drunkn Bar Fight [10.21.121] S2.11/**
 Drunkn Bar Fight v10.21-Q2Patch90Hz -QuestUnderground/**
 Drunkn Bar Fight v121+10.21 -QU/**
@@ -201,6 +261,8 @@ Eleven Table Tennis v543+1.543 -QU/**
 Eleven Table Tennis v551+1.551 -QU/**
 Eleven Table Tennis v558+1.558 -QU/**
 Eleven Table Tennis v574+1.574 -QU/**
+Eleven Table Tennis v642+1.642 -QU/**
+Eleven Table Tennis v650+1.650 -QU/**
 Elven Assassin [1.3.1g.77] S2.11/**
 Elven Assassin S2.11/**
 Elven Assassin v109+1.4.0b_OculusQuest -QU/**
@@ -208,6 +270,7 @@ Elven Assassin v109+1.4.0bOculusQuest -QU/**
 Elven Assassin v113+1.40e_OculusQuest -QU/**
 Elven Assassin v113+1.40e -QU/**
 Elven Assassin v118+1.4.1f -QU/**
+Elven Assassin v122+1.4.2c_OculusQuest -QU/**
 End Space v25 -QU/**
 End Space v26+1.0.6.1 -QU/**
 ENHANCE VR v2.0.0/**
@@ -274,6 +337,7 @@ Gadgeteer v77 1.0.15/**
 Gadgeteer v78+1.0.16 -QU/**
 Gadgeteer v79+1.0.17 -QU/**
 GameList.txt
+GearVR Games/**
 Ghost Giant v1.0.32-Q2Patched -QuestUnderground/**
 Ghost Giant v32+1.0.32 -QU/**
 Gladius (Manual Install only) v0.8.5/**
@@ -440,6 +504,7 @@ Paper Birds [1.47] S2.11/**
 Paper Birds v47+1 -QU/**
 Path Of The Warrior v20.01.14.356019 -QuestUnderground/**
 Path Of The Warrior v495+20.01.14.356019 -QU/**
+PCVR Games/**
 PecoPeco v5018+0.5.18 -QU/**
 PecoPeco v6011+0.6.11 -QU/**
 Penn & Teller VR - F U, U, U, & U v1.0 -QuestUnderground/**
@@ -475,6 +540,10 @@ Prison Boss VR v37+1.6.0.16 -QU/**
 Pteranodons Flight - The Flying Dinosaur Game v1.0/**
 Pteranodon's Flight v1+1.0 -unknown/**
 Puzzling Places v2+1.0 -unknown/**
+Quest Games/**
+Quest Games - Extra/**
+Quest Games - previous versions/**
+Quest Homebrew/**
 QuestZDoom Pack**/**
 QuestZDoom Pack launcher v1 -VRP (install this too)/**
 QuestZDoom Pack v1 -VRP/**
