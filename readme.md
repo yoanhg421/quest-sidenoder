@@ -104,7 +104,7 @@ What makes sidenoder better than other sideloaders ?
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 curl https://rclone.org/install.sh | sudo bash
-brew install android-platform-tools
+~~brew install android-platform-tools~~
 Beta OSX fuse from https://osxfuse.github.io
 ```
 ~~brew install rclone~~
