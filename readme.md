@@ -91,12 +91,12 @@ What makes sidenoder better than other sideloaders ?
 
 
 #### Run precompiled release on linux:
-1. Install ADB and RCLONE: `sudo apt install adb && curl https://rclone.org/install.sh | sudo bash`
+1. Install RCLONE: `curl https://rclone.org/install.sh | sudo bash`
 2. Download and unpack the latest linux AppImage from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
 3. Make the AppImage executable.
 4. Run the AppImage
 
-
+~~sudo apt install git adb nodejs~~ already included as part of application
 
 #### Run precompiled release on mac:
 
@@ -104,12 +104,14 @@ What makes sidenoder better than other sideloaders ?
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 curl https://rclone.org/install.sh | sudo bash
-~~brew install android-platform-tools~~
 Beta OSX fuse from https://osxfuse.github.io
 ```
-~~brew install rclone~~
 
-~~brew install osxfuse~~
+~~brew install android-platform-tools~~ already included as part of application
+
+~~brew install rclone~~ brew version not support mount
+
+~~brew install osxfuse~~ old version
 
 2. Download and unpack the latest mac release (.App / .dmg) from `https://github.com/vKolerts/quest-sidenoder/releases/latest`
 3. Run the .App or .dmg
@@ -148,13 +150,13 @@ https://github.com/vKolerts/quest-sidenoder/issues
 
 #### Manually run using node on linux:
 ```
-sudo apt install git adb nodejs
 curl https://rclone.org/install.sh | sudo bash
 git clone https://github.com/vKolerts/quest-sidenoder.git
 cd quest-sidenoder/
 npm install
 npm start
 ```
+~~sudo apt install git adb nodejs~~ already included as part of application
 
 #### Manually run using node on mac:
 ```
@@ -162,13 +164,13 @@ npm start
 brew install git
 brew install node
 curl https://rclone.org/install.sh | sudo bash
-brew cask install android-platform-tools
 brew cask install osxfuse
 git clone https://github.com/vKolerts/quest-sidenoder.git
 cd quest-sidenoder/
 npm install
 npm start
 ```
+~~brew install android-platform-tools~~ already included as part of application
 
 <details>
 <summary>Running big sur?</summary>
