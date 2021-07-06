@@ -6,15 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   <script>window.$ = window.jQuery = require('jquery');</script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" crossorigin="anonymous"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 
   <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
 
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="https://bootswatch.com/4/slate/bootstrap.min.css">
   <!-- <link rel="stylesheet" href="https://bootswatch.com/4/sandstone/bootstrap.min.css"> -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
   <title>Quest-Sideloader</title>
 
@@ -86,9 +86,11 @@
   <script>
     $(function() {
       loadInclude('modals/sideload.twig', 'sideloadmodaldiv');
+      loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
       loadInclude('modals/confirm.twig', 'confirmmodaldiv');
       loadInclude('modals/processing.twig', 'processingmodaldiv');
       loadInclude('modals/app_start.twig', 'appstartmodaldiv');
+      loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv');
       loadInclude('device_info.twig', 'device_infoDiv');
 
       document.ondragover = document.ondrop = (ev) => {
@@ -169,7 +171,7 @@
         console.log('GETDEVICE SUCESS');
         $('#devicebtn').removeClass('btn-danger');
         $('#devicebtn').addClass('btn-success');
-        $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | QUEST:</br>CONNECTED`);
+        $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
         $('.adbdev').removeClass('disabled').removeAttr('disabled');
 
@@ -186,7 +188,7 @@
       else {
         $('#devicebtn').removeClass('btn-success');
         $('#devicebtn').addClass('btn-danger');
-        $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | QUEST:</br>DISCONNECTED`);
+        $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
 
         $('.adbdev').addClass('disabled').attr('disabled', 'disabled');
 
@@ -262,25 +264,7 @@
 
   {% block onload %}
     <script>
-      $(document).ready(function() {
 
-        console.log('ONLOAD');
-        ipcRenderer.send('check_mount', 'bla');
-        //checkMount()
-        ipcRenderer.send('check_device', 'bla');
-
-        console.log('setup ask device listener')
-        ipcRenderer.on('ask_device', (event, arg) => {
-          console.log('ask_device msg came ! ');
-          dialog.showMessageBox(null, {
-            type: 'info',
-            buttons: ['Understood'],
-            title: 'Missing device',
-            message: `This action cannot be performed without a device attached.`,
-          })
-        });
-
-      });
     </script>
   {% endblock %}
 
@@ -318,13 +302,13 @@
         </a>
       </li>
       <li class="nav-item">
-        <a id="installedAppsNav" class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+        <a class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
           <i class="fa fa-list" aria-hidden="true"></i>
            Installed
         </a>
       </li>
       <li class="nav-item">
-        <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Tweaks">
+        <a class="adbdev btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Device tweaks">
           <i class="fa fa-bug" aria-hidden="true"></i>
         </a>
       </li>
@@ -341,7 +325,7 @@
       </span>
       &nbsp;
       <span type="button" id="devicebtn" class="btn btn-sm btn-danger"  disabled>
-        <i class="fa fa-spin fa-refresh"></i> | QUEST:</br>DISCONNECTED
+        <i class="fa fa-spin fa-refresh"></i> | DEVICE:</br>DISCONNECTED
       </span>
       &nbsp;
       <span type="button" id="wirelessbtn" onclick="connectWireless()" class="btn btn-sm btn-danger"  disabled>
@@ -368,14 +352,13 @@
   Main repository https://github.com/whitewhidow/quest-sidenoder
 </footer>
 
-
+<!-- modals -->
 <div id="sideloadmodaldiv"></div>
+<div id="appinfomodaldiv"></div>
 <div id="confirmmodaldiv"></div>
 <div id="processingmodaldiv"></div>
 <div id="appstartmodaldiv"></div>
-
-
-
+<div id="apptoolsmodaldiv"></div>
 
 
 <!--

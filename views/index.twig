@@ -23,9 +23,45 @@
                 $('#rcloneCheckIndicator').addClass('badge-success');
                 $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed`);
             }
+            else {
+                if (arg.adb) {
+                    $('#adbCheckIndicator').removeClass('badge-danger');
+                    $('#adbCheckIndicator').addClass('badge-success');
+                    $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb})`);
+                }
+
+                if (arg.rclone) {
+                    $('#rcloneCheckIndicator').removeClass('badge-danger');
+                    $('#rcloneCheckIndicator').addClass('badge-success');
+                    $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed`);
+                }
+                else {
+                    $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
+ RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
+                        <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`)
+                }
+            }
         });
 
-        {% if currentConfiguration.autoMount %}ipcRenderer.send('mount', 'foo');{% endif %}
+        $(document).ready(function() {
+
+          console.log('ONLOAD');
+          // ipcRenderer.send('check_mount', 'bla');
+          // ipcRenderer.send('check_device', 'bla');
+          {% if currentConfiguration.autoMount %}checkMount();{% endif %}
+
+          console.log('setup ask device listener')
+          ipcRenderer.on('ask_device', (event, arg) => {
+            console.log('ask_device msg came ! ');
+            dialog.showMessageBox(null, {
+              type: 'info',
+              buttons: ['Understood'],
+              title: 'Missing device',
+              message: `This action cannot be performed without a device attached.`,
+            })
+          });
+
+        });
 
     });
 
@@ -56,7 +92,7 @@
                 <div class="badge badge-danger" id="adbCheckIndicator">ADB not found | PLEASE INSTALL ADB GLOBALLY</div>
             </h3>
             <h3>
-                <div class="badge badge-danger" id="rcloneCheckIndicator">RCLONE not found | PLEASE INSTALL RCLONE GLOBALLY</div>
+                <div class="badge badge-danger text-left" id="rcloneCheckIndicator">RCLONE not found | PLEASE INSTALL RCLONE GLOBALLY</div>
             </h3>
                 {# <h3><div class="badge badge-danger" id="aaptCheckIndicator">AAPT not found | PLEASE INSTALL ADB GLOBALLY</div></h3>
                 #}

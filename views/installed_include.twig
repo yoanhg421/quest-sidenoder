@@ -15,19 +15,22 @@
 
 
   function update(elem) {
-    //elem.parentElement.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
+    $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
     ipcRenderer.send('update', elem.dataset.path);
   }
 
-  function uninstall(element, packageName) {
-    $(element).children('span').innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
-    // element.parentElement.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
+  function uninstall(elem, packageName) {
+    $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
     ipcRenderer.send('uninstall', packageName);
   }
-  function startApp(element, packageName) {
-    // $(element).children('span').innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
-    // element.parentElement.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
+
+  function startApp(elem, packageName) {
     ipcRenderer.send('get_activities', packageName);
+  }
+
+  function appTools(packageName) {
+    ipcRenderer.send('app_tools', packageName);
+    $('#processingModal').modal('show');
   }
 
 </script>
@@ -47,7 +50,7 @@
     </h2>
   </div>
   <div class="card-body">
-    <div class="card-text">
+    <div class="card-text container">
       <div id="searchformdiv"></div>
       <br>
       <table class="table table-striped table-condensed text-white" id="listTable">
