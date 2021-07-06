@@ -1,0 +1,49 @@
+<!-- Modal -->
+<div class="modal" id="appToolModal" >
+  <div role="document" style="margin: 1.75rem auto; min-width:580px; max-width:40%"> <!-- class="modal-dialog"  -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="appToolModalLabel">App tools</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card-body" id="configsCard">
+          <div class="form-group">
+            <label class="mb-1" for="mp_name">Multiplayer name</label>
+            <input id="app_mp_name" class="adbdev form-control" value="" />
+          </div>
+        </div>
+        <div class="text-center">
+          <a class="adbdev btn btn-info"><i id="backupAppBtn" class="fa fa-download" aria-hidden="true"></i> Backup app + obbs</a>
+          <a class="adbdev btn btn-info"><i id="backupDataBtn" class="fa fa-download" aria-hidden="true"></i> Backup appdata</a>
+          <a class="adbdev btn btn-success"><i id="restoreDataBtn" class="fa fa-upload" aria-hidden="true"></i> Restore appdata</a><br/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  console.log('ONLOAD APPTOOL MODAL');
+
+  ipcRenderer.removeAllListeners('app_tools');
+  ipcRenderer.on('app_tools', (event, arg) => {
+    console.log('app_tools msg came: ', arg);
+
+    $('#processingModal').modal('hide');
+    $('#appToolModal').modal('show');
+  });
+  /*ipcRenderer.on('start_activity', (event, arg) => {
+    console.log('start_activity msg came: ', arg); // prints "ping"
+    $('#appToolModal').modal('hide');
+  });*/
+
+  /*$('#startActivityButton').on('click', function(){
+    $('#appToolModal').modal('hide');
+    ipcRenderer.send('start_activity', $('#appActivities').val());
+  });*/
+</script>
