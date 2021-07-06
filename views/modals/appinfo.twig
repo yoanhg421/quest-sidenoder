@@ -1,6 +1,6 @@
 <!-- Modal -->
 <div class="modal" id="appinfoModal" >
-  <div role="document" style="margin: 1.75rem auto;max-width:60%"> <!-- class="modal-dialog"  -->
+  <div role="document" style="margin: 1.75rem auto; min-width:600px; max-width:60%"> <!-- class="modal-dialog"  -->
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="appinfoModalLabel">Unknown</h5>
@@ -17,6 +17,8 @@
             <ul></ul>
           </div>
         </div>
+        <div id="appinfoGenres" class="text-center"></div>
+        <br/>
         <div id="appinfoShortDesc"></div>
         <br/>
         <div><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
@@ -42,6 +44,10 @@
 
   $('#appinfoModal').on('hidden.bs.modal', () => {
     console.log('appinfo closed');
+    $('#appinfoGenres').html('');
+    $('#appinfoModalLabel').text('');
+    $('#appinfoText').html('');
+    $('#appinfoAbout').html('');
     $('#cbp-fwslider').html('<ul></ul>');
   })
 
@@ -52,14 +58,21 @@
     const data = arg.data;
     if (!data)  return;
 
+
     if (data.name) $('#appinfoModalLabel').text(data.name);
     if (data.short_description) $('#appinfoShortDesc').text(data.short_description);
     if (data.detailed_description) $('#appinfoText').html(data.detailed_description);
     if (data.about_the_game) $('#appinfoAbout').html(data.about_the_game);
-    if (data.supported_languages) $('#supportedLanguages').html(data.supported_languages);
+    if (data.supported_languages) $('#supportedLanguages').html(data.supported_languages.replace('русский', '<b>русский</b>'));
+    if (data.genres) {
+      for (const genre of data.genres) {
+        if (['Бесплатно', 'Free'].includes(genre.description)) continue;
+        $('#appinfoGenres').append(`<span class="badge badge-secondary">${genre.description}</span> `);
+      }
+    }
 
     if (data.header_image) {
-      $('#cbp-fwslider ul').append(`<li><img src="${data.header_image}" alt="header"/></li>`);
+      $('#cbp-fwslider ul').append(`<li><img src="${data.header_image}" width="600" alt="header"/></li>`);
     }
 
     if (data.movies) {

@@ -37,13 +37,31 @@
                 }
                 else {
                     $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
- RCLONE global installation not found, please read the <a href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
-                        <br/>Or if you have problem with global installation - try to manualy download latest <a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`)
+ RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
+                        <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`)
                 }
             }
         });
 
-        {% if currentConfiguration.autoMount %}ipcRenderer.send('mount', 'foo');{% endif %}
+        $(document).ready(function() {
+
+          console.log('ONLOAD');
+          // ipcRenderer.send('check_mount', 'bla');
+          // ipcRenderer.send('check_device', 'bla');
+          {% if currentConfiguration.autoMount %}checkMount();{% endif %}
+
+          console.log('setup ask device listener')
+          ipcRenderer.on('ask_device', (event, arg) => {
+            console.log('ask_device msg came ! ');
+            dialog.showMessageBox(null, {
+              type: 'info',
+              buttons: ['Understood'],
+              title: 'Missing device',
+              message: `This action cannot be performed without a device attached.`,
+            })
+          });
+
+        });
 
     });
 

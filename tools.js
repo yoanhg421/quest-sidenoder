@@ -6,7 +6,7 @@ const fs = require('fs');
 const fsExtra = require('fs-extra');
 const fsPromise = fs.promises;
 const platform = require('os').platform();
-
+const arch = require('os').arch(); // TODO set link for rclone downloading
 
 const fetch = require('node-fetch');
 const path = require('path');
@@ -61,6 +61,7 @@ module.exports =
   connectWireless,
   disconnectWireless,
   enableMTP,
+  rebootDevice,
   getActivities,
   startActivity,
   getDeviceInfo,
@@ -72,8 +73,8 @@ module.exports =
   reloadConfig,
   execShellCommand,
   updateRcloneProgress,
-  multiplayerNameGet,
-  multiplayerNameSet,
+  deviceTweaksGet,
+  deviceTweaksSet,
   appInfo,
   // ...
 }
@@ -128,14 +129,88 @@ async function getUserInfo() {
   }
 }
 
-async function multiplayerNameGet() {
-  console.log('multiplayerNameGet()');
-  return adbShell('settings get global username');
+async function deviceTweaksGet(arg) {
+  console.log('deviceTweaksGet()', arg);
+  let res = {
+    cmd: 'get',
+    // mp_name: '',
+    // guardian_pause: '0',
+    // frc: '0',
+    // gRR: '72',
+    // gCA: '-1',
+    // gFFR: '2',
+    // CPU: '2',
+    // GPU: '2',
+    // vres: '1024',
+    // cres: '640x480',
+    // gSSO: '1440x1584',
+  };
+
+  if (arg.key == 'mp_name') res.mp_name = (await adbShell('settings get global username')).replace('\n', '');
+  if (arg.key == 'guardian_pause') res.guardian_pause = (await adbShell('getprop debug.oculus.guardian_pause')).replace('\n', '');
+  if (arg.key == 'frc') res.frc = (await adbShell('getprop debug.oculus.fullRateCapture')).replace('\n', '');
+  if (arg.key == 'gRR') res.gRR = (await adbShell('getprop debug.oculus.refreshRate')).replace('\n', '');
+  if (arg.key == 'gCA') res.gCA = (await adbShell('getprop debug.oculus.forceChroma')).replace('\n', '');
+  if (arg.key == 'gFFR') res.gFFR = (await adbShell('getprop debug.oculus.foveation.level')).replace('\n', '');
+  if (arg.key == 'CPU') res.CPU = (await adbShell('getprop debug.oculus.cpuLevel')).replace('\n', '');
+  if (arg.key == 'GPU') res.GPU = (await adbShell('getprop debug.oculus.gpuLevel')).replace('\n', '');
+  if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution')).replace('\n', '');
+  if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.capture.height')).replace('\n', '');
+  if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.textureHeight')).replace('\n', '');
+
+  return res;
 }
 
-async function multiplayerNameSet(name) {
-  console.log('multiplayerNameSet()', name);
-  const res = await adbShell('settings put global username ' + name);
+async function deviceTweaksSet(arg) {
+  console.log('deviceTweaksSet()', arg);
+  let res = {cmd: 'set'};
+  if (typeof arg.mp_name != 'undefined') {
+    res.mp_name = await adbShell('settings put global username ' + arg.mp_name);
+  }
+
+  if (typeof arg.guardian_pause != 'undefined') {
+    res.guardian_pause = await adbShell('setprop debug.oculus.guardian_pause ' + (arg.guardian_pause ? '1' : '0'));
+  }
+  if (typeof arg.frc != 'undefined') {
+    res.frc = await adbShell('setprop debug.oculus.fullRateCapture ' + (arg.frc ? '1' : '0'));
+  }
+
+  if (typeof arg.gRR != 'undefined') {
+    res.gRR = await adbShell('setprop debug.oculus.refreshRate ' + arg.gRR);
+  }
+
+  if (typeof arg.gCA != 'undefined') {
+    res.gCA = await adbShell('setprop debug.oculus.forceChroma ' + arg.gCA);
+  }
+
+  if (typeof arg.gFFR != 'undefined') {
+    res.gFFR = await adbShell('setprop debug.oculus.foveation.level ' + arg.gFFR);
+  }
+
+  if (typeof arg.CPU != 'undefined') {
+    res.CPU = await adbShell('setprop debug.oculus.cpuLevel ' + arg.CPU);
+  }
+
+  if (typeof arg.GPU != 'undefined') {
+    res.GPU = await adbShell('setprop debug.oculus.gpuLevel ' + arg.GPU);
+  }
+
+  if (typeof arg.vres != 'undefined') {
+    res.vres = await adbShell('setprop debug.oculus.videoResolution ' + arg.vres);
+  }
+
+  if (typeof arg.cres != 'undefined') {
+    const [width, height] = arg.cres.split('x');
+    await adbShell('setprop debug.oculus.capture.width ' + width);
+    res.cres = await adbShell('setprop debug.oculus.capture.height ' + height);
+  }
+
+  if (typeof arg.gSSO != 'undefined') {
+    const [width, height] = arg.gSSO.split('x');
+    await adbShell('setprop debug.oculus.textureWidth ' + width);
+    await adbShell('setprop debug.oculus.textureHeight ' + height);
+    res.gSSO = await adbShell('settings put system font_scale 0.85 && settings put system font_scale 1.0');
+  }
 
   return res;
 }
@@ -179,6 +254,7 @@ async function getActivities(package, activity = false) {
   activities = activities.split('\n');
   activities.pop();
   console.log({ package, activities });
+  // TODO: check manifest.application.launcherActivities
 
   return activities;
 }
@@ -229,7 +305,7 @@ async function getDeviceIp() {
 
 async function connectWireless() {
   // await adbShell(`setprop service.adb.tcp.port 5555`);
-
+  // TODO: save ip & try use it
   const ip = await getDeviceIp();
   console.log({ ip });
   if (!ip) return false;
@@ -266,17 +342,31 @@ async function enableMTP() {
   return res;
 }
 
+async function rebootDevice() {
+  const res = await adbShell(`reboot`);
+  console.log('rebootDevice', { res });
+  return res;
+}
+
 async function getDeviceSync(attempt = 0) {
   try {
     const devices = await adb.listDevices();
     console.log({ devices });
     global.adbDevice = false;
     for (const device of devices) {
-      if (device.type == 'offline') continue;
-      global.adbDevice = devices[0].id;
+      if (device.type == 'offline') continue; // TODO: check authorize state
+      if (
+        !global.currentConfiguration.allowOtherDevices
+        && await adbShell('getprop ro.product.brand', device.id) != 'oculus\n'
+      ) continue;
+
+      global.adbDevice = device.id;
     }
 
-    win.webContents.send('check_device', { success: global.adbDevice });
+    if (global.adbDevice || attempt < 1) {
+      win.webContents.send('check_device', { success: global.adbDevice });
+    }
+
     if (!global.adbDevice && attempt <= 2) {
       return setTimeout(()=> getDeviceSync(attempt + 1), 200);
     }
@@ -294,18 +384,21 @@ async function getDeviceSync(attempt = 0) {
  * @param cmd {string}
  * @return {Promise<string>}
  */
-async function adbShell(cmd) {
-  console.log('adbShell', global.adbDevice, { cmd });
+async function adbShell(cmd, deviceId = global.adbDevice) {
   try {
-    const r = await adb.shell(global.adbDevice, cmd);
-    let res = await adbkit.util.readAll(r);
-    res = await res.toString();
-    console.log('adbShell', { res });
+    if (!deviceId) {
+      throw 'device not defined';
+    }
+
+    const r = await adb.shell(deviceId, cmd);
+    let output = await adbkit.util.readAll(r);
+    output = await output.toString();
+    console.log(`adbShell[${deviceId}]`, { cmd, output });
     // adb.util.readAll;
-    return res;
+    return output;
   }
   catch (err) {
-    console.error('adb_stderr', err);
+    console.error(`adbShell[${deviceId}]: err`, {cmd}, err);
     global.adbError = err;
     return false;
   }
@@ -438,18 +531,18 @@ function execShellCommand(cmd, buffer = 5000) {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
         console.error('exec_error', error);
-        global.adbError = error;
-        // return resolve(error);
+        global.execError = error;
+        return resolve(false);
       }
 
       if (stdout) {
         console.log('exec_stdout', stdout);
-        global.adbError = null;
+        global.execError = null;
         return resolve(stdout);
       }
       else {
         console.error('exec_stderr', stderr);
-        global.adbError = stderr;
+        global.execError = stderr;
         return resolve(false);
       }
     });
@@ -595,7 +688,7 @@ async function killRClone(){
 }
 
 
-async function mount(){
+async function mount() {
   if (await checkMount(global.mountFolder)) {
     // return;
     await killRClone();
@@ -627,19 +720,20 @@ async function mount(){
   console.log('start rclone');
   exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
-      console.log(`error: ${error.message}`);
+      console.log('rclone error:', error);
       if (error.message.search('transport endpoint is not connected')) {
         console.log('GEVONDE')
       }
+
       return;
     }
 
     if (stderr) {
-      console.log('stderr:', stderr);
+      console.log('rclone stderr:', stderr);
       return;
     }
 
-    console.log('stdout:', stdout);
+    console.log('rclone stdout:', stdout);
   });
 }
 
@@ -1079,11 +1173,19 @@ async function getPackageInfo(apkPath) {
   // manifest = await reader.readManifestSync()
 
   // console.log(manifest);
-  console.log(manifest.versionCode);
-  console.log(manifest.versionName);
-  console.log(manifest.package);
+  // console.log('manifest', manifest);
+  /*reader.readContent('res/drawable-mdpi-v4/ic_launcher.png')
+  .then(function(image) {
+    console.log(image)
+    fs.writeFile('image.png', image, function(err) {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log('success')
+      }
+    });
+  })*/
 
-  //console.log(manifest)
 
   info = {
     packageName: manifest.package,
@@ -1095,7 +1197,7 @@ async function getPackageInfo(apkPath) {
 }
 
 async function getInstalledApps(send = true) {
-  let apps = await adbShell(`cmd package list packages -3 --show-versioncode`);
+  let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   apps.pop();
   appinfo = [];
@@ -1124,7 +1226,7 @@ async function getInstalledApps(send = true) {
 }
 
 async function getInstalledAppsWithUpdates() {
-  const remotePath = path.join(global.mountFolder, 'Quest Games'); // TODO: folder path to config
+  const remotePath = path.join(global.mountFolder, global.currentConfiguration.mntGamePath); // TODO: folder path to config
   const list = await getDir(remotePath);
   let remotePackages = {};
   let remoteList = {};
@@ -1234,14 +1336,17 @@ function updateRcloneProgress() {
 
 function reloadConfig() {
   const defaultConfig = {
+    allowOtherDevices: false,
     autoMount: false,
     cfgSection: 'VRP-mirror10',
     rclonePath: '',
+    snapshotsDelete: true,
+    mntGamePath: 'Quest Games',
   };
   try {
     if (fs.existsSync(configLocation)) {
       console.log('Config exist, using ' + configLocation);
-      global.currentConfiguration = require(configLocation);
+      global.currentConfiguration = Object.assign(defaultConfig, require(configLocation));
     }
     else {
       console.log('Config doesnt exist, creating ') + configLocation;

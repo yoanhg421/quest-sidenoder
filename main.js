@@ -121,14 +121,14 @@ ipcMain.on('check_deps', async (event, arg) => {
 
 ipcMain.on('mount', async (event, arg) => {
   await tools.mount();
-  await setTimeout(async function() {
-    await tools.checkMount()
+  setTimeout(async () => {
+    await tools.checkMount();
     event.reply('check_mount', { success: global.mounted, mountFolder: global.mountFolder });
     if (global.mounted) {
-      tools.updateRcloneProgress()
+      tools.updateRcloneProgress();
     }
-  }, 2000);
-  //tools.setTimeout(updateRcloneProgress, 2000);
+  }, 1500);
+
   return;
 });
 
@@ -231,23 +231,36 @@ ipcMain.on('enable_mtp', async (event, arg) => {
   return;
 });
 
-ipcMain.on('mp_name', async (event, { cmd, val }) => {
-  console.log('mp_name received', { cmd, val });
-
-  if (cmd == 'get') {
-    const name = await tools.multiplayerNameGet();
-    event.reply('mp_name', { cmd, name });
+ipcMain.on('reboot_device', async (event, arg) => {
+  console.log('reboot_device received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
   }
 
-  if (cmd == 'set') {
+  res = await tools.rebootDevice();
+  event.reply('reboot_device', { success: !!res });
+  return;
+});
+
+ipcMain.on('device_tweaks', async (event, arg) => {
+  console.log('device_tweaks received', arg);
+
+  if (arg.cmd == 'get') {
+    const res = await tools.deviceTweaksGet(arg);
+    event.reply('device_tweaks', res);
+  }
+
+  if (arg.cmd == 'set') {
     if (!global.adbDevice) {
       console.log('Missing device, sending ask_device');
       event.reply('ask_device', '');
       return;
     }
 
-    const res = await tools.multiplayerNameSet(val);
-    event.reply('mp_name', { cmd, res });
+    const res = await tools.deviceTweaksSet(arg);
+    event.reply('device_tweaks', arg);
   }
 
   return;
@@ -283,16 +296,8 @@ ipcMain.on('change_config', async (event, { key, val }) => {
 ipcMain.on('app_info', async (event, arg) => {
   console.log('app_info received', arg);
   const res = await tools.appInfo(arg);
-  console.log({ res });
+  // console.log({ res });
   event.reply('app_info', res);
-  return;
-});
-
-
-ipcMain.on('open_debug', async (event, arg) => {
-  console.log('open_debug received', arg);
-  global.win.webContents.openDevTools();
-  event.reply('open_debug', { success: true });
   return;
 });
 

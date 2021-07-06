@@ -7,6 +7,12 @@
     $('#autoMount').on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key: 'autoMount', val: e.target.checked});
     });
+    if (remote.getGlobal('currentConfiguration').allowOtherDevices) {
+      $('#allowOtherDevices').prop('checked', true);
+    }
+    $('#allowOtherDevices').on('change.bootstrapSwitch', (e) => {
+      ipcRenderer.send('change_config', {key: 'allowOtherDevices', val: e.target.checked});
+    });
 
     $('#cfgSection').val(remote.getGlobal('currentConfiguration').cfgSection);
     $('#cfgSection').on('change', (e) => {
@@ -15,7 +21,7 @@
 
 
     $('#debugTool').on('click', (e) => {
-      ipcRenderer.send('open_debug', '');
+      remote.getGlobal('win').webContents.openDevTools();
     });
 
     async function setRclone() {
@@ -50,10 +56,10 @@
     <h2 class="">Settings</h2>
   </div>
   <div class="card-body">
-    <div class="card-text col-6">
+    <div class="card-text container">
       <div class="form-group mb-3">
         <label for="cfgMirror">Select rclone mirror(click on mount status button to remount):</label>
-        <select class="form-control" id="cfgSection">
+        <select class="custom-select" id="cfgSection">
           <!-- <option value="VRP-mirror02">VRP-mirror02</option> -->
           <option value="VRP-mirror03">VRP-mirror03</option>
           <option value="VRP-mirror06">VRP-mirror06</option>
@@ -77,6 +83,18 @@
           <input class="form-check-input" type="checkbox" id="autoMount">
           Automatically mount drive on startup (if not already mounted)
         </label>
+      </div>
+      <div class="form-check mb-3">
+        <label for="allowOtherDevices" class="form-check-label">
+          <input class="form-check-input" type="checkbox" id="allowOtherDevices">
+          Allow to connect not oculus devices
+        </label>
+      </div>
+
+      <div class="form-group">
+        <a id="debugTool" class="btn btn-primary">
+          <i class="fa fa-bug" aria-hidden="true"></i> Open debug tools
+        </a>
       </div>
     </div>
   </div>
