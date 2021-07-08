@@ -11,7 +11,7 @@ ipcRenderer.on('list_installed_app', (event, arg) => {
   else {
     trstring += `<a onclick="uninstall(this, '${arg.packageName}')" class="adbdev btn btn-danger"> <i id="uninstallBtn" class="fa fa-trash-o" aria-hidden="true"></i> Uninstall</a> `;
     trstring += `<a onclick="startApp(this, '${arg.packageName}')" class="adbdev btn btn-info"> <i id="startBtn" class="fa fa-play" aria-hidden="true"></i> Launch</a> `;
-    trstring += `<a onclick="appTools('${arg.packageName}')" class="adbdev btn btn-primary"> <i id="uninstallBtn" class="fa fa-cog" aria-hidden="true"></i> Tools</a> `;
+    // trstring += `<a onclick="appTools('${arg.packageName}')" class="adbdev btn btn-primary"> <i id="uninstallBtn" class="fa fa-cog" aria-hidden="true"></i> Tools</a> `;
   }
 
   trstring += `<td></tr>`

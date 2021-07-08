@@ -398,15 +398,15 @@ async function startSCRCPY() {
   }
 
   const scrcpyCmd = `${global.currentConfiguration.scrcpyPath || 'scrcpy'} ` +
-    `--crop ${global.currentConfiguration.scrcpyCrop} ` +
+    (global.currentConfiguration.scrcpyCrop ? `--crop ${global.currentConfiguration.scrcpyCrop} `: '') +
     `-b ${global.currentConfiguration.scrcpyBitrate || 1}000000 ` +
-    `${global.currentConfiguration.scrcpyFps ? '--max-fps' + global.currentConfiguration.scrcpyFps : ''} ` +
-    `${global.currentConfiguration.scrcpySize ? '--max-size' + global.currentConfiguration.scrcpySize : ''} ` +
-    `${!global.currentConfiguration.scrcpyWindow ? '-f' : ''} ` +
-    `${global.currentConfiguration.scrcpyOnTop ? '--always-on-top' : ''} ` +
-    `${!global.currentConfiguration.scrcpyControl ? '-n' : ''} ` +
+    (global.currentConfiguration.scrcpyFps ? `--max-fps ${global.currentConfiguration.scrcpyFps} ` : '') +
+    (global.currentConfiguration.scrcpySize ? `--max-size ${global.currentConfiguration.scrcpySize} ` : '') +
+    (!global.currentConfiguration.scrcpyWindow ? '-f ' : '') +
+    (global.currentConfiguration.scrcpyOnTop ? '--always-on-top ' : '') +
+    (!global.currentConfiguration.scrcpyControl ? '-n ' : '') +
     '--window-title "SideNoder Stream" ' +
-    `-s ${global.adbDevice}`;
+    `-s ${global.adbDevice} `;
   console.log({ scrcpyCmd });
   wakeUp();
   exec(scrcpyCmd, (error, stdout, stderr) => {
@@ -722,18 +722,44 @@ async function checkMount() {
 async function checkDeps(){
   console.log('checkDeps()');
   let res = {
-    adb: null,
-    rclone: null,
-    success: false,
+    adb: {
+      version: false,
+      error: false,
+    },
+    rclone: {
+      version: false,
+      cmd: false,
+      error: 'unknown',
+    },
+    scrcpy: {
+      version: false,
+      cmd: false,
+      error: 'unknown',
+    },
   };
-    // exists = await commandExists('adb');
-  res.adb = await adb.version();
-
   try {
-    res.rclone = global.currentConfiguration.rclonePath || await commandExists('rclone');
+    res.adb.version = await adb.version();
   }
   catch (e) {
-    return res;
+    res.adb.error = e;
+  }
+
+  try {
+    res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
+    res.rclone.version = await execShellCommand(`${res.rclone.cmd} --version`);
+    if (!res.rclone.version) throw global.execError;
+  }
+  catch (e) {
+    res.rclone.error = e;
+  }
+
+  try {
+    res.scrcpy.cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
+    res.scrcpy.version = await execShellCommand(`${res.scrcpy.cmd} --version`);
+    if (!res.scrcpy.version) res.scrcpy.version = global.execError; // don`t know why version at std_err((
+  }
+  catch (e) {
+    res.scrcpy.error = e;
   }
 
   res.success = true;

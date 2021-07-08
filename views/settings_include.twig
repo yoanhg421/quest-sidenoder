@@ -47,6 +47,29 @@
     });
     $('#rclonePathBtn').on('click', (e) => setRclone());
 
+    async function setSCRCPY() {
+      const file = await dialog.showOpenDialog(null, {
+        title: 'SCRCPY custom path',
+        message: 'Browse to scrcpy',
+        properties: ['openFile'],
+        filters: [{
+          name: 'Exe', extensions: ['exe'],
+          name: 'All', extensions: ['*'],
+        }],
+      });
+      if (file.canceled) return;
+      const scrcpyPath = file.filePaths[0];
+      $('#scrcpyPath').val(scrcpyPath);
+      ipcRenderer.send('change_config', {key: 'scrcpyPath', val: scrcpyPath});
+      return rclonePath;
+    }
+
+    $('#scrcpyPath').val(remote.getGlobal('currentConfiguration').scrcpyPath);
+    $('#scrcpyPath').on('change', (e) => {
+      ipcRenderer.send('change_config', {key: 'scrcpyPath', val: e.target.value});
+    });
+    $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
+
     // setRclone();
   });
 </script>
@@ -76,6 +99,13 @@
         <div class="input-group">
           <input id="rclonePath" class="form-control" value="" />
           <a class="btn btn-primary" id="rclonePathBtn">Browse</a>
+        </div>
+      </div>
+      <div class="form-group mb-4">
+        <label for="scrcpyPath"><a onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">SCRCPY</a> custom path:</label>
+        <div class="input-group">
+          <input id="scrcpyPath" class="form-control" value="" />
+          <a class="btn btn-primary" id="scrcpyPathBtn">Browse</a>
         </div>
       </div>
       <div class="form-check mb-3">
