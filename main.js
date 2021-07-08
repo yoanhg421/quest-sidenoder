@@ -89,7 +89,7 @@ ipcMain.on('check_device', async (event, arg) => {
 
 ipcMain.on('connect_wireless', async (event, arg) => {
   console.log('connect_wireless received');
-  if (!global.adbDevice) {
+  if (!global.adbDevice && !global.currentConfiguration.lastIp) {
     console.log('Missing device, sending ask_device');
     event.reply('connect_wireless', { success: false });
     event.reply('ask_device', '');
@@ -103,8 +103,8 @@ ipcMain.on('connect_wireless', async (event, arg) => {
 
 ipcMain.on('disconnect_wireless', async (event, arg) => {
   console.log('disconnect_wireless received');
-  await tools.disconnectWireless();
-  event.reply('connect_wireless', { success: false });
+  const res = await tools.disconnectWireless();
+  event.reply('connect_wireless', { success: !res });
   return;
 });
 
@@ -228,6 +228,19 @@ ipcMain.on('enable_mtp', async (event, arg) => {
 
   res = await tools.enableMTP();
   event.reply('enable_mtp', { success: !!res });
+  return;
+});
+
+ipcMain.on('scrcpy_start', async (event, arg) => {
+  console.log('scrcpy_start received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
+  }
+
+  res = await tools.startSCRCPY();
+  event.reply('scrcpy_start', { success: !!res });
   return;
 });
 

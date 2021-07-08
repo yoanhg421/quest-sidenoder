@@ -1,0 +1,96 @@
+<!-- Modal -->
+<div class="modal" id="scrcpyModal" >
+  <div role="document" style="margin: 1.75rem auto; min-width:580px; max-width:40%"> <!-- class="modal-dialog"  -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="scrcpyModalLabel">Screen share</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card-body">
+          <div class="alert alert-dismissible alert-warning">
+            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+            WARNING: You need installed <a onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">scrcpy</a>
+          </div>
+          <div class="form-group">
+            <label class="mb-1" for="scrcpy_bitrate">
+              <h6 class="card-title mb-0">Video BitRate</h6>
+              <small class="card-text">
+                Performance option
+              </small>
+            </label>
+            <select id="scrcpy_bitrate" class="adbdev custom-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="mb-1" for="scrcpy_crop">
+              <h6 class="card-title mb-0">Crop</h6>
+              <small class="card-text">
+                Crop the device screen on the server. The values are expressed in the device natural orientation (typically, portrait for a phone, landscape for a tablet). Any MaxSize value is computed on the cropped size
+              </small>
+            </label>
+            <input id="scrcpy_crop" class="adbdev form-control col-6" style="display:inline-block;" value="" />
+            <a class="btn btn-info" id="crop_quest2">Quest 2</a>
+            <a class="btn btn-info" id="crop_quest1">Quest 1</a>
+          </div>
+          <div class="form-group">
+            <label class="mb-1" for="scrcpy_fps">
+              <h6 class="card-title mb-0">Max fps</h6>
+              <small class="card-text">
+                Limit the frame rate of screen capture
+              </small>
+            </label>
+            <input id="scrcpy_fps" class="adbdev form-control" value="" />
+          </div>
+          <div class="form-group">
+            <label class="mb-1" for="scrcpy_size">
+              <h6 class="card-title mb-0">Max Size</h6>
+              <small class="card-text">
+                Limit both the width and height of the video to value. The other dimension is computed so that the device aspect-ratio is preserved
+              </small>
+            </label>
+            <input id="scrcpy_size" class="adbdev form-control" value="" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="scrcpy_start" type="button" class="btn btn-primary" data-dismiss="modal">Start stream</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  console.log('ONLOAD scrcpy MODAL');
+
+  let bitrate_options = '';
+  for (let i = 1; i <= 10; i++) {
+    bitrate_options+= `<option value="${i}" ${i == remote.getGlobal('currentConfiguration').scrcpyBitrate ? 'selected="selected"' : ''}>${i} Mbits/s</option>`;
+  }
+
+  $('#scrcpy_bitrate').html(bitrate_options);
+  $('#scrcpy_crop').val(remote.getGlobal('currentConfiguration').scrcpyCrop);
+  $('#scrcpy_fps').val(remote.getGlobal('currentConfiguration').scrcpyFps);
+  $('#scrcpy_size').val(remote.getGlobal('currentConfiguration').scrcpySize);
+  $('#scrcpy_bitrate').on('change', (e) => {
+    ipcRenderer.send('change_config', {key: 'scrcpyBitrate', val: e.target.value});
+  });
+  $('#scrcpy_crop').on('change', (e) => {
+    ipcRenderer.send('change_config', {key: 'scrcpyCrop', val: e.target.value});
+  });
+  $('#scrcpy_fps').on('change', (e) => {
+    ipcRenderer.send('change_config', {key: 'scrcpyFps', val: e.target.value});
+  });
+  $('#scrcpy_size').on('change', (e) => {
+    ipcRenderer.send('change_config', {key: 'scrcpySize', val: e.target.value});
+  });
+
+  $('#crop_quest1').on('click', () => $('#scrcpy_crop').val('1280:720:1500:350').trigger('change'));
+  $('#crop_quest2').on('click', () => $('#scrcpy_crop').val('1600:900:2017:510').trigger('change'));
+
+  $('#scrcpy_start').on('click', () => {
+    ipcRenderer.send('scrcpy_start');
+  });
+
+</script>

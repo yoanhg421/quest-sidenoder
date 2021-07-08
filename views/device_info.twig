@@ -4,8 +4,8 @@
   ipcRenderer.removeAllListeners('get_device_info');
   ipcRenderer.on('get_device_info', (event, arg) => {
     clearTimeout(timer);
-    timer = setTimeout(() => ipcRenderer.send('get_device_info', ''), 30000);
     if (!remote.getGlobal('adbDevice')) return;
+    timer = setTimeout(() => ipcRenderer.send('get_device_info', ''), 30000);
 
     console.log('get_device_info ! ', arg);
     const {

@@ -61,6 +61,7 @@ module.exports =
   connectWireless,
   disconnectWireless,
   enableMTP,
+  startSCRCPY,
   rebootDevice,
   getActivities,
   startActivity,
@@ -76,6 +77,8 @@ module.exports =
   deviceTweaksGet,
   deviceTweaksSet,
   appInfo,
+  isIdle,
+  wakeUp,
   // ...
 }
 
@@ -292,6 +295,9 @@ async function checkUpdateAvailable() {
 async function getDeviceIp() {
   // let ip = await adb.getDHCPIpAddress(global.adbDevice);
   // if (ip) return ip;
+  if (!global.adbDevice && global.currentConfiguration.lastIp) {
+    return global.currentConfiguration.lastIp;
+  }
 
   let ip = await adbShell(`ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
   console.log(ip);
@@ -313,13 +319,20 @@ async function connectWireless() {
   try {
     // await execShellCommand(`adb tcpip 5555`);
     // const res = await execShellCommand(`adb connect ${ip}:5555`);
-    await adb.tcpip(global.adbDevice);
+    if (global.adbDevice) {
+      const tcp = await adb.tcpip(global.adbDevice);
+      console.log('set tcpip', tcp);
+      changeConfig('lastIp', ip);
+    }
+
     const res = await adb.connect(ip, 5555);
     console.log('connectWireless', { ip, res });
+
     return ip;
   }
   catch (err) {
     console.error('connectWireless', err);
+    changeConfig('lastIp', '');
     return false;
   }
 }
@@ -329,17 +342,88 @@ async function disconnectWireless() {
   if (!ip) return false;
 
   // const res = await execShellCommand(`adb disconnect ${ip}:5555`);
-  // const res = await adb.disconnect(ip, 5555);
-  const res = await adb.usb(global.adbDevice);
-  console.log('disconnectWireless', { ip, res });
-  await getDeviceSync();
-  return res;
+  try {
+    const res = await adb.disconnect(ip, 5555);
+    // const res = await adb.usb(global.adbDevice);
+    console.log('disconnectWireless', { ip, res });
+    // changeConfig('lastIp', '');
+    // await getDeviceSync();
+    return res;
+  }
+  catch (err) {
+    console.error('disconnectWireless.error', err);
+    return !(await isWireless());
+  }
+}
+
+async function isWireless() {
+  try {
+    const devices = await adb.listDevices();
+    for (const device of devices) {
+      if (!device.id.includes(':5555')) continue;
+      if (['authorizing', 'offline'].includes(device.type)) continue;
+      return device.id;
+    }
+
+    return false;
+  }
+  catch (err) {
+    console.error('Something went wrong:', err.stack);
+    return false;
+  }
 }
 
 async function enableMTP() {
   const res = await adbShell(`svc usb setFunctions mtp`);
   console.log('enableMTP', { res });
   return res;
+}
+
+async function isIdle() {
+  const res = await adbShell(`dumpsys deviceidle | grep mScreenOn`);
+  console.log(res, res.includes('true'));
+  return !res.includes('true');
+}
+
+async function wakeUp() {
+  if (!await isIdle()) return;
+  return adbShell(`input keyevent KEYCODE_POWER`);
+}
+
+async function startSCRCPY() {
+  console.log('startSCRCPY()');
+  if (!global.currentConfiguration.scrcpyPath && !(await commandExists('scrcpy'))) {
+    returnError('Can`t find scrcpy binary');
+    return;
+  }
+
+  const scrcpyCmd = `${global.currentConfiguration.scrcpyPath || 'scrcpy'} ` +
+    `--crop ${global.currentConfiguration.scrcpyCrop} ` +
+    `-b ${global.currentConfiguration.scrcpyBitrate || 1}000000 ` +
+    `${global.currentConfiguration.scrcpyFps ? '--max-fps' + global.currentConfiguration.scrcpyFps : ''} ` +
+    `${global.currentConfiguration.scrcpySize ? '--max-size' + global.currentConfiguration.scrcpySize : ''} ` +
+    `${!global.currentConfiguration.scrcpyWindow ? '-f' : ''} ` +
+    `${global.currentConfiguration.scrcpyOnTop ? '--always-on-top' : ''} ` +
+    `${!global.currentConfiguration.scrcpyControl ? '-n' : ''} ` +
+    '--window-title "SideNoder Stream" ' +
+    `-s ${global.adbDevice}`;
+  console.log({ scrcpyCmd });
+  wakeUp();
+  exec(scrcpyCmd, (error, stdout, stderr) => {
+    if (error) {
+      console.error('scrcpy error:', error);
+      return;
+    }
+
+    if (stderr) {
+      console.error('rclone stderr:', stderr);
+      return;
+    }
+
+    console.log('scrcpy stdout:', stdout);
+  });
+
+  return true;
 }
 
 async function rebootDevice() {
@@ -354,7 +438,7 @@ async function getDeviceSync(attempt = 0) {
     console.log({ devices });
     global.adbDevice = false;
     for (const device of devices) {
-      if (device.type == 'offline') continue; // TODO: check authorize state
+      if (['authorizing', 'offline'].includes(device.type)) continue;
       if (
         !global.currentConfiguration.allowOtherDevices
         && await adbShell('getprop ro.product.brand', device.id) != 'oculus\n'
@@ -512,7 +596,7 @@ async function adbPushFolder(orig, dest, sync = false) {
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
     const new_dest = path.join(dest, file.name);
-    if (file.isFile()) {adbPushFolder
+    if (file.isFile()) {
       await adbPush(new_orig, new_dest, sync);
       continue;
     }
@@ -567,7 +651,8 @@ async function trackDevices() {
     });
 
     tracker.on('end', () => {
-      console.log('Tracking stopped')
+      console.error('Tracking stopped');
+      trackDevices();
     });
   }
   catch(err) {
@@ -655,7 +740,7 @@ async function checkDeps(){
   return res;
 }
 
-function returnError(message){
+function returnError(message) {
   console.log('returnError()');
   global.win.loadURL(`file://${__dirname}/views/error.twig`)
   global.twig.view = {
@@ -1342,6 +1427,9 @@ function reloadConfig() {
     rclonePath: '',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
+    scrcpyBitrate: '5',
+    scrcpyCrop: '1600:900:2017:510',
+    lastIp: '',
   };
   try {
     if (fs.existsSync(configLocation)) {
