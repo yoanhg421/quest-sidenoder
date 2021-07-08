@@ -41,7 +41,7 @@
     },
     "afterPack": "./removeLocales.js",
     "mac": {
-      "target": "dir"
+      "target": ["dir", "dmg"]
     }
   },
   "keywords": [],

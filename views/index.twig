@@ -28,7 +28,7 @@
         }
         else {
             $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
-RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" href="shell.openExternal('https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version')">README on github</a>.
+RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version')">README on github</a>.
                 <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.rclone.error}</pre>`)
         }
 
@@ -39,8 +39,8 @@ RCLONE global installation not found, please read the <a class="btn btn-sm btn-i
         }
         else {
             $('#scrcpyCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
-SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" href="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">README on github</a>.
-                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="https://github.com/Genymobile/scrcpy/releases/latest')">scrcpy</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.scrcpy.error}</pre>`)
+SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">README on github</a>.
+                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">scrcpy</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.scrcpy.error}</pre>`)
         }
     });
 
