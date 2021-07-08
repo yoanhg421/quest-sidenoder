@@ -3,67 +3,63 @@
 {% block onload %}
   {{ parent() }}
 <script>
-    $(document).ready(function() {
-        console.log('ONLOAD INDEX');
-        console.log('sending check_deps');
+    console.log('ONLOAD INDEX');
+    console.log('sending check_deps');
 
-        ipcRenderer.send('check_deps', 'bla');
+    ipcRenderer.send('check_deps', 'bla');
 
-        ipcRenderer.removeAllListeners('check_deps');
-        ipcRenderer.on('check_deps', (event, arg) => {
-            console.log('check_deps msg came: ', arg); // prints "ping"
-            if (arg.success) {
-                $('#adbCheckIndicator').removeClass('badge-danger');
-                $('#adbCheckIndicator').addClass('badge-success');
-                $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb})`);
-                $('#aaptCheckIndicator').removeClass('badge-danger');
-                $('#aaptCheckIndicator').addClass('badge-success');
-                $('#aaptCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> AAPT Installed`);
+    ipcRenderer.removeAllListeners('check_deps');
+    ipcRenderer.on('check_deps', (event, arg) => {
+        console.log('check_deps msg came: ', arg); // prints "ping"
+        const { adb, rclone, scrcpy } = arg;
+        if (adb.version) {
+            $('#adbCheckIndicator').removeClass('badge-danger');
+            $('#adbCheckIndicator').addClass('badge-success');
+            $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb.version})`);
+        }
+        else {
+            $('#adbCheckIndicator').html(`<i class="fa fa-times-circle"></i> ADB Included(adbkit)<br/><pre style="font-size: x-small;">${arg.adb.error}</pre>`);
+        }
+
+        if (arg.rclone.version) {
                 $('#rcloneCheckIndicator').removeClass('badge-danger');
                 $('#rcloneCheckIndicator').addClass('badge-success');
-                $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed`);
-            }
-            else {
-                if (arg.adb) {
-                    $('#adbCheckIndicator').removeClass('badge-danger');
-                    $('#adbCheckIndicator').addClass('badge-success');
-                    $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb})`);
-                }
+                $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed (${arg.rclone.cmd})<br/><pre style="font-size: x-small;">${arg.rclone.version}</pre>`);
+        }
+        else {
+            $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
+RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" href="shell.openExternal('https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version')">README on github</a>.
+                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.rclone.error}</pre>`)
+        }
 
-                if (arg.rclone) {
-                    $('#rcloneCheckIndicator').removeClass('badge-danger');
-                    $('#rcloneCheckIndicator').addClass('badge-success');
-                    $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed`);
-                }
-                else {
-                    $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
- RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" href="https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version">README on github</a>.
-                        <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings`)
-                }
-            }
-        });
-
-        $(document).ready(function() {
-
-          console.log('ONLOAD');
-          // ipcRenderer.send('check_mount', 'bla');
-          // ipcRenderer.send('check_device', 'bla');
-          {% if currentConfiguration.autoMount %}checkMount();{% endif %}
-
-          console.log('setup ask device listener')
-          ipcRenderer.on('ask_device', (event, arg) => {
-            console.log('ask_device msg came ! ');
-            dialog.showMessageBox(null, {
-              type: 'info',
-              buttons: ['Understood'],
-              title: 'Missing device',
-              message: `This action cannot be performed without a device attached.`,
-            })
-          });
-
-        });
-
+        if (arg.scrcpy.version) {
+                $('#scrcpyCheckIndicator').removeClass('badge-warning');
+                $('#scrcpyCheckIndicator').addClass('badge-success');
+                $('#scrcpyCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> SCRCPY Installed (${arg.scrcpy.cmd})<br/><pre style="font-size: x-small;">${arg.scrcpy.version}</pre>`);
+        }
+        else {
+            $('#scrcpyCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
+SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" href="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">README on github</a>.
+                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="https://github.com/Genymobile/scrcpy/releases/latest')">scrcpy</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.scrcpy.error}</pre>`)
+        }
     });
+
+  console.log('ONLOAD');
+  // ipcRenderer.send('check_mount', 'bla');
+  // ipcRenderer.send('check_device', 'bla');
+  {% if currentConfiguration.autoMount %}checkMount();{% endif %}
+
+  console.log('setup ask device listener')
+  ipcRenderer.on('ask_device', (event, arg) => {
+    console.log('ask_device msg came ! ');
+    dialog.showMessageBox(null, {
+      type: 'info',
+      buttons: ['Understood'],
+      title: 'Missing device',
+      message: `This action cannot be performed without a device attached.`,
+    })
+  });
+
 
 </script>
 {% endblock %}
@@ -94,8 +90,8 @@
             <h3>
                 <div class="badge badge-danger text-left" id="rcloneCheckIndicator">RCLONE not found | PLEASE INSTALL RCLONE GLOBALLY</div>
             </h3>
-                {# <h3><div class="badge badge-danger" id="aaptCheckIndicator">AAPT not found | PLEASE INSTALL ADB GLOBALLY</div></h3>
-                #}
+            <h3>
+                <div class="badge badge-warning text-left" id="scrcpyCheckIndicator">SCRCPY not found | PLEASE INSTALL SCRCPY GLOBALLY</div>
             </h3>
         </div>
     </div>

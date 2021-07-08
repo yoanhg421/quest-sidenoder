@@ -100,7 +100,7 @@ What makes sidenoder better than other sideloaders ?
 
 #### Run precompiled release on mac:
 
-1. Install ADB, RCLONE and OSXFUSE:
+1. Install RCLONE and OSXFUSE:
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 curl https://rclone.org/install.sh | sudo bash

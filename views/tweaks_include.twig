@@ -8,14 +8,18 @@
         <div class="card-header">Tools:</div>
         <div class="card-body">
           <div class="alert alert-dismissible alert-warning">
+            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
             WARNING: Some of this tweaks may reset to default when you restart your headset
           </div>
           <br/>
           <div class="form-group">
-            <a id="enableMTP" class="adbdev btn btn-primary" title="mount as usb storage">
-              <i class="fa fa-plug" aria-hidden="true"></i> Enable MTP mode
+            <a id="scrcpyCfg" class="adbdev btn btn-primary">
+              <i class="fa fa-share-square" aria-hidden="true"></i> Screen share
             </a>
-            <a id="rebootDevice" class="adbdev btn btn-danger" title="mount as usb storage">
+            <a id="enableMTP" class="adbdev btn btn-primary" title="mount device as usb storage">
+              <i class="fa fa-plug" aria-hidden="true"></i> Switch USB mode to MTP
+            </a>
+            <a id="rebootDevice" class="adbdev btn btn-danger">
               <i class="fa fa-refresh" aria-hidden="true"></i> Reboot device
             </a>
           </div>
@@ -44,7 +48,7 @@
       <div class="card text-white bg-primary mb-1">
         <div class="card-header">Snapshots:</div>
         <div class="card-body">
-          <div class="form-group">
+          <!-- <div class="form-group">
             <a id="pullScreenshots" class="adbdev btn btn-primary">
               <i class="fa fa-download" aria-hidden="true"></i> Grub the Screenshots
             </a>
@@ -58,7 +62,7 @@
               Clear from device after pulling
             </label>
           </div>
-          <hr/>
+          <hr/> -->
           <div class="form-group mb-3">
             <label class="mb-1" for="cres">
               <h6 class="card-title mb-0">Set Screenshots Size</h6>
@@ -254,6 +258,9 @@
 
     $('#enableMTP').on('click', function (e) {
       ipcRenderer.send('enable_mtp', '');
+    });
+    $('#scrcpyCfg').on('click', function (e) {
+      $('#scrcpyModal').modal('show');
     });
     $('#rebootDevice').on('click', function (e) {
       ipcRenderer.send('reboot_device', '');

@@ -24,7 +24,9 @@
     $('#confirmModal').modal('hide');
     //
     data = {path: $('#confirmSideloadButton').data('path'), update: $('#confirmSideloadButton').data('update')}
-    ipcRenderer.send('start_sideload', data);
+    loadInclude('modals/sideload.twig', 'sideloadmodaldiv', () => {
+      ipcRenderer.send('start_sideload', data);
+    });
   });
 
   ipcRenderer.removeAllListeners('ask_sideload');
