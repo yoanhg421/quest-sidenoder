@@ -1,6 +1,6 @@
 <!-- Modal -->
 <div class="modal" id="appinfoModal" >
-  <div role="document" style="margin: 1.75rem auto; min-width:600px; max-width:60%"> <!-- class="modal-dialog"  -->
+  <div role="document" style="margin: 1.75rem auto; min-width:804px; max-width:48%"> <!-- class="modal-dialog"  -->
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="appinfoModalLabel">Unknown</h5>
@@ -26,8 +26,8 @@
         <br/>
         <b>Description:</b>
         <br/>
-        <div id="appinfoText"></div>
-        <div id="appinfoAbout"></div>
+        <div id="appinfoText" class="text-center"></div>
+        <div id="appinfoAbout" class="text-center"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -73,13 +73,13 @@
     }
 
     if (data.header_image) {
-      $('#cbp-fwslider ul').append(`<li><img src="${data.header_image}" width="600" alt="header"/></li>`);
+      $('#cbp-fwslider ul').append(`<li><img src="${data.header_image}" width="720" alt="header"/></li>`);
     }
 
     if (data.movies) {
       for (const movie of data.movies) {
         if (!movie.mp4) continue;
-        $('#cbp-fwslider ul').append(`<li><video width="600" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`);
+        $('#cbp-fwslider ul').append(`<li><video width="600" style="max-height: 360px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`);
       }
     }
 

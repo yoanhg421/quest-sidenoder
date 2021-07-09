@@ -8,7 +8,7 @@
   // call get_dir when selection is made
   function getDir(elem, newpath = false) {
     if (!newpath) {
-      elem.onclick = false;
+      // elem.onclick = false;
       newpath = elem.dataset.path;
     }
 
@@ -80,6 +80,9 @@
     <h2 class="pull-left push-left" style="padding-top:10px">
       <i class="fa fa-folder-open" aria-hidden="true"></i>
       <span id="path"></u></span>
+    </h2>
+    <h2 class="pull-right push-right">
+      <a class="adbdev btn btn-primary" onclick="getDir(false, $('#path').text())"> <i id="wirelessbtnrefresh" class="fa fa-refresh"></i> Refresh</a>
     </h2>
   </div>
   <div class="card-body">

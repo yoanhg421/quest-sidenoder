@@ -1181,7 +1181,10 @@ async function sideloadFolder(arg) {
     win.webContents.send('sideload_process', res);
   }
   catch (e) {
-    console.log(e);
+    console.error(e);
+    res.apk = 'fail';
+    res.error = e;
+    win.webContents.send('sideload_process', res);
   }
 
   try {
