@@ -1,19 +1,19 @@
 {
   "name": "sidenoder",
-  "version": "0.3.2",
-  "description": "SideNoder",
+  "version": "0.3.3",
+  "description": "SideNoder - oculus quest tool for sideloading, device tweaks, application managing, etc",
   "main": "main.js",
   "dependencies": {
-    "adbkit": "^2.11.1",
+    "@devicefarmer/adbkit": "^3.2.0",
     "adbkit-apkreader": "^3.2.0",
     "command-exists": "^1.2.9",
     "compare-versions": "^3.6.0",
-    "electron-squirrel-startup": "^1.0.0",
     "electron-twig": "^1.1.1",
     "fix-path": "^3.0.0",
     "fs-extra": "^9.0.1",
     "jquery": "^3.5.1",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "web-auto-extractor": "^1.0.17"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.54",
@@ -61,7 +61,11 @@
         },
         {
           "name": "@electron-forge/maker-deb",
-          "config": {}
+          "config": {
+            "options": {
+              "icon": "./build/icon.png"
+            }
+          }
         },
         {
           "name": "@electron-forge/maker-dmg",

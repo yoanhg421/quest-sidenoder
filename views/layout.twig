@@ -296,7 +296,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a id="remotebtn" class="btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
+        <a id="remotebtn" disabled="disabled" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
           <i class="fa fa-folder-open-o" aria-hidden="true"></i>
             Remote
         </a>

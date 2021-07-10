@@ -1,6 +1,6 @@
 const exec = require('child_process').exec;
-const adbkit = require('adbkit')
 const ApkReader = require('adbkit-apkreader');
+const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
 const fs = require('fs');
 const fsExtra = require('fs-extra');
@@ -18,7 +18,7 @@ const fixPath = require('fix-path');
 fixPath();
 
 const configLocation = path.join(homedir, 'sidenoder-config.json');
-const STEAM_IDS = require('./steamids.js');
+const STEAM_IDS = {}//require('./steamids.js');
 
 console.log({platform});
 if (!['win64', 'win32'].includes(platform)) {
@@ -320,13 +320,16 @@ async function connectWireless() {
     // await execShellCommand(`adb tcpip 5555`);
     // const res = await execShellCommand(`adb connect ${ip}:5555`);
     if (global.adbDevice) {
-      const tcp = await adb.tcpip(global.adbDevice);
-      console.log('set tcpip', tcp);
+      const device = adb.getDevice(global.adbDevice);
+      const port = await device.tcpip();
+      await device.waitForDevice();
+      console.log('set tcpip', port);
       changeConfig('lastIp', ip);
     }
 
-    const res = await adb.connect(ip, 5555);
-    console.log('connectWireless', { ip, res });
+    const deviceTCP = await adb.connect(ip, 5555);
+    // await deviceTCP.waitForDevice();
+    console.log('connectWireless', { ip, res: deviceTCP });
 
     return ip;
   }
@@ -474,7 +477,7 @@ async function adbShell(cmd, deviceId = global.adbDevice) {
       throw 'device not defined';
     }
 
-    const r = await adb.shell(deviceId, cmd);
+    const r = await adb.getDevice(deviceId).shell(cmd);
     let output = await adbkit.util.readAll(r);
     output = await output.toString();
     console.log(`adbShell[${deviceId}]`, { cmd, output });
@@ -525,7 +528,7 @@ async function adbPullFolder(orig, dest, sync = false) {
   let need_close = false;
   if (!sync) {
     need_close = true;
-    sync = await adb.syncService(global.adbDevice);
+    sync = await adb.getDevice(global.adbDevice).syncService();
   }
 
   console.log('pullFolder', orig, dest);
@@ -588,7 +591,7 @@ async function adbPushFolder(orig, dest, sync = false) {
   let need_close = false;
   if (!sync) {
     need_close = true;
-    sync = await adb.syncService(global.adbDevice);
+    sync = await adb.getDevice(global.adbDevice).syncService();
   }
 
   await adbShell(`mkdir ${dest}`);
@@ -1071,9 +1074,18 @@ async function sideloadFolder(arg) {
   win.webContents.send('sideload_process', res);
 
   console.log('checking if installed');
-  installed = await adb.isInstalled(global.adbDevice, packageName);
+  let installed = false;
+  try {
+    installed = await adb.getDevice(global.adbDevice).isInstalled(packageName);
+    res.check = 'done';
+  }
+  catch (err) {
+    console.error('check', e);
+    res.check = 'fail';
+    res.error = e;
+    // TODO: maybe return;
+  }
 
-  res.check = 'done';
   res.backup = 'processing';
   win.webContents.send('sideload_process', res);
   const backup_path = `${global.tmpdir}/sidenoder_restore_backup/${packageName}`;
@@ -1090,6 +1102,8 @@ async function sideloadFolder(arg) {
     catch (e) {
       console.error('backup', e);
       res.backup = 'fail';
+      res.error = e;
+    // TODO: maybe return;
     }
   }
   else {
@@ -1102,12 +1116,13 @@ async function sideloadFolder(arg) {
   if (installed) {
     console.log('doing adb uninstall (ignore error)');
     try {
-      await adb.uninstall(global.adbDevice, packageName);
+      await adb.getDevice(global.adbDevice).uninstall(packageName);
       res.uninstall = 'done';
     }
     catch (e) {
       console.error('uninstall', e);
       res.uninstall = 'fail';
+      res.error = e;
     }
   }
   else {
@@ -1136,6 +1151,8 @@ async function sideloadFolder(arg) {
     catch (e) {
       console.error('restore', e);
       res.restore = 'fail';
+      res.error = e;
+    // TODO: maybe return;
     }
   }
   else {
@@ -1164,7 +1181,7 @@ async function sideloadFolder(arg) {
       res.apk = 'processing';
       win.webContents.send('sideload_process', res);
       // await execShellCommand(`adb install -g -d "${tempapk}"`);
-      await adb.install(global.adbDevice, tempapk);
+      await adb.getDevice(global.adbDevice).install(tempapk);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
     }
@@ -1173,7 +1190,7 @@ async function sideloadFolder(arg) {
       res.apk = 'processing';
       win.webContents.send('sideload_process', res);
       // await execShellCommand(`adb install -g -d "${apkfile}"`);
-      await adb.install(global.adbDevice, apkfile);
+      await adb.getDevice(global.adbDevice).install(apkfile);
     }
 
     res.apk = 'done';
@@ -1418,7 +1435,7 @@ async function getApkFromFolder(folder){
 }
 
 async function uninstall(packageName){
-  resp = await adb.uninstall(global.adbDevice, packageName);
+  resp = await adb.getDevice(global.adbDevice).uninstall(packageName);
 }
 
 
