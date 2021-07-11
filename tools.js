@@ -1,24 +1,27 @@
 const exec = require('child_process').exec;
 const ApkReader = require('adbkit-apkreader');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const commandExists = require('command-exists');
+const fsExtra = require('fs-extra'); // TODO: fs
+
 const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
-const fs = require('fs');
-const fsExtra = require('fs-extra');
-const fsPromise = fs.promises;
-const platform = require('os').platform();
-const arch = require('os').arch(); // TODO set link for rclone downloading
-
 const fetch = require('node-fetch');
-const path = require('path');
-const commandExists = require('command-exists');
-const util = require('util');
+const WAE = require('web-auto-extractor').default
 // const ApkReader = require('node-apk-parser');
 
 const fixPath = require('fix-path');
 fixPath();
 
-const configLocation = path.join(homedir, 'sidenoder-config.json');
-const STEAM_IDS = {}//require('./steamids.js');
+const pkg = require('./package.json');
+const platform = require('os').platform();
+const arch = require('os').arch(); // TODO set link for rclone downloading
+
+const sidenoderHome = path.join(global.homedir, 'sidenoder');
+const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
+const configLocation = path.join(sidenoderHome, 'config.json');
 
 console.log({platform});
 if (!['win64', 'win32'].includes(platform)) {
@@ -30,19 +33,19 @@ else {
   global.nullerror = '2> null'
 }
 
+const l = 32;
 let QUEST_ICONS = [];
-fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json')
-.then(res => res.json()) // expecting a json response
-.then(json => QUEST_ICONS = json)
-.catch(err => {
-  console.error('can`t get quest_icons', err);
-})
-
+let cacheOculusGames = false;
+let KMETAS = {};
+init();
 
 
 
 module.exports =
 {
+//properties
+  resetCache,
+//methods
   getDeviceSync,
   trackDevices,
   checkDeps,
@@ -666,7 +669,6 @@ async function trackDevices() {
 /*async function checkMount(){
   console.log('checkMount()')
   try {
-    await fsPromise.readdir(global.mountFolder);
     list = await getDir(global.mountFolder);
     if (list.length > 0) {
       global.mounted = true
@@ -687,23 +689,83 @@ async function trackDevices() {
   return false;
 }*/
 
-async function appInfo({steamId}) {
-  if (steamId) {
-    try {
-      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${steamId}`, {
+async function appInfo(args) {
+  const { res, package } = args;
+  const app = KMETAS[package];
+  let data = {
+    id: 0,
+    res: '',
+    name: app.simpleName,
+    short_description: '',
+    detailed_description: '',
+    about_the_game: '',
+    supported_languages: '',
+    genres: [],
+    header_image: '',
+    screenshots: [],
+    url: '',
+  };
+
+  try {
+    if (res == 'steam') {
+      const steam = app && app.steam;
+      if (!steam || !steam.id) throw 'incorrect args';
+
+      data.res = 'steam';
+      data.id = steam.id;
+      const url = `https://store.steampowered.com/app/${steam.id}/`;
+
+      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${steam.id}`, {
         headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
       });
       const json = await resp.json();
       // console.log({ json });
-      return json && json[steamId];
+      return json && json[steam.id];
     }
-    catch (err) {
-      console.error('appInfo', { steamId }, err);
-      return false;
+
+    if (res == 'oculus') {
+      const oculus = app && app.oculus;
+      if (!oculus || !oculus.id) throw 'incorrect args';
+      // console.log({ oculus });
+
+      data.res = 'oculus';
+      data.id = oculus.id;
+      data.url = 'https://www.oculus.com/experiences/quest/' + data.id;
+      data.genres = oculus.genres && oculus.genres.split(', ');
+      if (oculus.meta) {
+        data.name = oculus.meta.name;
+      }
+
+      const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
+      const resp = await fetch(`${url}?locale=${global.locale}`);
+      const meta = await WAE().parse(await resp.text());
+      const jsonld = meta.jsonld.Product[0];
+
+      data.name = jsonld.name;
+      data.header_image = meta.metatags['og:image'][0];
+      data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
+      data.url = meta.metatags['al:web:url'][0];
+      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+      if (jsonld.image) {
+        for (const id in jsonld.image) {
+          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+          data.screenshots.push({
+            id,
+            path_thumbnail: jsonld.image[id],
+          });
+        }
+      }
+
+      return {success: true, data};
     }
   }
+  catch (err) {
+    console.error('appInfo', {args, data}, err);
+    return { data };
+  }
 
-  return;
+  return { data };
 }
 
 async function checkMount() {
@@ -801,6 +863,26 @@ async function killRClone(){
   })
 }
 
+function parseRcloneSections() {
+  if (!fs.existsSync(global.currentConfiguration.rcloneConf)) {
+    return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
+  }
+
+  const cfg = fs.readFileSync(global.currentConfiguration.rcloneConf, 'utf8');
+
+  if (!cfg) return console.error('rclone config is empty', global.currentConfiguration.rcloneConf);
+
+  const lines = cfg.split('\n');
+  let sections = [];
+  for (const line of lines) {
+    if (line[0] != '[') continue;
+    sections.push(line.substr(1, line.length - 2));
+  }
+
+  global.rcloneSections = sections;
+  // console.log({ sections });
+  return sections;
+}
 
 async function mount() {
   if (await checkMount(global.mountFolder)) {
@@ -817,12 +899,15 @@ async function mount() {
     await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
   }
 
-  const epath = path.join(__dirname , 'a.enc'); // 'a'
-  const cpath = path.join(global.tmpdir, 'sidenoder_a');
-  const data = fs.readFileSync(epath, 'utf-8');
-  const buff = Buffer.from(data, 'base64');
-  const cfg = buff.toString('ascii');
-  fs.writeFileSync(cpath, cfg);
+  if (!fs.existsSync(global.currentConfiguration.rcloneConf)) { // TODO: temoporary
+    const epath = path.join(__dirname , 'a.enc'); // 'a'
+    const data = fs.readFileSync(epath, 'utf8');
+    const buff = Buffer.from(data, 'base64');
+    const cfg = buff.toString('ascii');
+    fs.writeFileSync(global.currentConfiguration.rcloneConf, cfg);
+
+    changeConfig('rcloneConf', global.currentConfiguration.rcloneConf);
+  }
 
   // const buff = new Buffer(data);
   // const base64data = buff.toString('base64');
@@ -832,7 +917,7 @@ async function mount() {
   const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
   const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
-  exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${cpath} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
+  exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${global.currentConfiguration.rcloneConf} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
     if (error) {
       console.log('rclone error:', error);
       if (error.message.search('transport endpoint is not connected')) {
@@ -851,10 +936,32 @@ async function mount() {
   });
 }
 
+function resetCache(folder) {
+  console.log('resetCache', folder);
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath);
+
+  if (folder == oculusGamesDir) {
+    cacheOculusGames = false;
+    return true;
+  }
+
+  return false;
+}
+
 
 async function getDir(folder) {
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath);
+  if (
+    folder == oculusGamesDir
+    && global.currentConfiguration.cacheOculusGames
+    && cacheOculusGames
+  ) {
+    console.log('getDir return from cache', folder);
+    return cacheOculusGames;
+  }
+
   try {
-    const files = await fsPromise.readdir(folder/*, { withFileTypes: true }*/);
+    const files = fs.readdirSync(folder/*, { withFileTypes: true }*/);
     let gameList = {};
     try {
       if (files.includes('GameList.txt')) {
@@ -866,7 +973,7 @@ async function getDir(folder) {
             packageName: meta[3],
             versionCode: meta[4],
             versionName: meta[5],
-            imagePath: `file://${global.tmpdir}/mnt/Quest Games/.meta/thumbnails/${meta[3]}.jpg`,
+            imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[3]}.jpg`,
           }
         }
       }
@@ -876,13 +983,15 @@ async function getDir(folder) {
     }
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
-      const info = await fsPromise.lstat(path.join(folder, fileName));
+
+      const info = fs.lstatSync(path.join(folder, fileName));
       let steamId = false,
         oculusId = false,
         imagePath = false,
         versionCode = '',
         simpleName = fileName,
         packageName = false,
+        kmeta = false,
         mp = false;
 
       const gameMeta = gameList[fileName];
@@ -914,16 +1023,23 @@ async function getDir(folder) {
         else if (!imagePath)
           imagePath = 'unknown.png';
 
-        steamId = STEAM_IDS[packageName];
+        kmeta = KMETAS[packageName];
       }
 
-
+      if (kmeta) {
+        steamId = !!(kmeta.steam && kmeta.steam.id);
+        oculusId = !!(kmeta.oculus && kmeta.oculus.id);
+      }
 
       simpleName = await cleanUpFoldername(simpleName);
+      const isFile = info.isFile()
+        || (info.isSymbolicLink() && fileName.includes('.')); // not well
+
       return {
         name: fileName,
         simpleName,
-        isFile: info.isFile(),
+        isFile,
+        isLink: info.isSymbolicLink(),
         steamId,
         oculusId,
         imagePath,
@@ -940,14 +1056,21 @@ async function getDir(folder) {
     fileNames.sort((a, b) => {
       return b.createdAt - a.createdAt;
     });
-    //console.log(fileNames)
+    // console.log(fileNames)
+
+    if (
+      folder == oculusGamesDir
+      && global.currentConfiguration.cacheOculusGames
+    ) {
+      console.log('getDir cached', folder);
+      cacheOculusGames = fileNames;
+    }
+
     return fileNames;
   }
   catch (error) {
-    console.log("entering catch block");
-    console.log(error);
+    console.error('Can`t open folder ' + folder, error);
     //returnError(e.message)
-    console.log("leaving catch block");
     return false;
   }
 }
@@ -967,7 +1090,7 @@ async function cleanUpFoldername(simpleName) {
 }
 
 async function getObbs(folder){
-  const files = await fsPromise.readdir(folder, { withFileTypes: true });
+  const files = fs.readdirSync(folder, { withFileTypes: true });
   let fileNames = await Promise.all(files.map(async (fileEnt) => {
     return path.join(folder, fileEnt.name).replace(/\\/g, '/')
   }));
@@ -976,7 +1099,7 @@ async function getObbs(folder){
 }
 
 async function getDirListing(folder){
-  const files = await fsPromise.readdir(folder, { withFileTypes: true });
+  const files = fs.readdirSync(folder, { withFileTypes: true });
   let fileNames = await Promise.all(files.map(async (fileEnt) => {
     return path.join(folder, fileEnt.name).replace(/\\/g, '/')
   }));
@@ -1205,11 +1328,12 @@ async function sideloadFolder(arg) {
   }
 
   try {
-    await fsPromise.readdir(location + '/' + packageName, { withFileTypes: true });
+    if (!fs.existsSync(location + '/' + packageName)) throw 'Can`t find obbs folder';
     obbFolder = packageName;
     console.log('DATAFOLDER to copy:' + obbFolder);
   }
   catch (error) {
+    console.log(error);
     obbFolder = false;
     res.remove_obb = 'skip';
     res.download_obb = 'skip';
@@ -1300,24 +1424,6 @@ async function getPackageInfo(apkPath) {
   const reader = await ApkReader.open(apkPath);
   const manifest = await reader.readManifest();
 
-  // reader = await ApkReader.readFile(`${apkPath}`)
-  // manifest = await reader.readManifestSync()
-
-  // console.log(manifest);
-  // console.log('manifest', manifest);
-  /*reader.readContent('res/drawable-mdpi-v4/ic_launcher.png')
-  .then(function(image) {
-    console.log(image)
-    fs.writeFile('image.png', image, function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        console.log('success')
-      }
-    });
-  })*/
-
-
   info = {
     packageName: manifest.package,
     versionCode: manifest.versionCode,
@@ -1337,6 +1443,7 @@ async function getInstalledApps(send = true) {
     const [packageName, versionCode] = appLine.slice(8).split(' versionCode:');
 
     const info = [];
+    info['simpleName'] = KMETAS[packageName] && KMETAS[packageName].simpleName || packageName;
     info['packageName'] = packageName;
     info['versionCode'] = versionCode;
     info['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
@@ -1395,7 +1502,7 @@ async function getInstalledAppsWithUpdates() {
       apps[x]['update'] = [];
       apps[x]['update']['path'] = package.filePath;
       //apps[x]['update']['simpleName'] = package.simpleName
-      apps[x]['packageName'] = package.simpleName
+      apps[x]['simpleName'] = package.simpleName
       apps[x]['update']['versionCode'] = remoteversion;
 
       console.log('UPDATE AVAILABLE');
@@ -1412,26 +1519,26 @@ async function getInstalledAppsWithUpdates() {
 
 
 async function getApkFromFolder(folder){
-  const files = await fsPromise.readdir(folder, { withFileTypes: true });
-  let fileNames = await Promise.all(files.map(async (fileEnt) => {
-    return path.join(folder, fileEnt.name).replace(/\\/g,"/")
-  }));
-  apk = false;
-  fileNames.forEach((item)=>{
-    console.log(item)
-    if (item.endsWith('.apk')) {
-      apk = item;
+  let res = {
+    path: false,
+    install_desc: false,
+  }
+
+  const files = fs.readdirSync(folder);
+  if (files.includes('install.txt')) {
+    res.install_desc = fs.readFileSync(path.join(folder, 'install.txt'), 'utf8');
+  }
+
+  for (file of files) {
+    console.log(file);
+    if (file.endsWith('.apk')) {
+      res.path = path.join(folder, file).replace(/\\/g, "/");
+      return res;
     }
-  })
-
-  if (!apk) {
-    returnError('No apk found in ' + folder)
-    return;
-  }
-  else {
-    return apk;
   }
 
+  returnError('No apk found in ' + folder);
+  return;
 }
 
 async function uninstall(packageName){
@@ -1465,12 +1572,41 @@ function updateRcloneProgress() {
   });
 }
 
+async function init() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json');
+    QUEST_ICONS = await res.json();
+    console.log('icons list loaded');
+  }
+  catch (err) {
+    console.error('can`t get quest_icons', err);
+  }
+
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e');
+    const text = await res.text();
+    const iv = Buffer.from(text.substring(0, l), 'hex');
+    const secret = crypto.createHash(hash_alg).update(pkg.author.repeat(2)).digest('base64').substr(0, l);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', secret, iv);
+    const encrypted = text.substring(l);
+    KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
+    console.log('kmetas loaded');
+  }
+  catch (err) {
+    console.error('can`t get kmetas', err);
+  }
+}
+
+
+
 function reloadConfig() {
   const defaultConfig = {
     allowOtherDevices: false,
+    cacheOculusGames: false,
     autoMount: false,
-    cfgSection: 'VRP-mirror10',
     rclonePath: '',
+    rcloneConf: path.join(sidenoderHome, 'rclone.conf'),
+    cfgSection: 'VRP-mirror10',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
     scrcpyBitrate: '5',
@@ -1478,25 +1614,33 @@ function reloadConfig() {
     lastIp: '',
   };
   try {
+    if (fs.existsSync(configLocationOld)) {
+      fs.mkdirSync(sidenoderHome);
+      fs.renameSync(configLocationOld, configLocation);
+    }
+
     if (fs.existsSync(configLocation)) {
       console.log('Config exist, using ' + configLocation);
       global.currentConfiguration = Object.assign(defaultConfig, require(configLocation));
     }
     else {
       console.log('Config doesnt exist, creating ') + configLocation;
+      fs.mkdirSync(sidenoderHome);
       fs.writeFileSync(configLocation, JSON.stringify(defaultConfig))
       global.currentConfiguration = defaultConfig;
     }
+
+    parseRcloneSections();
   }
   catch(err) {
     console.error(err);
   }
 }
 
-
-
 function changeConfig(key, value) {
   global.currentConfiguration[key] = value;
-  console.log(global.currentConfiguration[key]);
+  console.log('cfg.update', key, global.currentConfiguration[key]);
+  if (key == 'rcloneConf') parseRcloneSections();
+
   fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration));
 }

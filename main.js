@@ -1,4 +1,6 @@
-const { app, BrowserWindow, powerSaveBlocker } = require('electron')
+const { app, BrowserWindow, powerSaveBlocker } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 app.disableHardwareAcceleration();
 
@@ -14,16 +16,18 @@ global.mounted = false;
 global.updateAvailable = false;
 global.installedApps = [];
 global.currentConfiguration = {};
+global.rcloneSections = [];
+global.hash_alg = 'sha256';
 global.locale = 'en-US';
-app.on('ready', () => {
 
+app.on('ready', () => {
   global.locale = app.getLocale();
 })
 
 
-eval(require('fs').readFileSync(__dirname+'/versioncheck.js')+'');
+eval(fs.readFileSync(__dirname+'/versioncheck.js')+'');
 
-const tools = require('./tools')
+const tools = require('./tools');
 
 
 // try {
@@ -155,42 +159,6 @@ ipcMain.on('start_sideload', async (event, arg) => {
   return;
 });
 
-
-ipcMain.on('get_dir', async (event, arg) => {
-  console.log('get_dir received', arg);
-  if ((typeof arg === 'string') && arg.endsWith('.apk')) {
-    event.reply('ask_sideload', { success: true, path: arg, update: false });
-    return;
-  }
-
-  //if only 1 apk inside, send straight to there
-
-  const folder = arg || global.homedir;
-
-  const list = await tools.getDir(folder);
-
-  incList = [];
-  if (!list) incList = [{name: 'ERROR: Browse failed'}];
-  else list.forEach((item) => {
-    if (!item.isFile) {
-      incList.push(item);
-    }
-
-    if ((item.isFile && item.name.endsWith('.apk')) || (item.isFile && item.name.endsWith('.obb'))) {
-      incList.push(item);
-    }
-  });
-
-  response = {};
-  response.success = true;
-  response.list = incList;
-  response.path = folder;
-  win.webContents.send('get_dir',response);
-  //event.reply('get_dir', response)
-})
-
-
-
 ipcMain.on('update', async (event, arg) => {
   console.log('update received');
   let path = arg
@@ -201,8 +169,8 @@ ipcMain.on('update', async (event, arg) => {
   }
 
   console.log('for path ' + path)
-  apkpath = await tools.getApkFromFolder(path);
-  event.reply('ask_sideload', { success: true, path: apkpath, update: true });
+  const install = await tools.getApkFromFolder(path);
+  event.reply('ask_sideload', { success: true, install, update: true });
   return;
 });
 
@@ -214,9 +182,70 @@ ipcMain.on('filedrop', async (event, path) => {
     return;
   }
 
-  event.reply('ask_sideload', { success: true, path, update: false });
+  // TODO: find
+
+  event.reply('ask_sideload', { success: true, install: { path } });
   return;
 });
+
+
+ipcMain.on('reset_cache', async (event, arg) => {
+  tools.resetCache(arg);
+});
+
+ipcMain.on('get_dir', async (event, arg) => {
+  console.log('get_dir received', arg);
+  if ((typeof arg === 'string') && arg.endsWith('.apk')) {
+    const install = {
+      path: arg,
+      install_desc: false,
+    }
+    const lastslashindex = install.path.lastIndexOf('/');
+    const folder = install.path.substring(0, lastslashindex);
+
+    const files = fs.readdirSync(folder);
+    if (files.includes('install.txt')) {
+      install.install_desc = fs.readFileSync(path.join(folder, 'install.txt'), 'utf8');
+    }
+
+    event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
+    return;
+  }
+
+  //if only 1 apk inside, send straight to there
+
+  const folder = arg || global.homedir;
+
+  const list = await tools.getDir(folder);
+
+  dirList = [];
+  incList = [];
+  notSupported = [];
+  if (!list) incList = [{ name: 'ERROR: Browse failed' }];
+  else for (const item of list) {
+    if (!item.isFile) {
+      dirList.push(item);
+      continue;
+    }
+
+    if ((item.name.endsWith('.apk') || item.name.endsWith('.obb'))) {
+      incList.push(item);
+      continue;
+    }
+
+    notSupported.push(item);
+  }
+
+
+  response = {};
+  response.success = true;
+  response.list = dirList.concat(incList, notSupported);
+  response.path = folder;
+  // console.log(response.list, response.list.length, incList.length, notSupported.length);
+  win.webContents.send('get_dir',response);
+  //event.reply('get_dir', response)
+})
+
 
 ipcMain.on('enable_mtp', async (event, arg) => {
   console.log('enable_mtp received');
@@ -340,7 +369,7 @@ function createWindow () {
   }
 
   //tools.checkUpdateAvailable();
-  // global.win.webContents.openDevTools();
+  global.win.webContents.openDevTools();
 
   setTimeout(function(){ checkVersion(); }, 2000);
   //

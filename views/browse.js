@@ -23,8 +23,17 @@ async function getDirSize(el, path) {
   el.outerText = size + ' Mb';
 }
 
-function esc(item) {
-  return item.split('\'').join('\\\'');
+function oculusInfo(package) {
+  $('#processingModal').modal('show');
+  ipcRenderer.send('app_info', { res: 'oculus', package });
+}
+function steamInfo(package) {
+  $('#processingModal').modal('show');
+  ipcRenderer.send('app_info', { res: 'steam', package });
+}
+
+function esc(path) {
+  return path.split('\'').join('\\\'');
 }
 
 //when dir listing comes back, list it
@@ -42,118 +51,101 @@ ipcRenderer.on('get_dir', (event, arg) => {
 });
 
 function loadDir(path, list) {
-  let UpDir = path.substr(0, path.lastIndexOf("/"));
-  $('#listTableStart tbody').html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
+  const upDir = path.substr(0, path.lastIndexOf('/'));
+  const upDirTr = `<tr data-path="${upDir}" onclick="getDir(this)"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
+  $('#listTableStart tbody').html(upDirTr);
+  $('#listTableEnd tbody').html(upDirTr);
   $('#browseCardBody').html('');
+
   for (const item of list) {
+    // console.log(item);
     if (!item.createdAt) {
-      $('#listTable tbody').append(`<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o" aria-hidden="true"></i> ${item.name}</td></tr>`);
+      $('#listTable tbody').append(`<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`);
       continue;
     }
 
     const createdAt = item.createdAt.getTime();
     const fullPath = item.filePath.replace("\\", "/").replace("", ":");
+    const symblink = item.isLink ? `<small style="font-family: FontAwesome" class="text-secondary fa-link"></small> ` : '';
+    const name = symblink + item.name;
 
 
     if (item.isFile) {
       const size = (item.info.size / 1024 / 1024).toFixed(2);
       let rowItem = '';
       if (item.name.endsWith('.apk')) {
-        rowItem = `<a data-path="${fullPath}" onclick='getDir(this)'><b><i class="browse-file fa fa-upload" aria-hidden="true"></i> &nbsp; ${item.name}</b></a>`;
+        rowItem = `<td class="browse-file" data-path="${fullPath}" onclick='getDir(this)'><b><i class="fa fa-android"></i> &nbsp; ${name}</b></td>`;
+        rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
       }
       else {
-        rowItem = `<i class="browse-file fa fa-file-o" aria-hidden="true"></i> &nbsp; ${name}`;
+        rowItem = `<td><i class="fa fa-file-o"></i> &nbsp; ${name}</td>`;
+        rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
       }
 
-      row = $('#listTable tbody').append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td>${rowItem}</td><td>${size} Mb</td></tr>`);
+      row = $('#listTable tbody').append(rowItem);
+
+      continue;
     }
-    else {
-      const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
-      const infoLink = !item.infoLink ? '' : '<a onclick="window.open(\'' + item.infoLink + '\')" title="infolink"><i class="fa fa-steam"></i></a>';
-      if (item.imagePath) {
-        if (item.mp) {
-          mpribbon = `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>`;
-        }
-        else {
-          mpribbon = '';
-        }
 
-        selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-primary col-5">Select</span></a> `;
-        if (item.steamId) {
-          selectBtn += `<a onclick="ipcRenderer.send('app_info', {steamId: '${item.steamId}'});" title="App information[beta]" class="btn btn-info"><i class="fa fa-info" aria-hidden="true"></i></a> `;
-        }
-        selectBtn+= `<a onclick="window.open('${youtubeUrl}')" title="youtube" class="btn btn-danger"><i class="fa fa-youtube-play"></i></a> `;
-
-        row = $('#browseCardBody').append(`<div class="col mb-4 listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
-          <div class="card h-100 bg-primary text-center">
-
-          ${mpribbon}
-          <img src="${item.imagePath}" style="max-height: 120px" class="card-img-top" alt="...">
-          <div class="card-body">
-            <div class="card-text">
-              <h6>${item.simpleName}</h6><br>
-              ${selectBtn}
-            </div>
-          </div>
-          <div style="color:#ccc;font-size:smaller" class="card-footer">
-            v. ${item.versionCode || 'Unknown'} &nbsp;&nbsp;
-            <a onclick="getDirSize(this, '${esc(fullPath)}')">
-              <i class="fa fa-calculator" aria-hidden="true" title="get size"></i>
-            </a>
-            ${infoLink}<br/>
-            ${item.packageName}<br/>
-            Updated: ${item.createdAt.toLocaleString()}
-          </div>
-
-          </div>
-        </div>`);
-      }
-      else {
-        const info = !item.packageName ? '' : `<br/><small>${item.packageName} <a onclick="window.open('${youtubeUrl}')" title="youtube"><i class="fa fa-youtube-play"></i>${steamlink}`;
-        row = $('#listTable tbody').append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}"><td class='browse-folder'>
-        <a data-path="${fullPath}" onclick='getDir(this)'>
-        <i class=\"fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;` + `${item.name}</a>${info}</td>
-        <td><a onclick="getDirSize(this, '${esc(fullPath)}')"><i class="fa fa-calculator" aria-hidden="true" ></i> get size</a></td></tr>`);
-      }
-
+    if (!item.imagePath) {
+      rowItem = `<td class='browse-folder' data-path="${fullPath}" onclick='getDir(this)'><i class="fa fa-folder-o"></i> &nbsp; ${name}</td>`;
+      rowItem += `<td><a onclick="getDirSize(this, '${esc(fullPath)}')"><i class="fa fa-calculator" ></i> get size</a></td>`;
+      row = $('#listTable tbody').append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`);
+      continue;
     }
-    //console.log("appended "+ item.name);
+
+
+    mpribbon = item.mp ? `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>` : '';
+
+    selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-sm btn-primary col-5">Select</span></a> `;
+
+    if (item.oculusId) {
+      selectBtn += `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
+        <img src="oculus.png" width="14" style="margin-top: -1px;" /></a> `;
+    }
+
+    if (item.steamId) {
+      selectBtn += `<a onclick="steamInfo('${item.packageName}');" title="Steam information" class="btn btn-sm btn-info">
+        <i class="fa fa fa-steam-square "></i></a> `;
+    }
+
+    const youtubeUrl = 'https://www.youtube.com/results?search_query=oculus+quest+' + escape(item.simpleName);
+    selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
+      <i class="fa fa-youtube-play"></i></a> `;
+
+    row = $('#browseCardBody').append(`<div class="col mb-3 listitem" style="min-width: 250px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
+      <div class="card bg-primary text-center bg-dark">
+
+      ${mpribbon}
+      <div><small><b>${item.simpleName}</b></small></div>
+      <img src="${item.imagePath}" class="bg-secondary" style="height: 140px">
+      <div class="pb-2 pt-2">
+          ${selectBtn}
+      </div>
+      <div style="color:#ccc;" class="card-footer pb-1 pt-1"><small>
+        v. ${item.versionCode || 'Unknown'} &nbsp;&nbsp;
+        <a onclick="getDirSize(this, '${esc(fullPath)}')">
+          <i class="fa fa-calculator" title="get size"></i> get size
+        </a><br/>
+        ${item.packageName}<br/>
+        Updated: ${item.createdAt.toLocaleString()}
+      </small></div>
+
+      </div>
+    </div>`);
   }
-
-  $('#browseCardBody .listitem').sort(sortBy('createdat', false)).appendTo('#browseCardBody');
-
-  $('#listTableEnd tbody').html(`<tr><td class="browse-folder "><a data-path="${UpDir}" onclick="getDir(this)"><i class=\"browse-folder fa fa-folder-o\" aria-hidden=\"true\"></i> &nbsp;../ (up one directory)</a><td></tr>`)
-}
-
-
-//sort
-function sortBy(key, asc) {
-  return ((a, b) => {
-    var valA = $(a).data(key);
-    var valB = $(b).data(key);
-    if (valA < valB) {
-      return asc ? -1 : 1;
-    }
-
-    if (valA > valB) {
-      return asc ? 1 : -1;
-    }
-
-    return 0;
-  });
 }
 
 
 function fixIcons() {
   $('.browse-folder').hover(
-    () => {
-      console.log('HOVER');
-      $(this).find('i').removeClass('fa-folder-o')
-      $(this).find('i').addClass('fa-folder-open-o')
+    (e) => {
+      $(e.target).find('i').removeClass('fa-folder-o')
+      $(e.target).find('i').addClass('fa-folder-open-o')
     },
-    () => {
-      $(this).find('i').addClass('fa-folder-o')
-      $(this).find('i').removeClass('fa-folder-open-o')
+    (e) => {
+      $(e.target).find('i').addClass('fa-folder-o')
+      $(e.target).find('i').removeClass('fa-folder-open-o')
     }
   );
 }

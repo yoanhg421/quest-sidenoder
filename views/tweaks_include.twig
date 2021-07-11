@@ -1,26 +1,25 @@
-<div class="card text-white bg-primary">
+<div class="card text-light bg-primary">
   <div class="card-header">
-    <h2 class="">Device Tweaks</h2>
+    <h2 class="mb-0"><i class="fa fa-bug"></i> Device Tweaks</h2>
   </div>
   <div class="card-body">
     <div class="card-text container">
-      <div class="card text-white bg-primary mb-1">
+      <div class="alert alert-dismissible alert-warning">
+        <i class="fa fa-exclamation-triangle"></i>
+        WARNING: Some of this tweaks may reset to default when you restart your headset
+      </div>
+      <div class="card bg-primary mb-1">
         <div class="card-header">Tools:</div>
         <div class="card-body">
-          <div class="alert alert-dismissible alert-warning">
-            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-            WARNING: Some of this tweaks may reset to default when you restart your headset
-          </div>
-          <br/>
           <div class="form-group">
             <a id="scrcpyCfg" class="adbdev btn btn-primary">
-              <i class="fa fa-share-square" aria-hidden="true"></i> Screen share
+              <i class="fa fa-share-square"></i> Screen share
             </a>
             <a id="enableMTP" class="adbdev btn btn-primary" title="mount device as usb storage">
-              <i class="fa fa-plug" aria-hidden="true"></i> Switch USB mode to MTP
+              <i class="fa fa-plug"></i> Switch USB mode to MTP
             </a>
             <a id="rebootDevice" class="adbdev btn btn-danger">
-              <i class="fa fa-refresh" aria-hidden="true"></i> Reboot device
+              <i class="fa fa-refresh"></i> Reboot device
             </a>
           </div>
 
@@ -45,17 +44,17 @@
       </div>
 
 
-      <div class="card text-white bg-primary mb-1">
+      <div class="card bg-primary mb-1">
         <div class="card-header">Snapshots:</div>
         <div class="card-body">
-          <div class="form-group">
+          <!-- <div class="form-group">
             <a id="pullScreenshots" class="adbdev btn btn-primary">
-              <i class="fa fa-download" aria-hidden="true"></i> Grub the Screenshots
+              <i class="fa fa-download"></i> Grub the Screenshots
             </a>
             <a id="pullVideoshots" class="adbdev btn btn-primary">
-              <i class="fa fa-download" aria-hidden="true"></i> Grub the Videoshots
+              <i class="fa fa-download"></i> Grub the Videoshots
             </a>
-          </div>
+          </div> -->
           <div class="form-check mb-3">
             <label class="mb-1" for="snapshotsDelete" class="form-check-label">
               <input class="adbdev form-check-input" type="checkbox" id="snapshotsDelete">
@@ -107,7 +106,7 @@
       </div>
 
 
-      <div class="card text-white bg-primary mb-1">
+      <div class="card bg-primary mb-1">
         <div class="card-header">Graficaly tweaks:</div>
         <div class="card-body">
           <div class="form-group mb-3">
