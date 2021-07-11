@@ -369,7 +369,7 @@ function createWindow () {
   }
 
   //tools.checkUpdateAvailable();
-  global.win.webContents.openDevTools();
+  // global.win.webContents.openDevTools();
 
   setTimeout(function(){ checkVersion(); }, 2000);
   //
