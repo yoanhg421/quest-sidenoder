@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   <script>window.$ = window.jQuery = require('jquery');</script>
+  <!-- <script src="https://unpkg.com/@popperjs/core@2" crossorigin="anonymous"></script> -->
   <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" crossorigin="anonymous"></script> -->
   <script src="js/bootstrap.min.js" crossorigin="anonymous"></script>
 
@@ -15,54 +16,9 @@
   <link rel="stylesheet" href="css/bootstrap-slate.min.css">
   <!-- <link rel="stylesheet" href="https://bootswatch.com/4/sandstone/bootstrap.min.css"> -->
   <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/main.css">
 
   <title>Quest-Sideloader</title>
-
-  <style>
-    a { cursor: pointer; }
-    .btn {
-      text-shadow: none;
-      font-weight: bold;
-    }
-    .btn-success {
-      background: #7C4;
-    }
-    .btn-success:hover {
-      background: #46ba46;
-    }
-    .btn-danger {
-      background: #ec4d49;
-    }
-    .btn-danger:hover {
-      background: #e8241f;
-    }
-    .btn-info {
-      background: #49b;
-    }
-    .btn-info:hover {
-      background: #28b;
-    }
-    .badge {
-      text-shadow: none;
-    }
-    .badge-success {
-      background: #5a4;
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      padding: 15px;
-    }
-    html {
-      position: relative;
-      min-height: 100%;
-    }
-    body {
-      margin-bottom: 120px;
-    }
-  </style>
 
   <script>
     const electron = window.require('electron');
@@ -140,7 +96,7 @@
     // edit btn on installed apps page
       $('#updateBadge').removeClass('btn-danger');
       $('#updateBadge').addClass('btn-info');
-      $('#updateBadge').html(`<i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates`);
+      $('#updateBadge').html(`<i class="fa fa-search"></i> Click to check mount for updates`);
     });
 
     //edit btn on top
@@ -291,30 +247,30 @@
       #}
       <li class="nav-item">
         <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', ''));">
-          <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+          <i class="fa fa-folder-open-o"></i>
             Browse
         </a>
       </li>
       <li class="nav-item">
-        <a id="remotebtn" class="btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
-          <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+        <a id="remotebtn" disabled="disabled" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
+          <i class="fa fa-folder-open-o"></i>
             Remote
         </a>
       </li>
       <li class="nav-item">
         <a class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
-          <i class="fa fa-list" aria-hidden="true"></i>
+          <i class="fa fa-list"></i>
            Installed
         </a>
       </li>
       <li class="nav-item">
         <a class="adbdev btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Device tweaks">
-          <i class="fa fa-bug" aria-hidden="true"></i>
+          <i class="fa fa-bug"></i>
         </a>
       </li>
       <li class="nav-item">
         <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('settings_include.twig')" title="Settings">
-          <i class="fa fa-cog" aria-hidden="true"></i>
+          <i class="fa fa-cog"></i>
         </a>
       </li>
     </ul>
@@ -347,9 +303,7 @@
   <hr>
   <b>SideNoder v{{ version }}</b>
   <br>
-  This fork https://github.com/vKolerts/quest-sidenoder
-  <br>
-  Main repository https://github.com/whitewhidow/quest-sidenoder
+  https://github.com/vKolerts/quest-sidenoder
 </footer>
 
 <!-- modals -->

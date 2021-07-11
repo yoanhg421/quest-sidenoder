@@ -13,6 +13,16 @@
     $('#allowOtherDevices').on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key: 'allowOtherDevices', val: e.target.checked});
     });
+    if (remote.getGlobal('currentConfiguration').cacheOculusGames) {
+      $('#cacheOculusGames').prop('checked', true);
+    }
+    $('#cacheOculusGames').on('change.bootstrapSwitch', (e) => {
+      ipcRenderer.send('change_config', {key: 'cacheOculusGames', val: e.target.checked});
+    });
+
+    for (const section of remote.getGlobal('rcloneSections')) {
+      $('#cfgSection').append(`<option value="${section}">${section}</option`);
+    }
 
     $('#cfgSection').val(remote.getGlobal('currentConfiguration').cfgSection);
     $('#cfgSection').on('change', (e) => {
@@ -47,6 +57,30 @@
     });
     $('#rclonePathBtn').on('click', (e) => setRclone());
 
+    async function setRcloneConf() {
+      const file = await dialog.showOpenDialog(null, {
+        title: 'RClone config location',
+        message: 'Browse to rclone config',
+        properties: ['openFile'],
+        filters: [{
+          name: 'Config', extensions: ['conf', 'cfg', 'ini'],
+          name: 'All', extensions: ['*'],
+        }],
+      });
+      if (file.canceled) return;
+
+      const rcloneConf = file.filePaths[0];
+      $('#rcloneConf').val(rcloneConf);
+      ipcRenderer.send('change_config', {key: 'rcloneConf', val: rcloneConf});
+      return rcloneConf;
+    }
+
+    $('#rcloneConf').val(remote.getGlobal('currentConfiguration').rcloneConf);
+    $('#rcloneConf').on('change', (e) => {
+      ipcRenderer.send('change_config', {key: 'rcloneConf', val: e.target.value});
+    });
+    $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
+
     async function setSCRCPY() {
       const file = await dialog.showOpenDialog(null, {
         title: 'SCRCPY custom path',
@@ -58,6 +92,7 @@
         }],
       });
       if (file.canceled) return;
+
       const scrcpyPath = file.filePaths[0];
       $('#scrcpyPath').val(scrcpyPath);
       ipcRenderer.send('change_config', {key: 'scrcpyPath', val: scrcpyPath});
@@ -74,57 +109,77 @@
   });
 </script>
 
-<div class="card text-white bg-primary">
+<div class="card text-light bg-primary">
   <div class="card-header">
-    <h2 class="">Settings</h2>
+    <h2 class="mb-0"><i class="fa fa-cog"></i> Settings</h2>
   </div>
   <div class="card-body">
     <div class="card-text container">
-      <div class="form-group mb-3">
-        <label for="cfgMirror">Select rclone mirror(click on mount status button to remount):</label>
-        <select class="custom-select" id="cfgSection">
-          <!-- <option value="VRP-mirror02">VRP-mirror02</option> -->
-          <option value="VRP-mirror03">VRP-mirror03</option>
-          <option value="VRP-mirror06">VRP-mirror06</option>
-          <option value="VRP-mirror09">VRP-mirror09</option>
-          <option value="VRP-mirror10">VRP-mirror10</option>
-          <option value="VRP-mirror12">VRP-mirror12</option>
-          <option value="VRP-mirror13">VRP-mirror13</option>
-          <option value="VRP-mirror16">VRP-mirror16</option>
-        </select>
-      </div>
+      <div class="card bg-primary mb-1">
+        <div class="card-header">Rclone configs(needed for mount remoute disck`s):</div>
+        <div class="card-body">
+          <div class="form-group mb-3">
+            <label for="cfgSection">Select mirror(click on mount status button to remount):</label>
+            <select class="custom-select" id="cfgSection">
+            </select>
+          </div>
 
-      <div class="form-group mb-4">
-        <label for="rclonePath"><a onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> custom path:</label>
-        <div class="input-group">
-          <input id="rclonePath" class="form-control" value="" />
-          <a class="btn btn-primary" id="rclonePathBtn">Browse</a>
+          <div class="form-group mb-4">
+            <label for="rclonePath">Custom binary path:</label>
+            <div class="input-group">
+              <input id="rclonePath" class="form-control" value="" />
+              <a class="btn btn-primary" id="rclonePathBtn">Browse</a>
+              <a class="btn btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">Download</a>
+            </div>
+          </div>
+          <div class="form-group mb-4">
+            <label for="rcloneConf">Path config:</label>
+            <div class="input-group">
+              <input id="rcloneConf" class="form-control" value="" />
+              <a class="btn btn-primary" id="rcloneConfBtn">Browse</a>
+            </div>
+          </div>
+
+          <div class="form-check mb-3">
+            <label for="autoMount" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="autoMount">
+              Automatically mount drive on startup (if not already mounted)
+            </label>
+          </div>
         </div>
       </div>
-      <div class="form-group mb-4">
-        <label for="scrcpyPath"><a onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">SCRCPY</a> custom path:</label>
-        <div class="input-group">
-          <input id="scrcpyPath" class="form-control" value="" />
-          <a class="btn btn-primary" id="scrcpyPathBtn">Browse</a>
-        </div>
-      </div>
-      <div class="form-check mb-3">
-        <label for="autoMount" class="form-check-label">
-          <input class="form-check-input" type="checkbox" id="autoMount">
-          Automatically mount drive on startup (if not already mounted)
-        </label>
-      </div>
-      <div class="form-check mb-3">
-        <label for="allowOtherDevices" class="form-check-label">
-          <input class="form-check-input" type="checkbox" id="allowOtherDevices">
-          Allow to connect not oculus devices
-        </label>
-      </div>
 
-      <div class="form-group">
-        <a id="debugTool" class="btn btn-primary">
-          <i class="fa fa-bug" aria-hidden="true"></i> Open debug tools
-        </a>
+
+      <div class="card bg-primary mb-1">
+        <div class="card-header">Main:</div>
+        <div class="card-body">
+          <div class="form-group mb-4">
+            <label for="scrcpyPath"><a onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">SCRCPY</a> custom path:</label>
+            <div class="input-group">
+              <input id="scrcpyPath" class="form-control" value="" />
+              <a class="btn btn-primary" id="scrcpyPathBtn">Browse</a>
+                  <a class="btn btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">Download</a>
+            </div>
+          </div>
+          <div class="form-check mb-3">
+            <label for="allowOtherDevices" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="allowOtherDevices">
+              Allow to connect not oculus devices
+            </label>
+          </div>
+          <div class="form-check mb-3">
+            <label for="cacheOculusGames" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="cacheOculusGames">
+              Cache Oculus Games on first opening(for faster reopening)
+            </label>
+          </div>
+
+          <!-- <div class="form-group">
+            <a id="debugTool" class="btn btn-primary">
+              <i class="fa fa-bug"></i> Open debug tools
+            </a>
+          </div> -->
+        </div>
       </div>
     </div>
   </div>

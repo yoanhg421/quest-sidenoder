@@ -1,5 +1,5 @@
 <!-- Modal -->
-<div class="modal fade" id="sideloadModal" tabindex="-1" role="dialog" aria-labelledby="sideloadModalLabel" aria-hidden="true"  data-backdrop="static" data-keyboard="false">
+<div class="modal fade" id="sideloadModal" tabindex="-1" role="dialog" aria-labelledby="sideloadModalLabel"  data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -82,11 +82,11 @@
           <div><span id="sideloadDoneBadge" class="badge badge-warning">pending</span></div>
         </div>
         <div id="sideloadErrorArea" style="display: none">
-          <a class="btn btn-sm btn-primary" data-toggle="collapse" href="#collapseError" aria-expanded="false" aria-controls="collapseError">
-            <i class="fa fa-angle-down" aria-hidden="true"></i> Error:
+          <a class="btn btn-sm btn-outline-danger" data-toggle="collapse" href="#collapseError" aria-expanded="false" aria-controls="collapseError">
+            <i class="fa fa-angle-down"></i> Fail log
           </a>
           <div class="collapse" id="collapseError">
-            <pre id="sideloadError">
+            <pre id="sideloadError" class="card bg-dark" style="white-space: pre-wrap;padding: 8pt;">
             </pre>
           </div>
         </div>
@@ -205,7 +205,7 @@
     let state = '';
     if (text === 'done') state = 'success';
     else if (text === 'skip') state = 'secondary';
-    else if (text === 'error') state = 'danger';
+    else if (text === 'fail') state = 'danger';
     else if (text.includes('/')) {
       const parts = text.split('/');
       if (parts[0] == parts[1]) state = 'success';

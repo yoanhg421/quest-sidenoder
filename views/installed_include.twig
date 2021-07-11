@@ -4,7 +4,7 @@
   $('#listTable tbody').html('');
   ipcRenderer.send('get_installed', '');
 
-  // loadInclude('searchform.twig', 'searchformdiv');
+  loadInclude('searchform.twig', 'searchformdiv');
 
   function getUpdates() {
     $('#updateBadge').html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
@@ -35,13 +35,13 @@
 
 </script>
 
-<div class="card text-white bg-primary">
+<div class="card text-light bg-primary">
   <div class="card-header">
-    <h2 class="pull-left push-left" style="padding-top: 10px">Installed APP's</h2>
-    <h2 class="pull-right push-right" id="updateheader">
+    <h2 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h2>
+    <h2 class="mb-0 pull-right" id="updateheader">
       <script>
         if (remote.getGlobal('mounted')) {
-          $('#updateheader').html(`<a onclick="getUpdates()"> <span id="updateBadge" class="adbdev btn btn-info btn-md"><i class="fa fa-search" aria-hidden="true"></i> Click to check mount for updates</span></a>`)
+          $('#updateheader').html(`<a onclick="getUpdates()"> <span id="updateBadge" class="adbdev btn btn-info btn-md"><i class="fa fa-search"></i> Click to check mount for updates</span></a>`)
         }
         else {
           $('#updateheader').html(`<span id="updateBadge" class="btn btn-danger btn-md">Drive not mounted, cannot check for updates</span>`);

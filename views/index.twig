@@ -27,7 +27,7 @@
                 $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed (${arg.rclone.cmd})<br/><pre style="font-size: x-small;">${arg.rclone.version}</pre>`);
         }
         else {
-            $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
+            $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o"></i>
 RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version')">README on github</a>.
                 <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.rclone.error}</pre>`)
         }
@@ -38,7 +38,7 @@ RCLONE global installation not found, please read the <a class="btn btn-sm btn-i
                 $('#scrcpyCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> SCRCPY Installed (${arg.scrcpy.cmd})<br/><pre style="font-size: x-small;">${arg.scrcpy.version}</pre>`);
         }
         else {
-            $('#scrcpyCheckIndicator').html(`<i class="fa fa-times-circle-o" aria-hidden="true"></i>
+            $('#scrcpyCheckIndicator').html(`<i class="fa fa-times-circle-o"></i>
 SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">README on github</a>.
                 <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">scrcpy</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.scrcpy.error}</pre>`)
         }
@@ -70,9 +70,9 @@ SCRCPY global installation not found, please read the <a class="btn btn-sm btn-i
 
     <div class="card text-white bg-primary">
         <div class="card-header">
-            <h3>
-                <i class="fa fa-list-ul" aria-hidden="true"></i> System check
-            </h3>
+            <h2 class="mb-0">
+                <i class="fa fa-list-ul"></i> System check
+            </h2>
         </div>
         <div class="card-body">
             <h3>

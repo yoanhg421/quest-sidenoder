@@ -1,20 +1,20 @@
 <!-- Modal -->
 <div class="modal" id="appinfoModal" >
-  <div role="document" style="margin: 1.75rem auto; min-width:600px; max-width:60%"> <!-- class="modal-dialog"  -->
+  <div role="document" style="margin: 1.75rem auto; min-width:804px; max-width:48%"> <!-- class="modal-dialog"  -->
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="appinfoModalLabel">Unknown</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
+          <span>&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <div class="alert alert-dismissible alert-warning">
-          <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-          WARNING: Info auto parsed from Steam and can contains mistakes
+          <i class="fa fa-exclamation-triangle"></i>
+          WARNING: Info auto parsed and can contains mistakes
         </div>
         <div class="text-center">
-          <div id="cbp-fwslider" class="cbp-fwslider">
+          <div id="appinfoSlider" class="cbp-fwslider">
             <ul></ul>
           </div>
         </div>
@@ -23,11 +23,11 @@
         <div id="appinfoShortDesc"></div>
         <br/>
         <div><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
-        <br/>
+        <hr/>
         <b>Description:</b>
         <br/>
-        <div id="appinfoText"></div>
-        <div id="appinfoAbout"></div>
+        <div id="appinfoText" class="text-center"></div>
+        <div id="appinfoAbout" class="text-center"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -37,9 +37,9 @@
 </div>
 
 
-    <link rel="stylesheet" type="text/css" href="css/component.css" />
-    <script src="js/modernizr.custom.js"></script>
-    <script src="js/jquery.cbpFWSlider.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="css/component.css" />
+  <script src="js/modernizr.custom.js"></script>
+  <script src="js/jquery.cbpFWSlider.min.js"></script>
 <script>
   console.log('ONLOAD APPINFO MODAL');
 
@@ -49,47 +49,50 @@
     $('#appinfoModalLabel').text('');
     $('#appinfoText').html('');
     $('#appinfoAbout').html('');
-    $('#cbp-fwslider').html('<ul></ul>');
+    $('#appinfoSlider').html('<ul></ul>');
   })
 
-  ipcRenderer.removeAllListeners('process_data');
+  ipcRenderer.removeAllListeners('app_info');
   ipcRenderer.on('app_info', (event, arg) => {
+    $('#processingModal').modal('hide');
+    console.log('app_info received');
     // console.log('app_info received', arg);
-    if (!arg || !arg.success)  return;
+    if (!arg || !arg.success)  return console.log(arg);
     const data = arg.data;
     if (!data)  return;
 
 
     if (data.name) $('#appinfoModalLabel').text(data.name);
-    if (data.short_description) $('#appinfoShortDesc').text(data.short_description);
+    if (data.short_description) $('#appinfoShortDesc').html(data.short_description);
     if (data.detailed_description) $('#appinfoText').html(data.detailed_description);
     if (data.about_the_game) $('#appinfoAbout').html(data.about_the_game);
     if (data.supported_languages) $('#supportedLanguages').html(data.supported_languages.replace('русский', '<b>русский</b>'));
     if (data.genres) {
       for (const genre of data.genres) {
-        if (['Бесплатно', 'Free'].includes(genre.description)) continue;
-        $('#appinfoGenres').append(`<span class="badge badge-secondary">${genre.description}</span> `);
+        const genre_text = genre.description || genre;
+        if (['Бесплатно', 'Free'].includes(genre_text)) continue;
+        $('#appinfoGenres').append(`<span class="badge badge-secondary">${genre_text}</span> `);
       }
     }
 
     if (data.header_image) {
-      $('#cbp-fwslider ul').append(`<li><img src="${data.header_image}" width="600" alt="header"/></li>`);
+      $('#appinfoSlider ul').append(`<li><img src="${data.header_image}" width="800" style="max-height: 405px;" alt="header"/></li>`);
     }
 
     if (data.movies) {
       for (const movie of data.movies) {
         if (!movie.mp4) continue;
-        $('#cbp-fwslider ul').append(`<li><video width="600" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`);
+        $('#appinfoSlider ul').append(`<li><video width="600" style="max-height: 360px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`);
       }
     }
 
     if (data.screenshots) {
       for (const screenshot of data.screenshots) {
-        $('#cbp-fwslider ul').append(`<li><img src="${screenshot.path_thumbnail}" alt="${screenshot.id}" /></li>`);
+        $('#appinfoSlider ul').append(`<li><img src="${screenshot.path_thumbnail}" width="800" style="max-height: 405px;" alt="${screenshot.id}" /></li>`);
       }
     }
 
-    $('#cbp-fwslider').cbpFWSlider({current: 0});
+    $('#appinfoSlider').cbpFWSlider({current: 0});
     $('#appinfoModal').modal('show');
   });
 
