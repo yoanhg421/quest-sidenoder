@@ -54,14 +54,14 @@
             <a id="pullVideoshots" class="adbdev btn btn-primary">
               <i class="fa fa-download"></i> Grub the Videoshots
             </a>
-          </div> -->
+          </div>
           <div class="form-check mb-3">
             <label class="mb-1" for="snapshotsDelete" class="form-check-label">
               <input class="adbdev form-check-input" type="checkbox" id="snapshotsDelete">
               Clear from device after pulling
             </label>
           </div>
-          <hr/>
+          <hr/> -->
           <div class="form-group mb-3">
             <label class="mb-1" for="cres">
               <h6 class="card-title mb-0">Set Screenshots Size</h6>
@@ -202,67 +202,70 @@
   </div>
 </div>
 
-<script>
+<script>{
   console.log('ONLOAD tweaks');
-  {
-    const TWEAKS_KEYS = ['mp_name', 'cres', 'vres', 'gRR', 'gCA', 'gFFR', 'gSSO', 'CPU', 'GPU'];
-    const TWEAKS_CHECKBOXES = ['guardian_pause', 'frc'];
-    for (const key of TWEAKS_KEYS) {
-      ipcRenderer.send('device_tweaks', { cmd: 'get', key });
-    }
-    for (const key of TWEAKS_CHECKBOXES) {
-      ipcRenderer.send('device_tweaks', { cmd: 'get', key });
-    }
+  const TWEAKS_KEYS = [
+    'mp_name', 'cres', 'vres', 'gRR', 'gCA', 'gFFR', 'gSSO', 'CPU', 'GPU'
+  ];
+  const TWEAKS_CHECKBOXES = [
+    'guardian_pause', 'frc'
+  ];
 
-    ipcRenderer.removeAllListeners('device_tweaks');
-    ipcRenderer.on('device_tweaks', (event, arg) => {
-      console.log('device_tweaks ! ', arg);
-      if (arg.cmd == 'get') {
-        for (const key of TWEAKS_KEYS) {
-          if (arg[key]) $('#' + key).val(arg[key]);
-        }
+  for (const key of TWEAKS_KEYS) {
+    ipcRenderer.send('device_tweaks', { cmd: 'get', key });
+  }
+  for (const key of TWEAKS_CHECKBOXES) {
+    ipcRenderer.send('device_tweaks', { cmd: 'get', key });
+  }
 
-        for (const key of TWEAKS_CHECKBOXES) {
-          if (arg[key]) $('#' + key).prop('checked', arg[key] == '1');
-        }
+  ipcRenderer.removeAllListeners('device_tweaks');
+  ipcRenderer.on('device_tweaks', (event, arg) => {
+    console.log('device_tweaks ! ', arg);
+    if (arg.cmd == 'get') {
+      for (const key of TWEAKS_KEYS) {
+        if (arg[key]) $('#' + key).val(arg[key]);
       }
 
-      if (arg.cmd == 'set') {
-        for (const key of TWEAKS_KEYS) {
-          if (typeof arg[key] != 'undefined') $('#' + key).addClass('is-valid');
-        }
+      for (const key of TWEAKS_CHECKBOXES) {
+        if (arg[key]) $('#' + key).prop('checked', arg[key] == '1');
       }
-    });
-
-    for (const key of TWEAKS_KEYS) {
-      $('#' + key).on('change', function (e) {
-        $(e.target).removeClass('is-valid');
-        ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: e.target.value });
-      });
     }
 
-    for (const key of TWEAKS_CHECKBOXES) {
-      $('#' + key).on('change.bootstrapSwitch', (e) => {
-        ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: e.target.checked});
-      });
+    if (arg.cmd == 'set') {
+      for (const key of TWEAKS_KEYS) {
+        if (typeof arg[key] != 'undefined') $('#' + key).addClass('is-valid');
+      }
     }
+  });
 
-
-    if (remote.getGlobal('currentConfiguration').snapshotsDelete) {
-      $('#snapshotsDelete').prop('checked', true);
-    }
-    $('#snapshotsDelete').on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('change_config', {key: 'snapshotsDelete', val: e.target.checked});
-    });
-
-    $('#enableMTP').on('click', function (e) {
-      ipcRenderer.send('enable_mtp', '');
-    });
-    $('#scrcpyCfg').on('click', function (e) {
-      $('#scrcpyModal').modal('show');
-    });
-    $('#rebootDevice').on('click', function (e) {
-      ipcRenderer.send('reboot_device', '');
+  for (const key of TWEAKS_KEYS) {
+    $('#' + key).on('change', function (e) {
+      $(e.target).removeClass('is-valid');
+      ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: e.target.value });
     });
   }
-</script>
+
+  for (const key of TWEAKS_CHECKBOXES) {
+    $('#' + key).on('change.bootstrapSwitch', (e) => {
+      ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: e.target.checked});
+    });
+  }
+
+
+  if (remote.getGlobal('currentConfiguration').snapshotsDelete) {
+    $('#snapshotsDelete').prop('checked', true);
+  }
+  $('#snapshotsDelete').on('change.bootstrapSwitch', (e) => {
+    ipcRenderer.send('change_config', {key: 'snapshotsDelete', val: e.target.checked});
+  });
+
+  $('#enableMTP').on('click', function (e) {
+    ipcRenderer.send('enable_mtp', '');
+  });
+  $('#scrcpyCfg').on('click', function (e) {
+    $('#scrcpyModal').modal('show');
+  });
+  $('#rebootDevice').on('click', function (e) {
+    ipcRenderer.send('reboot_device', '');
+  });
+}</script>

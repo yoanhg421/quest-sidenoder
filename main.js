@@ -1,63 +1,50 @@
-const { app, BrowserWindow, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, powerSaveBlocker, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
+global.twig = require('electron-twig');
 
 app.disableHardwareAcceleration();
 
-global.twig = require('electron-twig');
-global.tmpdir = require('os').tmpdir();
-global.tmpdir = global.tmpdir.replace(/\\/g,"/");
+const {
+  EOL,
+  platform,
+  arch,
+  homedir,
+  tmpdir,
+} = require('os');
+
+global.endOfLine = EOL;
+global.platform = platform(); // process.platform
+global.arch = arch();
+global.homedir = homedir();
+global.tmpdir = tmpdir().replace(/\\/g, '/');
 global.mountFolder = global.tmpdir + '/mnt';
-global.platform = require('os').platform;
-global.homedir = require('os').homedir();
-global.endOfLine = require('os').EOL;
+
 global.adbDevice = false;
 global.mounted = false;
 global.updateAvailable = false;
-global.installedApps = [];
 global.currentConfiguration = {};
 global.rcloneSections = [];
+global.installedApps = [];
 global.hash_alg = 'sha256';
 global.locale = 'en-US';
 
+global.platform = global.platform.replace('32', '').replace('64', '');
+if (global.platform == 'darwin') global.platform = 'mac';
+
 app.on('ready', () => {
   global.locale = app.getLocale();
-})
+});
 
-
-eval(fs.readFileSync(__dirname+'/versioncheck.js')+'');
+eval(fs.readFileSync(path.join(__dirname, 'versioncheck.js'), 'utf8'));
 
 const tools = require('./tools');
 
 
-// try {
-//     tools.execShellCommand('/home/sam/test.sh');
-// }
-// catch (e) {
-//     console.error(e)
-//     return
-// }
-
-const { ipcMain } = require('electron')
-
-const id = powerSaveBlocker.start('prevent-display-sleep')
-console.log(powerSaveBlocker.isStarted(id))
+// const id = powerSaveBlocker.start('prevent-display-sleep');
+// console.log(powerSaveBlocker.isStarted(id));
 
 
-
-ipcMain.on('test', async (event, arg) => {
-
-  //external link in browser
-  //const { shell } = require('electron')
-  //await shell.openExternal('https://electronjs.org')
-
-  // template = require('twig').renderFile('views/error.twig', {}, (error, template) => {
-  //     event.reply('log', template);
-  // });
-
-  event.reply('log', arg);
-  return;
-});
 
 ipcMain.on('get_installed', async (event, arg) => {
   console.log('get_installed received');
@@ -113,9 +100,9 @@ ipcMain.on('disconnect_wireless', async (event, arg) => {
 });
 
 ipcMain.on('check_deps', async (event, arg) => {
-  console.log('check_deps received');
+  console.log('check_deps received', arg);
 
-  const res = await tools.checkDeps();
+  const res = await tools.checkDeps(arg);
 
   // IF DEPS OK LAUNCH CHECKDIVICES OTHERWISE NO
   tools.trackDevices();
@@ -203,10 +190,7 @@ ipcMain.on('get_dir', async (event, arg) => {
     const lastslashindex = install.path.lastIndexOf('/');
     const folder = install.path.substring(0, lastslashindex);
 
-    const files = fs.readdirSync(folder);
-    if (files.includes('install.txt')) {
-      install.install_desc = fs.readFileSync(path.join(folder, 'install.txt'), 'utf8');
-    }
+    install.install_desc = tools.detectInstallTxt(folder);
 
     event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
     return;
@@ -355,6 +339,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule:true,
+      contextIsolation: false,
     }
   })
   win.setMenu(null);
@@ -369,7 +354,9 @@ function createWindow () {
   }
 
   //tools.checkUpdateAvailable();
-  // global.win.webContents.openDevTools();
+  if (process.argv[2] == '--dev') {
+    global.win.webContents.openDevTools();
+  }
 
   setTimeout(function(){ checkVersion(); }, 2000);
   //
@@ -388,9 +375,9 @@ catch (e) {
 // DEFAULT
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => {
-  powerSaveBlocker.stop(id)
+  // powerSaveBlocker.stop(id)
   console.log('close')
-  if (process.platform !== 'darwin') {
+  if (global.platform !== 'mac') {
     app.quit()
   }
 })

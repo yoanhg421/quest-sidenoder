@@ -3,51 +3,90 @@
 {% block onload %}
   {{ parent() }}
 <script>
-    console.log('ONLOAD INDEX');
-    console.log('sending check_deps');
+  console.log('ONLOAD INDEX');
+  console.log('sending check_deps');
 
-    ipcRenderer.send('check_deps', 'bla');
+  ipcRenderer.send('check_deps', 'adb');
+  ipcRenderer.send('check_deps', 'rclone');
+  ipcRenderer.send('check_deps', 'zip');
+  ipcRenderer.send('check_deps', 'scrcpy');
 
-    ipcRenderer.removeAllListeners('check_deps');
-    ipcRenderer.on('check_deps', (event, arg) => {
-        console.log('check_deps msg came: ', arg); // prints "ping"
-        const { adb, rclone, scrcpy } = arg;
-        if (adb.version) {
-            $('#adbCheckIndicator').removeClass('badge-danger');
-            $('#adbCheckIndicator').addClass('badge-success');
-            $('#adbCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${arg.adb.version})`);
-        }
-        else {
-            $('#adbCheckIndicator').html(`<i class="fa fa-times-circle"></i> ADB Included(adbkit)<br/><pre style="font-size: x-small;">${arg.adb.error}</pre>`);
-        }
+  ipcRenderer.removeAllListeners('check_deps');
+  ipcRenderer.on('check_deps', (event, arg) => {
+    console.log('check_deps msg came: ', arg); // prints "ping"
+    const { adb, rclone, zip, scrcpy } = arg;
+    if (adb) {
+      const id = '#adbCheckIndicator';
+      if (adb.version) {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-success');
+        $(id).html(`<i class="fa fa-check-circle-o"></i> ADB Included(adbkit v.${adb.version})`);
+      }
+      else {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-danger');
+        $(id).html(`<i class="fa fa-times-circle"></i> ADB Included(adbkit)<br/><pre style="font-size: x-small;">
+          <br/>error: \n${adb.error}</pre>`);
+      }
+    }
 
-        if (arg.rclone.version) {
-                $('#rcloneCheckIndicator').removeClass('badge-danger');
-                $('#rcloneCheckIndicator').addClass('badge-success');
-                $('#rcloneCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed (${arg.rclone.cmd})<br/><pre style="font-size: x-small;">${arg.rclone.version}</pre>`);
-        }
-        else {
-            $('#rcloneCheckIndicator').html(`<i class="fa fa-times-circle-o"></i>
-RCLONE global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/vKolerts/quest-sidenoder#running-the-compiled-version')">README on github</a>.
-                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.rclone.error}</pre>`)
-        }
+    if (rclone) {
+      const id = '#rcloneCheckIndicator';
+      if (rclone.version) {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-success');
+        $(id).html(`<i class="fa fa-check-circle-o"></i> RCLONE Installed (${rclone.cmd})<br/><pre style="font-size: x-small;">${rclone.version}</pre>`);
 
-        if (arg.scrcpy.version) {
-                $('#scrcpyCheckIndicator').removeClass('badge-warning');
-                $('#scrcpyCheckIndicator').addClass('badge-success');
-                $('#scrcpyCheckIndicator').html(`<i class="fa fa-check-circle-o"></i> SCRCPY Installed (${arg.scrcpy.cmd})<br/><pre style="font-size: x-small;">${arg.scrcpy.version}</pre>`);
-        }
-        else {
-            $('#scrcpyCheckIndicator').html(`<i class="fa fa-times-circle-o"></i>
-SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">README on github</a>.
-                <br/>Or if you have problem with global installation - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">scrcpy</a> and set custom location at settings<br/>error: <pre style="font-size: x-small;">${arg.scrcpy.error}</pre>`)
-        }
-    });
+        if (remote.getGlobal('currentConfiguration').autoMount) checkMount();
+      }
+      else {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-danger');
+        $(id).html(`<i class="fa fa-times-circle-o"></i>
+          Can't find RCLONE - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">RClone</a> and set custom location at settings
+          <br/><pre style="font-size: x-small;">error: \n${rclone.error}</pre>`)
+      }
+    }
+
+    if (zip) {
+      const id = '#zipCheckIndicator';
+      if (zip.version) {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-success');
+        $(id).html(`<i class="fa fa-check-circle-o"></i> 7zip Archiver installed (${zip.cmd})<br/><pre style="font-size: x-small;">${zip.version}</pre>`);
+      }
+      else {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-danger');
+        $(id).html(`<i class="fa fa-times-circle-o"></i>
+          Can't find 7zip Archiver - try to manualy download latest <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://www.7-zip.org/download.html')">7ZIP</a> and set custom location at settings
+          <br/><pre style="font-size: x-small;">error: \n${zip.error}</pre>`)
+      }
+    }
+
+    if (scrcpy) {
+      const id = '#scrcpyCheckIndicator';
+      if (scrcpy.version) {
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-success');
+        $(id).html(`<i class="fa fa-check-circle-o"></i> SCRCPY Installed (${scrcpy.cmd})<br/><pre style="font-size: x-small;">${scrcpy.version}</pre>`);
+      }
+      else {
+        const tag = remote.getGlobal('platform')
+          .replace('win', 'windows')
+          .replace('mac', 'macos');
+        $(id).removeClass('badge-warning');
+        $(id).addClass('badge-danger');
+        $(id).html(`<i class="fa fa-times-circle-o"></i>
+          SCRCPY global installation not found, please read the <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#${tag}')">MANUAL</a>
+          <br/><pre style="font-size: x-small;">error: \n${scrcpy.error}</pre>`)
+      }
+    }
+  });
 
   console.log('ONLOAD');
   // ipcRenderer.send('check_mount', 'bla');
   // ipcRenderer.send('check_device', 'bla');
-  {% if currentConfiguration.autoMount %}checkMount();{% endif %}
 
   console.log('setup ask device listener')
   ipcRenderer.on('ask_device', (event, arg) => {
@@ -68,33 +107,36 @@ SCRCPY global installation not found, please read the <a class="btn btn-sm btn-i
 
 <div id="mainbody">
 
-    <div class="card text-white bg-primary">
-        <div class="card-header">
-            <h2 class="mb-0">
-                <i class="fa fa-list-ul"></i> System check
-            </h2>
-        </div>
-        <div class="card-body">
-            <h3>
-                Platform Detected: {{ platform }}
-            </h3>
-            <h3>
-                Temp Dir Detected: {{ tmpdir }}
-            </h3>
-            <h3>
-                Mount Dir Detected: {{ mountFolder }}
-            </h3>
-            <h3>
-                <div class="badge badge-danger" id="adbCheckIndicator">ADB not found | PLEASE INSTALL ADB GLOBALLY</div>
-            </h3>
-            <h3>
-                <div class="badge badge-danger text-left" id="rcloneCheckIndicator">RCLONE not found | PLEASE INSTALL RCLONE GLOBALLY</div>
-            </h3>
-            <h3>
-                <div class="badge badge-warning text-left" id="scrcpyCheckIndicator">SCRCPY not found | PLEASE INSTALL SCRCPY GLOBALLY</div>
-            </h3>
-        </div>
+  <div class="card text-white bg-primary">
+    <div class="card-header">
+      <h2 class="mb-0">
+        <i class="fa fa-list-ul"></i> System check
+      </h2>
     </div>
+    <div class="card-body">
+      <h3>
+        Platform Detected: {{ platform }}
+      </h3>
+      <h3>
+        Temp Dir Detected: {{ tmpdir }}
+      </h3>
+      <h3>
+        Mount Dir Detected: {{ mountFolder }}
+      </h3>
+      <h3>
+        <div class="badge badge-warning" id="adbCheckIndicator">ADB - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="rcloneCheckIndicator">RCLONE - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="zipCheckIndicator">7zip Archiver - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="scrcpyCheckIndicator">SCRCPY - checking..</div>
+      </h3>
+    </div>
+  </div>
 
 
 

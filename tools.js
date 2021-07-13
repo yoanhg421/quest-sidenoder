@@ -1,6 +1,7 @@
 const exec = require('child_process').exec;
 const ApkReader = require('adbkit-apkreader');
 const fs = require('fs');
+const util = require('util');
 const path = require('path');
 const crypto = require('crypto');
 const commandExists = require('command-exists');
@@ -12,31 +13,19 @@ const fetch = require('node-fetch');
 const WAE = require('web-auto-extractor').default
 // const ApkReader = require('node-apk-parser');
 
-const fixPath = require('fix-path');
-fixPath();
+require('fix-path')();
 
 const pkg = require('./package.json');
-const platform = require('os').platform();
-const arch = require('os').arch(); // TODO set link for rclone downloading
 
+const l = 32;
 const sidenoderHome = path.join(global.homedir, 'sidenoder');
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(sidenoderHome, 'config.json');
 
-console.log({platform});
-if (!['win64', 'win32'].includes(platform)) {
-  global.nullcmd = '> /dev/null'
-  global.nullerror = '2> /dev/null'
-}
-else {
-  global.nullcmd = '> null'
-  global.nullerror = '2> null'
-}
-
-const l = 32;
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
+
 init();
 
 
@@ -82,6 +71,7 @@ module.exports =
   appInfo,
   isIdle,
   wakeUp,
+  detectInstallTxt,
   // ...
 }
 
@@ -224,15 +214,12 @@ async function deviceTweaksSet(arg) {
 async function getStorageInfo() {
   console.log('getStorageInfo()');
 
-  const res = await adbShell('df -h');
-  const re = new RegExp('.*/storage/emulated.*');
-  if (!res) return false;
-
-  const linematch = res.match(re);
+  const linematch = await adbShell('df -h | grep "/storage/emulated"');
   if (!linematch) return false;
 
   const refree = new RegExp('([0-9(.{1})]+[a-zA-Z%])', 'g');
-  const storage = linematch[0].match(refree);
+  const storage = linematch.match(refree);
+  console.log(storage)
 
   if (storage.length == 3) {
     return {
@@ -403,9 +390,9 @@ async function startSCRCPY() {
     return;
   }
 
-  const scrcpyCmd = `${global.currentConfiguration.scrcpyPath || 'scrcpy'} ` +
+  const scrcpyCmd = `"${global.currentConfiguration.scrcpyPath || 'scrcpy'}" ` +
     (global.currentConfiguration.scrcpyCrop ? `--crop ${global.currentConfiguration.scrcpyCrop} `: '') +
-    `-b ${global.currentConfiguration.scrcpyBitrate || 1}000000 ` +
+    `-b ${global.currentConfiguration.scrcpyBitrate || 1}M ` +
     (global.currentConfiguration.scrcpyFps ? `--max-fps ${global.currentConfiguration.scrcpyFps} ` : '') +
     (global.currentConfiguration.scrcpySize ? `--max-size ${global.currentConfiguration.scrcpySize} ` : '') +
     (!global.currentConfiguration.scrcpyWindow ? '-f ' : '') +
@@ -784,51 +771,67 @@ async function checkMount() {
   }
 }
 
-async function checkDeps(){
+async function checkDeps(arg){
   console.log('checkDeps()');
   let res = {
-    adb: {
+    [arg]: {
       version: false,
+      cmd: false,
       error: false,
-    },
-    rclone: {
-      version: false,
-      cmd: false,
-      error: 'unknown',
-    },
-    scrcpy: {
-      version: false,
-      cmd: false,
-      error: 'unknown',
-    },
+    }
   };
-  try {
-    res.adb.version = await adb.version();
-  }
-  catch (e) {
-    res.adb.error = e;
-  }
 
   try {
-    res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
-    res.rclone.version = await execShellCommand(`${res.rclone.cmd} --version`);
-    if (!res.rclone.version) throw global.execError;
-  }
-  catch (e) {
-    res.rclone.error = e;
-  }
+    if (arg == 'adb') {
+      res[arg].version = await adb.version();
+    }
 
-  try {
-    res.scrcpy.cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
-    res.scrcpy.version = await execShellCommand(`${res.scrcpy.cmd} --version`);
-    if (!res.scrcpy.version) res.scrcpy.version = global.execError; // don`t know why version at std_err((
+    if (arg == 'rclone') {
+      // module with autodownload https://github.com/sntran/rclone.js/blob/main/index.js
+      // res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
+      res[arg].cmd = await fetchBinary('rclone');
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+      if (!res[arg].version) throw global.execError;
+    }
+
+    if (arg == 'zip') {
+      res[arg].cmd = await fetchBinary('7za');
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --help`);
+      if (res[arg].version) res[arg].version = res[arg].version.split('\n')[1];
+      else throw global.execError;
+    }
+
+    if (arg == 'scrcpy') {
+      res[arg].cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+      if (!res[arg].version) res[arg].version = global.execError; // don`t know why version at std_err((
+    }
   }
   catch (e) {
-    res.scrcpy.error = e;
+    res[arg].error = e;
   }
 
   res.success = true;
   return res;
+}
+
+async function fetchBinary(bin) {
+  const cfgKey = `${bin}Path`;
+  const cmd = global.currentConfiguration[cfgKey];
+  if (cmd) return cmd;
+
+  const file = global.platform == 'win' ? `${bin}.exe` : bin;
+
+  const binPath = path.join(sidenoderHome, file);
+  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
+  console.log('fetchBinary', { bin, cfgKey, binUrl, binPath, file });
+  const resp = await fetch(binUrl);
+  if (!resp.ok) throw new Error(`Can't download '${binUrl}': ${resp.statusText}`);
+
+  fs.writeFileSync(binPath, await resp.buffer());
+  fs.chmodSync(binPath, 0o755);
+
+  return changeConfig(cfgKey, binPath);
 }
 
 function returnError(message) {
@@ -841,7 +844,7 @@ function returnError(message) {
 
 
 async function killRClone(){
-  const killCmd = (['win64', 'win32'].includes(platform))
+  const killCmd = platform == 'win'
     ? `taskkill.exe /F /IM rclone.exe /T` // TODO: need test
     : `killall -9 rclone`;
   console.log('try kill rclone');
@@ -864,6 +867,7 @@ async function killRClone(){
 }
 
 function parseRcloneSections() {
+  if (!global.currentConfiguration.rcloneConf) return;
   if (!fs.existsSync(global.currentConfiguration.rcloneConf)) {
     return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
   }
@@ -880,6 +884,10 @@ function parseRcloneSections() {
   }
 
   global.rcloneSections = sections;
+  if (sections.length && !global.currentConfiguration.cfgSection) {
+    changeConfig('cfgSection', sections[0]);
+  }
+
   // console.log({ sections });
   return sections;
 }
@@ -890,23 +898,26 @@ async function mount() {
     await killRClone();
   }
 
-  if (!['win64', 'win32'].includes(platform)) {
+  if (platform == 'win') {
+    await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
+  }
+  else {
     await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
     await fs.mkdir(global.mountFolder, {}, ()=>{}) // folder must exist on windows
   }
-  else {
-    await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
-  }
 
-  if (!fs.existsSync(global.currentConfiguration.rcloneConf)) { // TODO: temoporary
+   // TODO: temoporary
+  if (!global.currentConfiguration.rcloneConf) {
+    const rcloneConf = path.join(sidenoderHome, 'rclone.conf');
+
     const epath = path.join(__dirname , 'a.enc'); // 'a'
     const data = fs.readFileSync(epath, 'utf8');
     const buff = Buffer.from(data, 'base64');
     const cfg = buff.toString('ascii');
-    fs.writeFileSync(global.currentConfiguration.rcloneConf, cfg);
+    fs.writeFileSync(rcloneConf, cfg);
 
-    changeConfig('rcloneConf', global.currentConfiguration.rcloneConf);
+    changeConfig('rcloneConf', rcloneConf);
   }
 
   // const buff = new Buffer(data);
@@ -914,10 +925,10 @@ async function mount() {
   // fs.writeFileSync(epath + '.enc', base64data);
   //console.log(cpath);
 
-  const mountCmd = (platform == 'darwin') ? 'cmount' : 'mount';
+  const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
   const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
-  exec(`${rcloneCmd} ${mountCmd} --read-only --rc --rc-no-auth --config=${global.currentConfiguration.rcloneConf} ${global.currentConfiguration.cfgSection}: ${global.mountFolder}`, (error, stdout, stderr) => {
+  exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" "${global.currentConfiguration.cfgSection}": "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
       console.log('rclone error:', error);
       if (error.message.search('transport endpoint is not connected')) {
@@ -951,6 +962,7 @@ function resetCache(folder) {
 
 async function getDir(folder) {
   const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath);
+  console.log(folder, global.currentConfiguration.cacheOculusGames);
   if (
     folder == oculusGamesDir
     && global.currentConfiguration.cacheOculusGames
@@ -1517,6 +1529,32 @@ async function getInstalledAppsWithUpdates() {
 }
 
 
+function detectInstallTxt(files, folder) {
+  if (typeof files == 'string') {
+    folder = files;
+    files = false;
+  }
+
+  if (!files) {
+    files = fs.readdirSync(folder);
+  }
+
+  const installTxNames = [
+    'install.txt',
+    'Install.txt',
+    // 'notes.txt',
+    // 'Notes.txt',
+  ];
+
+  for (const name of installTxNames) {
+    if (files.includes(name)) {
+      return fs.readFileSync(path.join(folder, name), 'utf8');
+    }
+  }
+
+  return false;
+}
+
 
 async function getApkFromFolder(folder){
   let res = {
@@ -1525,12 +1563,9 @@ async function getApkFromFolder(folder){
   }
 
   const files = fs.readdirSync(folder);
-  if (files.includes('install.txt')) {
-    res.install_desc = fs.readFileSync(path.join(folder, 'install.txt'), 'utf8');
-  }
+  res.install_desc = detectInstallTxt(files);
 
   for (file of files) {
-    console.log(file);
     if (file.endsWith('.apk')) {
       res.path = path.join(folder, file).replace(/\\/g, "/");
       return res;
@@ -1573,6 +1608,18 @@ function updateRcloneProgress() {
 }
 
 async function init() {
+  initLogs();
+
+  console.log({ platform, arch }, process.platform, process.arch, process.argv);
+  if (platform == 'win') {
+    global.nullcmd = '> null'
+    global.nullerror = '2> null'
+  }
+  else {
+    global.nullcmd = '> /dev/null'
+    global.nullerror = '2> /dev/null'
+  }
+
   try {
     const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json');
     QUEST_ICONS = await res.json();
@@ -1586,7 +1633,7 @@ async function init() {
     const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e');
     const text = await res.text();
     const iv = Buffer.from(text.substring(0, l), 'hex');
-    const secret = crypto.createHash(hash_alg).update(pkg.author.repeat(2)).digest('base64').substr(0, l);
+    const secret = crypto.createHash(hash_alg).update(pkg.author.split(' ')[0].repeat(2)).digest('base64').substr(0, l);
     const decipher = crypto.createDecipheriv('aes-256-cbc', secret, iv);
     const encrypted = text.substring(l);
     KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
@@ -1597,15 +1644,67 @@ async function init() {
   }
 }
 
+function initLogs() {
+  const log_path = path.join(sidenoderHome, 'debug_last.log');
+  if (fs.existsSync(log_path)) {
+    fs.unlinkSync(log_path);
+  }
+  else if (!fs.existsSync(sidenoderHome)) {
+    fs.mkdirSync(sidenoderHome);
+  }
+
+  const log_file = fs.createWriteStream(log_path, { flags: 'w' });
+  const log_stdout = process.stdout;
+
+  console.log = function(...d) {
+    let line = '';
+    let line_color = '';
+    for (const l of d) {
+      if (typeof l == 'string') {
+        line += l + ' ';
+        line_color += l + ' ';
+        continue;
+      }
+
+      const formated = util.format(l);
+      line += formated + ' ';
+      line_color += '\x1b[32m' + formated + '\x1b[0m ';
+    }
+
+    log_stdout.write(line_color + '\n');
+    log_file.write(line + '\n');
+  };
+
+  console.error = function(...d) {
+    let line = '';
+    for (const l of d) {
+      line += util.format(l) + ' ';
+    }
+
+    log_stdout.write('\x1b[31mERROR: ' + line + '\x1b[0m\n');
+    log_file.write('ERROR: ' + line + '\n');
+  };
+
+  console.warning = function(...d) {
+    let line = '';
+    for (const l of d) {
+      line += util.format(l) + ' ';
+    }
+
+    log_stdout.write('\x1b[33mWARN: ' + line + '\x1b[0m\n');
+    log_file.write('WARN: ' + line + '\n');
+  };
+}
+
 
 
 function reloadConfig() {
   const defaultConfig = {
     allowOtherDevices: false,
-    cacheOculusGames: false,
-    autoMount: false,
+    cacheOculusGames: true,
+    autoMount: true,
     rclonePath: '',
-    rcloneConf: path.join(sidenoderHome, 'rclone.conf'),
+    rcloneConf: '',
     cfgSection: 'VRP-mirror10',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
@@ -1615,7 +1714,6 @@ function reloadConfig() {
   };
   try {
     if (fs.existsSync(configLocationOld)) {
-      fs.mkdirSync(sidenoderHome);
       fs.renameSync(configLocationOld, configLocation);
     }
 
@@ -1625,22 +1723,24 @@ function reloadConfig() {
     }
     else {
       console.log('Config doesnt exist, creating ') + configLocation;
-      fs.mkdirSync(sidenoderHome);
       fs.writeFileSync(configLocation, JSON.stringify(defaultConfig))
       global.currentConfiguration = defaultConfig;
     }
 
     parseRcloneSections();
   }
-  catch(err) {
-    console.error(err);
+  catch (err) {
+    console.error('loadConfig', err);
   }
 }
 
 function changeConfig(key, value) {
+  console.log('cfg.update', key, value);
+
   global.currentConfiguration[key] = value;
-  console.log('cfg.update', key, global.currentConfiguration[key]);
+  fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration));
+
   if (key == 'rcloneConf') parseRcloneSections();
 
-  fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration));
+  return value;
 }

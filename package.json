@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "SideNoder - oculus quest tool for sideloading, device tweaks, application managing, etc",
   "main": "main.js",
   "dependencies": {
@@ -16,19 +16,11 @@
     "web-auto-extractor": "^1.0.17"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.54",
-    "@electron-forge/maker-deb": "^6.0.0-beta.54",
-    "@electron-forge/maker-dmg": "^6.0.0-beta.54",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.54",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
-    "@electron-forge/maker-zip": "^6.0.0-beta.54",
     "electron": "^10.1.5",
     "electron-builder": "^22.9.1"
   },
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make --skip-package",
+    "start": "electron ./ --dev",
     "pack": "electron-builder --dir",
     "dist": "electron-builder -mwl",
     "postinstall": "electron-builder install-app-deps"
@@ -41,11 +33,26 @@
     },
     "afterPack": "./removeLocales.js",
     "mac": {
-      "target": "dir"
+      "target": [
+        "dir",
+        "tar.gz"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
     }
   },
-  "keywords": [],
-  "author": "vKolerts",
+  "author": "vKolerts <str.mail.ru@bk.ru> (https://github.com/vKolerts/quest-sidenoder/)",
   "license": "MIT",
   "config": {
     "forge": {

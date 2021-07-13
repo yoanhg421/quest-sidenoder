@@ -1,114 +1,3 @@
-<script>
-  $(document).ready(function () {
-    console.log('ONLOAD settings');
-    if (remote.getGlobal('currentConfiguration').autoMount) {
-      $('#autoMount').prop('checked', true);
-    }
-    $('#autoMount').on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('change_config', {key: 'autoMount', val: e.target.checked});
-    });
-    if (remote.getGlobal('currentConfiguration').allowOtherDevices) {
-      $('#allowOtherDevices').prop('checked', true);
-    }
-    $('#allowOtherDevices').on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('change_config', {key: 'allowOtherDevices', val: e.target.checked});
-    });
-    if (remote.getGlobal('currentConfiguration').cacheOculusGames) {
-      $('#cacheOculusGames').prop('checked', true);
-    }
-    $('#cacheOculusGames').on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('change_config', {key: 'cacheOculusGames', val: e.target.checked});
-    });
-
-    for (const section of remote.getGlobal('rcloneSections')) {
-      $('#cfgSection').append(`<option value="${section}">${section}</option`);
-    }
-
-    $('#cfgSection').val(remote.getGlobal('currentConfiguration').cfgSection);
-    $('#cfgSection').on('change', (e) => {
-      ipcRenderer.send('change_config', {key: 'cfgSection', val: e.target.value});
-    });
-
-
-    $('#debugTool').on('click', (e) => {
-      remote.getGlobal('win').webContents.openDevTools();
-    });
-
-    async function setRclone() {
-      const file = await dialog.showOpenDialog(null, {
-        title: 'RClone custom path',
-        message: 'Browse to rclone',
-        properties: ['openFile'],
-        filters: [{
-          name: 'Exe', extensions: ['exe'],
-          name: 'All', extensions: ['*'],
-        }],
-      });
-      if (file.canceled) return;
-      const rclonePath = file.filePaths[0];
-      $('#rclonePath').val(rclonePath);
-      ipcRenderer.send('change_config', {key: 'rclonePath', val: rclonePath});
-      return rclonePath;
-    }
-
-    $('#rclonePath').val(remote.getGlobal('currentConfiguration').rclonePath);
-    $('#rclonePath').on('change', (e) => {
-      ipcRenderer.send('change_config', {key: 'rclonePath', val: e.target.value});
-    });
-    $('#rclonePathBtn').on('click', (e) => setRclone());
-
-    async function setRcloneConf() {
-      const file = await dialog.showOpenDialog(null, {
-        title: 'RClone config location',
-        message: 'Browse to rclone config',
-        properties: ['openFile'],
-        filters: [{
-          name: 'Config', extensions: ['conf', 'cfg', 'ini'],
-          name: 'All', extensions: ['*'],
-        }],
-      });
-      if (file.canceled) return;
-
-      const rcloneConf = file.filePaths[0];
-      $('#rcloneConf').val(rcloneConf);
-      ipcRenderer.send('change_config', {key: 'rcloneConf', val: rcloneConf});
-      return rcloneConf;
-    }
-
-    $('#rcloneConf').val(remote.getGlobal('currentConfiguration').rcloneConf);
-    $('#rcloneConf').on('change', (e) => {
-      ipcRenderer.send('change_config', {key: 'rcloneConf', val: e.target.value});
-    });
-    $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
-
-    async function setSCRCPY() {
-      const file = await dialog.showOpenDialog(null, {
-        title: 'SCRCPY custom path',
-        message: 'Browse to scrcpy',
-        properties: ['openFile'],
-        filters: [{
-          name: 'Exe', extensions: ['exe'],
-          name: 'All', extensions: ['*'],
-        }],
-      });
-      if (file.canceled) return;
-
-      const scrcpyPath = file.filePaths[0];
-      $('#scrcpyPath').val(scrcpyPath);
-      ipcRenderer.send('change_config', {key: 'scrcpyPath', val: scrcpyPath});
-      return rclonePath;
-    }
-
-    $('#scrcpyPath').val(remote.getGlobal('currentConfiguration').scrcpyPath);
-    $('#scrcpyPath').on('change', (e) => {
-      ipcRenderer.send('change_config', {key: 'scrcpyPath', val: e.target.value});
-    });
-    $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
-
-    // setRclone();
-  });
-</script>
-
 <div class="card text-light bg-primary">
   <div class="card-header">
     <h2 class="mb-0"><i class="fa fa-cog"></i> Settings</h2>
@@ -185,3 +74,100 @@
   </div>
 </div>
 
+<script>{
+  console.log('ONLOAD settings');
+  const OPT_KEYS = [
+    'cfgSection',
+    'rclonePath',
+    'rcloneConf',
+    'scrcpyPath',
+  ];
+  const CHKBOXES = [
+    'autoMount',
+    'allowOtherDevices',
+    'cacheOculusGames',
+  ];
+
+  for (const section of remote.getGlobal('rcloneSections')) {
+    $('#cfgSection').append(`<option value="${section}">${section}</option`);
+  }
+
+  for (const key of OPT_KEYS) {
+    $('#' + key).val(remote.getGlobal('currentConfiguration')[key]);
+    $('#' + key).on('change', (e) => {
+      ipcRenderer.send('change_config', {key, val: e.target.value});
+    });
+  }
+
+  for (const key of CHKBOXES) {
+    if (remote.getGlobal('currentConfiguration')[key]) {
+      $('#' + key).prop('checked', true);
+    }
+
+    $('#' + key).on('change.bootstrapSwitch', (e) => {
+      ipcRenderer.send('change_config', {key, val: e.target.checked});
+    });
+  }
+
+
+  $('#debugTool').on('click', (e) => {
+    remote.getGlobal('win').webContents.openDevTools();
+  });
+
+  $('#rclonePathBtn').on('click', (e) => setRclone());
+  async function setRclone() {
+    const file = await dialog.showOpenDialog(null, {
+      title: 'RClone custom path',
+      message: 'Browse to rclone',
+      properties: ['openFile'],
+      filters: [{
+        name: 'Exe', extensions: ['exe'],
+        name: 'All', extensions: ['*'],
+      }],
+    });
+    if (file.canceled) return;
+    const rclonePath = file.filePaths[0];
+    $('#rclonePath').val(rclonePath);
+    ipcRenderer.send('change_config', {key: 'rclonePath', val: rclonePath});
+    return rclonePath;
+  }
+
+  $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
+  async function setRcloneConf() {
+    const file = await dialog.showOpenDialog(null, {
+      title: 'RClone config location',
+      message: 'Browse to rclone config',
+      properties: ['openFile'],
+      filters: [{
+        name: 'Config', extensions: ['conf', 'cfg', 'ini'],
+        name: 'All', extensions: ['*'],
+      }],
+    });
+    if (file.canceled) return;
+
+    const rcloneConf = file.filePaths[0];
+    $('#rcloneConf').val(rcloneConf);
+    ipcRenderer.send('change_config', {key: 'rcloneConf', val: rcloneConf});
+    return rcloneConf;
+  }
+
+  $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
+  async function setSCRCPY() {
+    const file = await dialog.showOpenDialog(null, {
+      title: 'SCRCPY custom path',
+      message: 'Browse to scrcpy',
+      properties: ['openFile'],
+      filters: [{
+        name: 'Exe', extensions: ['exe'],
+        name: 'All', extensions: ['*'],
+      }],
+    });
+    if (file.canceled) return;
+
+    const scrcpyPath = file.filePaths[0];
+    $('#scrcpyPath').val(scrcpyPath);
+    ipcRenderer.send('change_config', {key: 'scrcpyPath', val: scrcpyPath});
+    return rclonePath;
+  }
+
+}</script>
