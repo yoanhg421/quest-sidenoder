@@ -949,7 +949,7 @@ async function mount() {
 
 function resetCache(folder) {
   console.log('resetCache', folder);
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath);
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
 
   if (folder == oculusGamesDir) {
     cacheOculusGames = false;
@@ -961,8 +961,8 @@ function resetCache(folder) {
 
 
 async function getDir(folder) {
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath);
-  console.log(folder, global.currentConfiguration.cacheOculusGames);
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
+  //console.log(folder, oculusGamesDir);
   if (
     folder == oculusGamesDir
     && global.currentConfiguration.cacheOculusGames
