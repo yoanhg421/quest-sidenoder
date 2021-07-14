@@ -439,13 +439,12 @@ async function getDeviceSync(attempt = 0) {
       global.adbDevice = device.id;
     }
 
-    if (global.adbDevice || attempt < 1) {
-      return win.webContents.send('check_device', { success: global.adbDevice });
-    }
 
-    if (!global.adbDevice && attempt <= 2) {
+    if (!global.adbDevice && attempt < 3) {
       return setTimeout(()=> getDeviceSync(attempt + 1), 200);
     }
+
+    win.webContents.send('check_device', { success: global.adbDevice });
 
     return global.adbDevice;
   }
@@ -633,12 +632,12 @@ async function trackDevices() {
   try {
     const tracker = await adb.trackDevices()
     tracker.on('add', async (device) => {
-      console.log('Device %s was plugged in', { success: device.id });
+      console.log('Device was plugged in', device.id);
       await getDeviceSync();
     });
 
     tracker.on('remove', async (device) => {
-      console.log('Device %s was unplugged', device.id);
+      console.log('Device was unplugged', device.id);
       await getDeviceSync();
     });
 
