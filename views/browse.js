@@ -31,7 +31,7 @@ function fixIcons() {
 }
 
 // call get_dir when selection is made
-function getDir(newpath = false, resetCache = false) {
+function getDir(newpath = '', resetCache = false) {
   if (!newpath.endsWith('.apk')) {
     $('#processingModal').modal('show');
   }
