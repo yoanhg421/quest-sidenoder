@@ -483,7 +483,7 @@ async function adbPull(orig, dest, sync = false) {
   console.log('adbPull', orig, dest);
   const transfer = sync
     ? await sync.pull(orig)
-    : await adb.pull(global.adbDevice, orig);
+    : await adb.getDevice(global.adbDevice).pull(orig);
   return new Promise(function(resolve, reject) {
     transfer.on('progress', (stats) => {
       console.log(orig + ' pulled', stats);
@@ -529,7 +529,7 @@ async function adbPullFolder(orig, dest, sync = false) {
       continue;
     }
 
-    fs.mkdirSync(new_dest);
+    fs.mkdirSync(new_dest, { recursive: true });
     await adbPullFolder(new_orig, new_dest, sync);
   }
 
@@ -542,7 +542,7 @@ async function adbPush(orig, dest, sync = false) {
   console.log('adbPush', orig, dest);
   const transfer = sync
     ? await sync.pushFile(orig, dest)
-    : await adb.push(global.adbDevice, orig, dest);
+    : await adb.getDevice(global.adbDevice).push(orig, dest);
   const stats = fs.lstatSync(orig);
   const size = stats.size;
 
@@ -582,7 +582,7 @@ async function adbPushFolder(orig, dest, sync = false) {
     sync = await adb.getDevice(global.adbDevice).syncService();
   }
 
-  await adbShell(`mkdir ${dest}`);
+  await adbShell(`mkdir -p ${dest}`);
   const files = fs.readdirSync(orig, { withFileTypes: true });
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
@@ -598,6 +598,14 @@ async function adbPushFolder(orig, dest, sync = false) {
   if (need_close) sync.end();
 
   return true;
+}
+
+async function adbInstall(apk) {
+  console.log('adbInstall', apk);
+  const temp_path = '/data/local/tmp/install.apk';
+
+  await adbPush(apk, temp_path);
+  return adb.getDevice(global.adbDevice).installRemote(temp_path);
 }
 
 function execShellCommand(cmd, buffer = 5000) {
@@ -646,8 +654,9 @@ async function trackDevices() {
       trackDevices();
     });
   }
-  catch(err) {
+  catch (err) {
     console.error('Something went wrong:', err.stack);
+    returnError(err);
   }
 }
 
@@ -904,8 +913,7 @@ async function mount() {
   else {
     await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
-    if (!fs.existsSync(global.mountFolder))
-      fs.mkdirSync(global.mountFolder);
+    fs.mkdirSync(global.mountFolder, { recursive: true });
   }
 
    // TODO: temoporary
@@ -1255,8 +1263,6 @@ async function sideloadFolder(arg) {
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
     try {
-
-      if (fs.existsSync(backup_path)) fs.rmdirSync(backup_path, { recursive: true });
       fs.mkdirSync(backup_path, { recursive: true });
       await adbPullFolder(`/sdcard/Android/data/${packageName}`, backup_path);
       res.backup = 'done';
@@ -1297,8 +1303,6 @@ async function sideloadFolder(arg) {
   if (installed) {
     console.log('doing adb push appdata (ignore error)');
     try {
-      //await execShellCommand(`adb shell "mkdir -p /sdcard/Android/data/${packageName}/"`);
-      //await execShellCommand(`adb push "${global.tmpdir}/sidenoder_restore_backup/${packageName}/* /sdcard/Android/data/${packageName}/"`, 100000);
       await adbPushFolder(backup_path, `/sdcard/Android/data/${packageName}`);
 
       res.restore = 'done';
@@ -1329,11 +1333,11 @@ async function sideloadFolder(arg) {
 
   try {
     // await execShellCommand(`adb install -g -d "${apkfile}"`);
-    await adb.getDevice(global.adbDevice).install(apkfile);
+    await adbInstall(apkfile);
 
     if (fromremote) {
       //TODO: check settings
-      execShellCommand(`rm "${tempapk}"`);
+      fs.unlinkSync(tempapk);
     }
 
     res.apk = 'done';
@@ -1415,7 +1419,7 @@ async function sideloadFolder(arg) {
 
           await adbPush(tempobb, `/sdcard/Android/obb/${obbFolder}/${name}`);
           //TODO: check settings
-          execShellCommand(`rm -r "${tempobb}"`);
+          fs.rmdirSync(tempobb, { recursive: true });
         }
         else {
           await adbPush(item, `/sdcard/Android/obb/${obbFolder}/${name}`);
@@ -1583,13 +1587,14 @@ async function uninstall(packageName){
 }
 
 
+let rcloneProgress = false;
 async function updateRcloneProgress() {
   try {
     const response = await fetch('http://127.0.0.1:5572/core/stats', { method: 'POST' })
     const data = await response.json();
     if (!data.transferring || !data.transferring[0]) throw 'no data';
     const transferring = data.transferring[0];
-    const res = {
+    rcloneProgress = {
       cmd: 'download',
       bytes: transferring.bytes,
       size: transferring.size,
@@ -1599,11 +1604,14 @@ async function updateRcloneProgress() {
       name: transferring.name,
     }
     //console.log('sending rclone data');
-    win.webContents.send('process_data', res);
+    win.webContents.send('process_data', rcloneProgress);
   }
   catch (error) {
     //console.error('Fetch-Error:', error);
-    win.webContents.send('process_data', '');
+    if (rcloneProgress) {
+      rcloneProgress = false;
+      win.webContents.send('process_data', rcloneProgress);
+    }
   }
 
   setTimeout(updateRcloneProgress, 2000);
@@ -1651,8 +1659,8 @@ function initLogs() {
   if (fs.existsSync(log_path)) {
     fs.unlinkSync(log_path);
   }
-  else if (!fs.existsSync(sidenoderHome)) {
-    fs.mkdirSync(sidenoderHome);
+  else {
+    fs.mkdirSync(sidenoderHome, { recursive: true });
   }
 
   const log_file = fs.createWriteStream(log_path, { flags: 'w' });
