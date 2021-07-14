@@ -52,7 +52,7 @@ function drawInstalledApps(apps) {
   console.log('drawInstalledApps', apps.length);
   let rows = '';
   for (const app of apps) {
-    console.log('list_installed_app msg came ! ', app);
+    // console.log('list app', app);
     row = `<tr><td class="text-center" style="width: 250px;vertical-align:middle;"><img style="max-height:80px" src="${app.imagePath}"/></td>
       <td style="vertical-align:middle;font-weight: bolder; font-size: large">${app.simpleName}
       <br/><small>${app.packageName}<br/>VersionCode: ${app.versionCode}</small></td><td style="vertical-align:middle;">`;
