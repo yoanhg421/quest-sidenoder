@@ -4,9 +4,7 @@ const fs = require('fs'),
 console.log('ONLOAD BROWSE');
 
 ipcRenderer.on('get_dir', (event, arg) => {
-  console.log('get_dir msg came: ');
-  console.log(arg);
-  $('#listTable tbody').html('');
+  console.log('get_dir msg came: ', arg.path);
   if (arg.success) {
     $('#path').html(arg.path);
     loadDir(arg.path, arg.list);
@@ -90,12 +88,16 @@ function loadDir(path, list) {
   for (const item of list) {
     // console.log(item);
     if (!item.createdAt) {
-      $('#listTable tbody').append(`<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`);
+      rows += `<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`;
       continue;
     }
 
     const createdAt = item.createdAt.getTime();
-    const fullPath = item.filePath.replace('\\', '/').replace('', ':').split('\'').join('\\\'');
+    const fullPath = item.filePath
+      .replace('\\', '/')
+      .replace('', ':')
+      .split('\'')
+      .join('\\\'');
     const symblink = item.isLink ? `<small style="font-family: FontAwesome" class="text-secondary fa-link"></small> ` : '';
     const name = symblink + item.name;
 
@@ -167,8 +169,7 @@ function loadDir(path, list) {
     </div>`;
   }
 
-  $('#listTableStart tbody').html(upDirTr);
-  $('#listTableEnd tbody').html(upDirTr);
+  $('#listTableStart')[0].innerHTML = $('#listTableEnd')[0].innerHTML = upDirTr;
   $('#browseCardBody')[0].innerHTML = cards;
   $('#listTable')[0].innerHTML = rows;
 }

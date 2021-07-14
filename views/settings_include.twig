@@ -93,18 +93,20 @@
   }
 
   for (const key of OPT_KEYS) {
-    $('#' + key).val(remote.getGlobal('currentConfiguration')[key]);
-    $('#' + key).on('change', (e) => {
+    $('#' + key)
+      .val(remote.getGlobal('currentConfiguration')[key])
+      .on('change', (e) => {
       ipcRenderer.send('change_config', {key, val: e.target.value});
     });
   }
 
   for (const key of CHKBOXES) {
+    const el = $('#' + key);
     if (remote.getGlobal('currentConfiguration')[key]) {
-      $('#' + key).prop('checked', true);
+      el.prop('checked', true);
     }
 
-    $('#' + key).on('change.bootstrapSwitch', (e) => {
+    el.on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key, val: e.target.checked});
     });
   }

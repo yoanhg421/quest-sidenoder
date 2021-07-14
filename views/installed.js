@@ -72,7 +72,7 @@ function drawInstalledApps(apps) {
     rows += row;
   }
 
-  $('#listTable tbody')[0].innerHTML = rows;
+  $('#listTable')[0].innerHTML = rows;
 }
 
 

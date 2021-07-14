@@ -27,8 +27,9 @@
 
     function loadInclude(template, id = null, complete = null) {
       if (!id) {
-        $('#mainbody').html('');
-        $('#mainbody').load(template, complete);
+        $('#mainbody')
+          .html('')
+          .load(template, complete);
       }
       else {
         $(`#${id}`).load(template, complete);
@@ -79,11 +80,13 @@
 
     function checkMount() {
       $('#mountrefresh').addClass('fa-spin');
-      $('#mountbtn').removeClass('btn-danger');
-      $('#mountbtn').removeClass('btn-success');
-      $('#mountbtn').addClass('btn-warning');
-      $('#remotebtn').attr('disabled', 'disabled');
-      $('#remotebtn').addClass('disabled');
+      $('#mountbtn')
+        .removeClass('btn-danger')
+        .removeClass('btn-success')
+        .addClass('btn-warning');
+      $('#remotebtn')
+        .attr('disabled', 'disabled')
+        .addClass('disabled');
       ipcRenderer.send('mount', 'bla');
     }
 
@@ -97,29 +100,35 @@
       console.log('check_mount responded: ', arg); // prints "ping"
       if (arg.success) {
         $('#mountrefresh').removeClass('fa-spin');
-        $('#mountbtn').removeClass('btn-warning');
-        $('#mountbtn').removeClass('btn-danger');
-        $('#mountbtn').addClass('btn-success');
-        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
-        $('#remotebtn').removeAttr('disabled');
-        $('#remotebtn').removeClass('disabled');
+        $('#mountbtn')
+          .removeClass('btn-warning')
+          .removeClass('btn-danger')
+          .addClass('btn-success')
+          .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
+        $('#remotebtn')
+          .removeAttr('disabled')
+          .removeClass('disabled');
 
         if (!remote.getGlobal('adbDevice')) return;
 
-        $('#updateBadge').removeClass('disabled');
-        $('#updateBadge').removeAttr('disabled');
+        $('#updateBadge')
+          .removeClass('disabled')
+          .removeAttr('disabled');
       }
       else {
         $('#mountrefresh').removeClass('fa-spin');
-        $('#mountbtn').removeClass('btn-success');
-        $('#mountbtn').removeClass('btn-warning');
-        $('#mountbtn').addClass('btn-danger');
-        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
-        $('#remotebtn').attr('disabled', 'disabled');
-        $('#remotebtn').addClass('disabled');
+        $('#mountbtn')
+          .removeClass('btn-success')
+          .removeClass('btn-warning')
+          .addClass('btn-danger')
+          .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
+        $('#remotebtn')
+          .attr('disabled', 'disabled')
+          .addClass('disabled');
 
-        $('#updateBadge').attr('disabled', 'disabled');
-        $('#updateBadge').addClass('disabled');
+        $('#updateBadge')
+          .attr('disabled', 'disabled')
+          .addClass('disabled');
       }
     });
 
@@ -128,50 +137,61 @@
 
       if (!!arg.success) {
         console.log('GETDEVICE SUCESS');
-        $('#devicebtn').removeClass('btn-danger');
-        $('#devicebtn').addClass('btn-success');
-        $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
+        $('#devicebtn')
+          .removeClass('btn-danger')
+          .addClass('btn-success')
+          .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
-        $('.adbdev').removeClass('disabled').removeAttr('disabled');
+        $('a.adbdev')
+          .removeClass('disabled')
+          .removeAttr('disabled');
         if (!remote.getGlobal('mounted')) {
-          $('#updateBadge').addClass('disabled');
-          $('#updateBadge').attr('disabled');
+          $('#updateBadge')
+            .addClass('disabled')
+            .attr('disabled');
         }
 
         if (arg.success.endsWith(':5555')) {
           $('#wirelessbtn')[0].onclick = disconnectWireless;
-          $('#wirelessbtn').removeClass('btn-danger');
-          $('#wirelessbtn').addClass('btn-success');
-          $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+          $('#wirelessbtn')
+            .removeClass('btn-danger')
+            .addClass('btn-success')
+            .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
         }
 
         ipcRenderer.send('get_device_info', '');
         ipcRenderer.send('mp_name', { cmd: 'get' });
       }
       else {
-        $('#devicebtn').removeClass('btn-success');
-        $('#devicebtn').addClass('btn-danger');
-        $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
+        $('#devicebtn')
+          .removeClass('btn-success')
+          .addClass('btn-danger')
+          .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
 
-        $('.adbdev').addClass('disabled').attr('disabled', 'disabled');
+        $('a.adbdev')
+          .addClass('disabled')
+          .attr('disabled', 'disabled');
 
         $('#wirelessbtn')[0].onclick = connectWireless;
-        $('#wirelessbtn').removeClass('btn-success');
-        $('#wirelessbtn').addClass('btn-danger');
-        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
+        $('#wirelessbtn')
+          .removeClass('btn-success')
+          .addClass('btn-danger')
+          .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
       }
     });
 
     function connectWireless() {
       $('#wirelessrefresh').addClass('fa-spin');
-      $('#wirelessbtn').removeClass('btn-danger');
-      $('#wirelessbtn').addClass('btn-warning');
+      $('#wirelessbtn')
+        .removeClass('btn-danger')
+        .addClass('btn-warning');
       ipcRenderer.send('connect_wireless', '');
     }
     function disconnectWireless() {
       $('#wirelessrefresh').addClass('fa-spin');
-      $('#wirelessbtn').removeClass('btn-success');
-      $('#wirelessbtn').addClass('btn-warning');
+      $('#wirelessbtn')
+        .removeClass('btn-success')
+        .addClass('btn-warning');
       ipcRenderer.send('disconnect_wireless', '');
     }
 
@@ -182,9 +202,10 @@
       if (arg.success) {
         console.log('WIRELESS CONNECTED');
         $('#wirelessbtn')[0].onclick = disconnectWireless;
-        $('#wirelessbtn').removeClass('btn-danger');
-        $('#wirelessbtn').addClass('btn-success');
-        $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+        $('#wirelessbtn')
+          .removeClass('btn-danger')
+          .addClass('btn-success')
+          .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
 
         dialog.showMessageBox(null, {
           type: 'info',
@@ -195,9 +216,10 @@
       }
       else {
         $('#wirelessbtn')[0].onclick = connectWireless;
-        $('#wirelessbtn').removeClass('btn-success');
-        $('#wirelessbtn').addClass('btn-danger');
-        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
+        $('#wirelessbtn')
+          .removeClass('btn-success')
+          .addClass('btn-danger')
+          .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
       }
     });
 

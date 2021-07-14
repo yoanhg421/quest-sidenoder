@@ -7,11 +7,11 @@
           aria-haspopup="true" aria-expanded="false">Sort
       </button>
       <div id="searchdropdownmenu" class="dropdown-menu" style="right: 0;left: auto;">
-        <a class="dropdown-item set-sort" href="#" data-key="createdat" data-asc="0">Sort by update
+        <a class="dropdown-item" onclick="sortItems('createdat', 0)">Sort by update
           decending</a>
-        <a class="dropdown-item set-sort" href="#" data-key="createdat" data-asc="1">Sort by update</a>
-        <a class="dropdown-item set-sort" href="#" data-key="name" data-asc="1">Sort by name</a>
-        <a class="dropdown-item set-sort" href="#" data-key="name" data-asc="0">Sort by name
+        <a class="dropdown-item" onclick="sortItems('createdat', 1)">Sort by update</a>
+        <a class="dropdown-item" onclick="sortItems('name', 0)">Sort by name</a>
+        <a class="dropdown-item" onclick="sortItems('name', 1)">Sort by name
           decending</a>
       </div>
     </div>
@@ -58,11 +58,14 @@
   };
 
   //sort
-  $('.set-sort').on('click', (el) => {
-    const target = $(el.target);
-    $('#browseCardBody .listitem').sort(sortBy(target.data('key'), target.data('asc') == '1')).appendTo('#browseCardBody');
-    $('#listTable tbody .listitem').sort(sortBy(target.data('key'), target.data('asc') == '1')).appendTo('#listTable');
+  function sortItems(key, asc) {
+    sortElements($('#browseCardBody'), key, asc);
+    sortElements($('#listTable'), key, asc);
     $('#searchdropdownmenu').hide();
-  });
+  }
+
+  function sortElements(el, key, asc) {
+    el.html(el.find('.listitem').sort(sortBy(key, asc)));
+  }
 
 </script>

@@ -220,7 +220,7 @@
 
   ipcRenderer.removeAllListeners('device_tweaks');
   ipcRenderer.on('device_tweaks', (event, arg) => {
-    console.log('device_tweaks ! ', arg);
+    // console.log('device_tweaks ! ', arg);
     if (arg.cmd == 'get') {
       for (const key of TWEAKS_KEYS) {
         if (arg[key]) $('#' + key).val(arg[key]);

@@ -183,8 +183,15 @@
       badgeState($('#sideloadDoneBadge'), arg.done);
       ipcRenderer.send('get_device_info', '');
 
-      $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');
-      $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o');
+      $('#sideloadDoneBtn')
+        .removeClass('disabled')
+        .removeClass('btn-primary')
+        .addClass('btn-success')
+        .html('Done');
+      $('#sideloadRefresh')
+        .removeClass('fa-refresh')
+        .removeClass('fa-spin')
+        .addClass('fa-check-circle-o');
     }
 
     if (arg.update) {

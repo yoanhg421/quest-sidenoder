@@ -9,8 +9,8 @@
     <div class="card-text container">
       <div id="searchformdiv"></div>
       <br>
-      <table class="table table-striped table-condensed text-white" id="listTable">
-        <tbody>
+      <table class="table table-striped table-condensed text-white">
+        <tbody id="listTable">
         </tbody>
       </table>
     </div>
@@ -25,8 +25,9 @@
   loadInclude('searchform.twig', 'searchformdiv');
 
   if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
-    $('#updateBadge').removeClass('disabled');
-    $('#updateBadge').removeAttr('disabled');
+    $('#updateBadge')
+      .removeClass('disabled')
+      .removeAttr('disabled');
   }
 
 </script>
