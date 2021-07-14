@@ -144,7 +144,7 @@ function loadDir(path, list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
-    cards+= `<div class="col mb-3 listitem" style="min-width: 250px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
+    cards += `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
       ${newribbon}
