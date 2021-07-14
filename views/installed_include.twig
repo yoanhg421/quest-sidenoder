@@ -1,52 +1,8 @@
-<script>
-  console.log('ONLOAD installed');
-  $('#updateBadge').hide();
-  $('#listTable tbody').html('');
-  ipcRenderer.send('get_installed', '');
-
-  loadInclude('searchform.twig', 'searchformdiv');
-
-  function getUpdates() {
-    $('#updateBadge').html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
-
-    $('#listTable tbody').html('');
-    ipcRenderer.send(`get_installed_with_updates`, ``);
-  }
-
-
-  function update(elem) {
-    $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
-    ipcRenderer.send('update', elem.dataset.path);
-  }
-
-  function uninstall(elem, packageName) {
-    $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
-    ipcRenderer.send('uninstall', packageName);
-  }
-
-  function startApp(elem, packageName) {
-    ipcRenderer.send('get_activities', packageName);
-  }
-
-  function appTools(packageName) {
-    ipcRenderer.send('app_tools', packageName);
-    $('#processingModal').modal('show');
-  }
-
-</script>
-
 <div class="card text-light bg-primary">
   <div class="card-header">
     <h2 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h2>
-    <h2 class="mb-0 pull-right" id="updateheader">
-      <script>
-        if (remote.getGlobal('mounted')) {
-          $('#updateheader').html(`<a onclick="getUpdates()"> <span id="updateBadge" class="adbdev btn btn-info btn-md"><i class="fa fa-search"></i> Click to check mount for updates</span></a>`)
-        }
-        else {
-          $('#updateheader').html(`<span id="updateBadge" class="btn btn-danger btn-md">Drive not mounted, cannot check for updates</span>`);
-        }
-      </script>
+    <h2 class="mb-0 pull-right">
+      <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled" disabled="disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
     </h2>
   </div>
   <div class="card-body">
@@ -60,3 +16,17 @@
     </div>
   </div>
 </div>
+
+<script>
+  console.log('ONLOAD installed');
+  $('#processingModal').modal('show');
+  ipcRenderer.send('get_installed', '');
+
+  loadInclude('searchform.twig', 'searchformdiv');
+
+  if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
+    $('#updateBadge').removeClass('disabled');
+    $('#updateBadge').removeAttr('disabled');
+  }
+
+</script>

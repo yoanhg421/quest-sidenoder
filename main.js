@@ -19,6 +19,7 @@ global.arch = arch();
 global.homedir = homedir();
 global.tmpdir = tmpdir().replace(/\\/g, '/');
 global.mountFolder = global.tmpdir + '/mnt';
+global.sidenoderHome = path.join(global.homedir, 'sidenoder');
 
 global.adbDevice = false;
 global.mounted = false;
@@ -48,10 +49,21 @@ const tools = require('./tools');
 
 ipcMain.on('get_installed', async (event, arg) => {
   console.log('get_installed received');
-  await tools.getInstalledApps();
+  const apps = await tools.getInstalledApps();
 
+  console.log('get_installed', apps.length);
 
-  event.reply('get_installed', { success: true, apps: global.installedApps });
+  event.reply('get_installed', { success: true, apps });
+  return;
+});
+
+ipcMain.on('get_installed_with_updates', async (event, arg) => {
+  console.log('get_installed_with_updates received');
+  const apps = await tools.getInstalledAppsWithUpdates();
+
+  console.log('get_installed_with_updates', apps.length);
+
+  event.reply('get_installed_with_updates', { success: true, apps });
   return;
 });
 
@@ -60,16 +72,6 @@ ipcMain.on('get_device_info', async (event, arg) => {
   const res = await tools.getDeviceInfo();
 
   event.reply('get_device_info', res);
-  return;
-})
-
-ipcMain.on('get_installed_with_updates', async (event, arg) => {
-  console.log('get_installed_with_updates received');
-  await tools.getInstalledAppsWithUpdates();
-
-  //console.log(apps)
-
-  event.reply('get_installed_with_updates', { success: true, apps: global.installedApps });
   return;
 });
 
@@ -103,34 +105,29 @@ ipcMain.on('check_deps', async (event, arg) => {
   console.log('check_deps received', arg);
 
   const res = await tools.checkDeps(arg);
-
-  // IF DEPS OK LAUNCH CHECKDIVICES OTHERWISE NO
-  tools.trackDevices();
-
   event.reply('check_deps', res);
 });
 
 ipcMain.on('mount', async (event, arg) => {
   await tools.mount();
-  setTimeout(async () => {
-    await tools.checkMount();
-    event.reply('check_mount', { success: global.mounted, mountFolder: global.mountFolder });
-    if (global.mounted) {
-      tools.updateRcloneProgress();
-    }
-  }, 1500);
+  setTimeout(() => checkMount(event), 2000);
 
   return;
 });
 
 ipcMain.on('check_mount', async (event, arg) => {
+  checkMount(event);
+});
+
+async function checkMount(event) {
   await tools.checkMount();
   event.reply('check_mount', { success: global.mounted, mountFolder: global.mountFolder });
   if (global.mounted) {
-    setTimeout(tools.updateRcloneProgress, 2000);
+    tools.updateRcloneProgress()
   }
+
   return;
-});
+}
 
 ipcMain.on('start_sideload', async (event, arg) => {
   console.log('start_sideload received');
@@ -141,23 +138,21 @@ ipcMain.on('start_sideload', async (event, arg) => {
   }
 
   event.reply('start_sideload', { success: true, path: arg.path });
-  tools.sideloadFolder(arg)
-  event.reply('check_device', { success: global.adbDevice });
+  tools.sideloadFolder(arg);
   return;
 });
 
-ipcMain.on('update', async (event, arg) => {
-  console.log('update received');
-  let path = arg
+ipcMain.on('folder_install', async (event, { path, update }) => {
+  console.log('folder_install received', path);
+
   if (!global.adbDevice) {
     console.log('Missing device, sending ask_device');
     event.reply('ask_device', '');
     return;
   }
 
-  console.log('for path ' + path)
   const install = await tools.getApkFromFolder(path);
-  event.reply('ask_sideload', { success: true, install, update: true });
+  event.reply('ask_sideload', { success: true, install, update });
   return;
 });
 
@@ -169,7 +164,7 @@ ipcMain.on('filedrop', async (event, path) => {
     return;
   }
 
-  // TODO: find
+  // TODO: check isApk
 
   event.reply('ask_sideload', { success: true, install: { path } });
   return;
@@ -348,7 +343,9 @@ function createWindow () {
   global.twig.view = {
     tmpdir: global.tmpdir,
     platform: global.platform,
+    arch: global.arch,
     mountFolder: global.mountFolder,
+    sidenoderHome: global.sidenoderHome,
     version: global.version,
     currentConfiguration: global.currentConfiguration
   }
@@ -358,7 +355,8 @@ function createWindow () {
     global.win.webContents.openDevTools();
   }
 
-  setTimeout(function(){ checkVersion(); }, 2000);
+  setTimeout(tools.trackDevices, 1000);
+  setTimeout(checkVersion, 2000);
   //
 
 }

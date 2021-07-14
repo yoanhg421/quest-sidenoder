@@ -18,7 +18,6 @@ require('fix-path')();
 const pkg = require('./package.json');
 
 const l = 32;
-const sidenoderHome = path.join(global.homedir, 'sidenoder');
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(sidenoderHome, 'config.json');
 
@@ -76,7 +75,7 @@ module.exports =
 }
 
 async function getDeviceInfo() {
-  console.log('getDeviceInfo()');
+  // console.log('getDeviceInfo()');
 
   const storage = await getStorageInfo();
   const user = await getUserInfo();
@@ -91,7 +90,7 @@ async function getDeviceInfo() {
     battery,
   };
 
-  console.log('getDeviceInfo', res);
+  // console.log('getDeviceInfo', res);
   return res;
 }
 
@@ -441,7 +440,7 @@ async function getDeviceSync(attempt = 0) {
     }
 
     if (global.adbDevice || attempt < 1) {
-      win.webContents.send('check_device', { success: global.adbDevice });
+      return win.webContents.send('check_device', { success: global.adbDevice });
     }
 
     if (!global.adbDevice && attempt <= 2) {
@@ -899,12 +898,15 @@ async function mount() {
   }
 
   if (platform == 'win') {
-    await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`); // folder must NOT exist on windows
+    // folder must NOT exist on windows
+    if (fs.existsSync(global.mountFolder))
+      await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`);
   }
   else {
     await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
-    await fs.mkdir(global.mountFolder, {}, ()=>{}) // folder must exist on windows
+    if (!fs.existsSync(global.mountFolder))
+      fs.mkdirSync(global.mountFolder);
   }
 
    // TODO: temoporary
@@ -982,6 +984,7 @@ async function getDir(folder) {
           const meta = line.split(';');
           gameList[meta[1]] = {
             simpleName: meta[0],
+            releaseName: meta[1],
             packageName: meta[3],
             versionCode: meta[4],
             versionName: meta[5],
@@ -1001,18 +1004,27 @@ async function getDir(folder) {
         oculusId = false,
         imagePath = false,
         versionCode = '',
+        versionName = '',
         simpleName = fileName,
         packageName = false,
+        note = '',
         kmeta = false,
-        mp = false;
+        mp = false,
+        newItem = false;
 
       const gameMeta = gameList[fileName];
       if (gameMeta) {
         simpleName = gameMeta.simpleName;
         packageName = gameMeta.packageName;
         versionCode = gameMeta.versionCode;
+        versionName = gameMeta.versionName;
         simpleName = gameMeta.simpleName;
         // imagePath = gameMeta.imagePath;
+
+        if (gameMeta.releaseName.includes('(')) {
+          note = gameMeta.releaseName.match(/\((.*?)\)/);
+          note = note[0].replace(', only autoinstalls with Rookie', '');
+        }
       }
 
       if (!versionCode && (new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
@@ -1029,6 +1041,7 @@ async function getDir(folder) {
         if (!simpleName) simpleName = simpleName.split(' -packageName-')[0];
       }
 
+
       if (packageName) {
         if (QUEST_ICONS.includes(packageName + '.jpg'))
           imagePath = `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`;
@@ -1041,6 +1054,9 @@ async function getDir(folder) {
       if (kmeta) {
         steamId = !!(kmeta.steam && kmeta.steam.id);
         oculusId = !!(kmeta.oculus && kmeta.oculus.id);
+      }
+      else {
+        newItem = true;
       }
 
       simpleName = await cleanUpFoldername(simpleName);
@@ -1056,9 +1072,12 @@ async function getDir(folder) {
         oculusId,
         imagePath,
         versionCode,
+        versionName,
         packageName,
-        mp,
+        note,
+        newItem,
         info,
+        mp,
         createdAt: new Date(info.mtimeMs),
         filePath: folder + '/' + fileName.replace(/\\/g, '/'),
       };
@@ -1170,22 +1189,21 @@ async function sideloadFolder(arg) {
 
       if (fs.existsSync(tempapk)) {
         console.log('is remote, ' + tempapk + 'already exists, using');
+        res.download = 'skip';
       }
       else {
         await fsExtra.copyFile(apkfile, tempapk);
         res.download = 'done';
-        res.aapt = 'processing';
-        win.webContents.send('sideload_process', res);
       }
-
-      packageinfo = await getPackageInfo(tempapk);
+      apkfile = tempapk;
     }
     else {
-      packageinfo = await getPackageInfo(apkfile);
+      res.download = 'skip';
     }
 
     res.aapt = 'processing';
     win.webContents.send('sideload_process', res);
+    packageinfo = await getPackageInfo(apkfile);
 
     packageName = packageinfo.packageName;
     console.log({ packageinfo, packageName });
@@ -1193,13 +1211,23 @@ async function sideloadFolder(arg) {
     console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
-    console.log(e);
-    returnError(e);
+    console.error(e);
+    res.aapt = 'fail';
+    res.done = 'fail';
+    res.error = e;
+    win.webContents.send('sideload_process', res);
+    // returnError(e);
     return;
   }
 
   if (!packageName) {
-    returnError(new Error('Can`t parse packageName of ' + apkfile));
+    const e = 'Can`t parse packageName of ' + apkfile;
+    // returnError(new Error(e));
+    console.error(e);
+    res.aapt = 'fail';
+    res.done = 'fail';
+    res.error = e;
+    win.webContents.send('sideload_process', res);
     return;
   }
 
@@ -1297,35 +1325,16 @@ async function sideloadFolder(arg) {
   win.webContents.send('sideload_process', res);
 
   console.log('doing adb install');
+  res.apk = 'processing';
+  win.webContents.send('sideload_process', res);
+
   try {
+    // await execShellCommand(`adb install -g -d "${apkfile}"`);
+    await adb.getDevice(global.adbDevice).install(apkfile);
+
     if (fromremote) {
-      tempapk = global.tmpdir + '/' + path.basename(apkfile);
-      console.log('is remote, copying to ' + tempapk);
-
-      if (fs.existsSync(tempapk)) {
-        console.log('is remote, ' + tempapk + ' already exists, using');
-      }
-      else {
-        res.download = 'processing';
-        win.webContents.send('sideload_process', res);
-
-        await fsExtra.copyFile(apkfile, tempapk);
-      }
-
-      res.download = 'done';
-      res.apk = 'processing';
-      win.webContents.send('sideload_process', res);
-      // await execShellCommand(`adb install -g -d "${tempapk}"`);
-      await adb.getDevice(global.adbDevice).install(tempapk);
       //TODO: check settings
       execShellCommand(`rm "${tempapk}"`);
-    }
-    else {
-      res.download = 'skip';
-      res.apk = 'processing';
-      win.webContents.send('sideload_process', res);
-      // await execShellCommand(`adb install -g -d "${apkfile}"`);
-      await adb.getDevice(global.adbDevice).install(apkfile);
     }
 
     res.apk = 'done';
@@ -1445,7 +1454,7 @@ async function getPackageInfo(apkPath) {
   return info;
 }
 
-async function getInstalledApps(send = true) {
+async function getInstalledApps() {
   let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   apps.pop();
@@ -1463,10 +1472,6 @@ async function getInstalledApps(send = true) {
       : 'unknown.png';
 
     appinfo.push(info);
-
-    if (send === true) {
-      win.webContents.send('list_installed_app', info);
-    }
   }
 
 
@@ -1497,35 +1502,33 @@ async function getInstalledAppsWithUpdates() {
   const remoteKeys = Object.keys(remotePackages);
 
   const apps = global.installedApps || await getInstalledApps(false);
-  for (const x in apps) {
-    const packageName = apps[x]['packageName'];
-    console.log('checking ' + packageName);
+  let updates = [];
+  for (const app of apps) {
+    const packageName = app['packageName'];
+    console.log(packageName, 'checking');
+
     if (!remoteKeys.includes(packageName)) continue;
 
     for (name of remotePackages[packageName]) {
       const package = remoteList[name];
-      const installedVersion = apps[x]['versionCode'];
+      const installedVersion = app['versionCode'];
       const remoteversion = package.versionCode;
 
-      console.log({ packageName, installedVersion, remoteversion });
+      // console.log({ packageName, installedVersion, remoteversion });
 
       if (remoteversion <= installedVersion) continue;
 
-      apps[x]['update'] = [];
-      apps[x]['update']['path'] = package.filePath;
-      //apps[x]['update']['simpleName'] = package.simpleName
-      apps[x]['simpleName'] = package.simpleName
-      apps[x]['update']['versionCode'] = remoteversion;
+      app['update'] = [];
+      app['update']['path'] = package.filePath;
+      app['simpleName'] = package.simpleName;
+      app['update']['versionCode'] = remoteversion;
+      updates.push(app);
 
-      console.log('UPDATE AVAILABLE');
-      win.webContents.send('list_installed_app', apps[x]);
+      console.log(packageName, 'UPDATE AVAILABLE');
     }
   }
 
-  global.installedApps = apps;
-
-  //console.log(listing)
-  return apps;
+  return updates;
 }
 
 
@@ -1581,10 +1584,10 @@ async function uninstall(packageName){
 }
 
 
-function updateRcloneProgress() {
-  const response = fetch('http://127.0.0.1:5572/core/stats', {method: 'POST'})
-  .then(response => response.json())
-  .then(data => {
+async function updateRcloneProgress() {
+  try {
+    const response = await fetch('http://127.0.0.1:5572/core/stats', { method: 'POST' })
+    const data = await response.json();
     if (!data.transferring || !data.transferring[0]) throw 'no data';
     const transferring = data.transferring[0];
     const res = {
@@ -1598,13 +1601,13 @@ function updateRcloneProgress() {
     }
     //console.log('sending rclone data');
     win.webContents.send('process_data', res);
-    setTimeout(updateRcloneProgress, 2000);
-  })
-  .catch((error) => {
+  }
+  catch (error) {
     //console.error('Fetch-Error:', error);
     win.webContents.send('process_data', '');
-    setTimeout(updateRcloneProgress, 2000);
-  });
+  }
+
+  setTimeout(updateRcloneProgress, 2000);
 }
 
 async function init() {
