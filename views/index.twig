@@ -85,19 +85,6 @@
   });
 
   console.log('ONLOAD');
-  // ipcRenderer.send('check_mount', 'bla');
-  // ipcRenderer.send('check_device', 'bla');
-
-  console.log('setup ask device listener')
-  ipcRenderer.on('ask_device', (event, arg) => {
-    console.log('ask_device msg came ! ');
-    dialog.showMessageBox(null, {
-      type: 'info',
-      buttons: ['Understood'],
-      title: 'Missing device',
-      message: `This action cannot be performed without a device attached.`,
-    })
-  });
 
 
 </script>
@@ -115,13 +102,16 @@
     </div>
     <div class="card-body">
       <h3>
-        Platform Detected: {{ platform }}
+        Platform: {{ platform }} {{ arch }}
       </h3>
       <h3>
-        Temp Dir Detected: {{ tmpdir }}
+        Temp Dir: {{ tmpdir }}
       </h3>
       <h3>
-        Mount Dir Detected: {{ mountFolder }}
+        Mount Dir: {{ mountFolder }}
+      </h3>
+      <h3>
+        Sidenoder Dir: {{ sidenoderHome }}
       </h3>
       <h3>
         <div class="badge badge-warning" id="adbCheckIndicator">ADB - checking..</div>

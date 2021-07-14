@@ -41,6 +41,7 @@
   ipcRenderer.removeAllListeners('ask_sideload');
   ipcRenderer.on('ask_sideload', (event, arg) => {
     console.log('ask_sideload msg came ! ', arg);
+    $('#processingModal').modal('hide');
     const { success, install, update } = arg;
     if (!success) return;
 

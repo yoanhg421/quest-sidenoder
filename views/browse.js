@@ -1,6 +1,48 @@
 const fs = require('fs'),
   path = require('path');
 
+console.log('ONLOAD BROWSE');
+
+ipcRenderer.on('get_dir', (event, arg) => {
+  console.log('get_dir msg came: ');
+  console.log(arg);
+  $('#listTable tbody').html('');
+  if (arg.success) {
+    $('#path').html(arg.path);
+    loadDir(arg.path, arg.list);
+    fixIcons();
+  }
+
+  $('#processingModal').modal('hide');
+});
+
+
+function fixIcons() {
+  $('.browse-folder').hover(
+    (e) => {
+      $(e.target).find('i').removeClass('fa-folder-o')
+      $(e.target).find('i').addClass('fa-folder-open-o')
+    },
+    (e) => {
+      $(e.target).find('i').addClass('fa-folder-o')
+      $(e.target).find('i').removeClass('fa-folder-open-o')
+    }
+  );
+}
+
+// call get_dir when selection is made
+function getDir(newpath = false, resetCache = false) {
+  if (!newpath.endsWith('.apk')) {
+    $('#processingModal').modal('show');
+  }
+
+  if (resetCache) {
+    ipcRenderer.send('reset_cache', newpath);
+  }
+
+  ipcRenderer.send('get_dir', newpath);
+}
+
 async function readSizeRecursive(item) {
   const stats = fs.lstatSync(item);
   if (!stats.isDirectory()) return stats.size;
@@ -15,12 +57,13 @@ async function readSizeRecursive(item) {
   return total;
 }
 
-async function getDirSize(el, path) {
+function getDirSize(el, path) {
   el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
-
-  const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
-  el.outerText = size + ' Mb';
+  setTimeout(async () => {
+    const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
+    el.outerText = size + ' Mb';
+  }, 100);
 }
 
 function oculusInfo(package) {
@@ -32,30 +75,17 @@ function steamInfo(package) {
   ipcRenderer.send('app_info', { res: 'steam', package });
 }
 
-function esc(path) {
-  return path.split('\'').join('\\\'');
+
+function install(path) {
+  $('#processingModal').modal('show');
+  ipcRenderer.send('folder_install', { path, update: false });
 }
-
-//when dir listing comes back, list it
-ipcRenderer.on('get_dir', (event, arg) => {
-  console.log('get_dir msg came: ');
-  console.log(arg);
-  $('#listTable tbody').html('');
-  if (arg.success) {
-    $('#path').html(arg.path);
-    loadDir(arg.path, arg.list);
-    fixIcons();
-  }
-
-  $('#processingModal').modal('hide');
-});
 
 function loadDir(path, list) {
   const upDir = path.substr(0, path.lastIndexOf('/'));
-  const upDirTr = `<tr data-path="${upDir}" onclick="getDir(this)"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
-  $('#listTableStart tbody').html(upDirTr);
-  $('#listTableEnd tbody').html(upDirTr);
-  $('#browseCardBody').html('');
+  const upDirTr = `<tr onclick="getDir('${upDir}')"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
+  let rows = '';
+  let cards = '';
 
   for (const item of list) {
     // console.log(item);
@@ -65,7 +95,7 @@ function loadDir(path, list) {
     }
 
     const createdAt = item.createdAt.getTime();
-    const fullPath = item.filePath.replace("\\", "/").replace("", ":");
+    const fullPath = item.filePath.replace('\\', '/').replace('', ':').split('\'').join('\\\'');
     const symblink = item.isLink ? `<small style="font-family: FontAwesome" class="text-secondary fa-link"></small> ` : '';
     const name = symblink + item.name;
 
@@ -74,7 +104,7 @@ function loadDir(path, list) {
       const size = (item.info.size / 1024 / 1024).toFixed(2);
       let rowItem = '';
       if (item.name.endsWith('.apk')) {
-        rowItem = `<td class="browse-file" data-path="${fullPath}" onclick='getDir(this)'><b><i class="fa fa-android"></i> &nbsp; ${name}</b></td>`;
+        rowItem = `<td class="browse-file" onclick="getDir('${fullPath}')"><b><i class="fa fa-android"></i> &nbsp; ${name}</b></td>`;
         rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
       }
       else {
@@ -82,30 +112,31 @@ function loadDir(path, list) {
         rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
       }
 
-      row = $('#listTable tbody').append(rowItem);
-
+      rows+= rowItem;
       continue;
     }
 
     if (!item.imagePath) {
-      rowItem = `<td class='browse-folder' data-path="${fullPath}" onclick='getDir(this)'><i class="fa fa-folder-o"></i> &nbsp; ${name}</td>`;
-      rowItem += `<td><a onclick="getDirSize(this, '${esc(fullPath)}')"><i class="fa fa-calculator" ></i> get size</a></td>`;
-      row = $('#listTable tbody').append(`<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`);
+      rowItem = `<td class='browse-folder' onclick="getDir('${fullPath}')"><i class="fa fa-folder-o"></i> &nbsp; ${name}</td>`;
+      rowItem += `<td><a onclick="getDirSize(this, '${fullPath}')"><i class="fa fa-calculator" ></i> get size</a></td>`;
+
+      rows+= `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
       continue;
     }
 
 
-    mpribbon = item.mp ? `<div class="ribbon-wrapper-green"><div class="ribbon-green">MP!</div></div>` : '';
+    newribbon = item.newItem ? `<div class="ribbon-wrapper-green"><div class="ribbon-green">NEW!</div></div>` : '';
 
-    selectBtn = `<a data-path="${fullPath}" onclick='getDir(this)'><span class="btn btn-sm btn-primary col-5">Select</span></a> `;
+    selectBtn = `<a onclick="getDir('${fullPath}')" class="btn btn-sm btn-primary"><i class="fa fa-folder-open"></i></a> `;
+    selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-primary col-4">Install</a> `;
 
     if (item.oculusId) {
-      selectBtn += `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
+      selectBtn+= `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
         <img src="oculus.png" width="14" style="margin-top: -1px;" /></a> `;
     }
 
     if (item.steamId) {
-      selectBtn += `<a onclick="steamInfo('${item.packageName}');" title="Steam information" class="btn btn-sm btn-info">
+      selectBtn+= `<a onclick="steamInfo('${item.packageName}');" title="Steam information" class="btn btn-sm btn-info">
         <i class="fa fa fa-steam-square "></i></a> `;
     }
 
@@ -113,39 +144,31 @@ function loadDir(path, list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
-    row = $('#browseCardBody').append(`<div class="col mb-3 listitem" style="min-width: 250px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
+    cards+= `<div class="col mb-3 listitem" style="min-width: 250px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
-      ${mpribbon}
-      <div><small><b>${item.simpleName}</b></small></div>
+      ${newribbon}
+      <div><small><b>${item.simpleName} ${item.note || ''}</b></small></div>
       <img src="${item.imagePath}" class="bg-secondary" style="height: 140px">
       <div class="pb-2 pt-2">
           ${selectBtn}
       </div>
       <div style="color:#ccc;" class="card-footer pb-1 pt-1"><small>
-        v. ${item.versionCode || 'Unknown'} &nbsp;&nbsp;
-        <a onclick="getDirSize(this, '${esc(fullPath)}')">
-          <i class="fa fa-calculator" title="get size"></i> get size
-        </a><br/>
+        versionCode: ${item.versionCode || 'Unknown'} ${item.versionName && `(v.${item.versionName})`}
+        <br/>
         ${item.packageName}<br/>
-        Updated: ${item.createdAt.toLocaleString()}
+        Updated: ${item.createdAt.toLocaleString()} &nbsp;
+        <a onclick="getDirSize(this, '${fullPath}')">
+          <i class="fa fa-calculator" title="Calculate folder size"></i> get size
+        </a>
       </small></div>
 
       </div>
-    </div>`);
+    </div>`;
   }
-}
 
-
-function fixIcons() {
-  $('.browse-folder').hover(
-    (e) => {
-      $(e.target).find('i').removeClass('fa-folder-o')
-      $(e.target).find('i').addClass('fa-folder-open-o')
-    },
-    (e) => {
-      $(e.target).find('i').addClass('fa-folder-o')
-      $(e.target).find('i').removeClass('fa-folder-open-o')
-    }
-  );
+  $('#listTableStart tbody').html(upDirTr);
+  $('#listTableEnd tbody').html(upDirTr);
+  $('#browseCardBody')[0].innerHTML = cards;
+  $('#listTable')[0].innerHTML = rows;
 }

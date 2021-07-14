@@ -50,14 +50,16 @@
       loadInclude('device_info.twig', 'device_infoDiv');
 
       document.ondragover = document.ondrop = (ev) => {
-        ev.preventDefault()
+        ev.preventDefault();
       }
 
       document.body.ondrop = (ev) => {
-        if (ev.dataTransfer.files[0].path.endsWith(".apk")) {
-          ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g,"/"));
+        ev.preventDefault();
+        if (!ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
+
+        if (ev.dataTransfer.files[0].path.endsWith('.apk')) {
+          ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g, '/'));
         }
-        ev.preventDefault()
       }
     });
 
@@ -78,6 +80,7 @@
     function checkMount() {
       $('#mountrefresh').addClass('fa-spin');
       $('#mountbtn').removeClass('btn-danger');
+      $('#mountbtn').removeClass('btn-success');
       $('#mountbtn').addClass('btn-warning');
       $('#remotebtn').attr('disabled', 'disabled');
       $('#remotebtn').addClass('disabled');
@@ -87,16 +90,6 @@
     ipcRenderer.on('log', (event, arg) => {
       console.log('log came');
       console.log(arg);
-    });
-
-    // edit btn on browse page
-    ipcRenderer.on('check_mount', (event, {success}) => {
-      if (!success) return;
-
-    // edit btn on installed apps page
-      $('#updateBadge').removeClass('btn-danger');
-      $('#updateBadge').addClass('btn-info');
-      $('#updateBadge').html(`<i class="fa fa-search"></i> Click to check mount for updates`);
     });
 
     //edit btn on top
@@ -110,18 +103,28 @@
         $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
         $('#remotebtn').removeAttr('disabled');
         $('#remotebtn').removeClass('disabled');
+
+        if (!remote.getGlobal('adbDevice')) return;
+
+        $('#updateBadge').removeClass('disabled');
+        $('#updateBadge').removeAttr('disabled');
       }
       else {
         $('#mountrefresh').removeClass('fa-spin');
         $('#mountbtn').removeClass('btn-success');
+        $('#mountbtn').removeClass('btn-warning');
         $('#mountbtn').addClass('btn-danger');
+        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
         $('#remotebtn').attr('disabled', 'disabled');
         $('#remotebtn').addClass('disabled');
+
+        $('#updateBadge').attr('disabled', 'disabled');
+        $('#updateBadge').addClass('disabled');
       }
     });
 
     ipcRenderer.on('check_device', (event, arg) => {
-      console.log('get_device msg came FROM BE to fe:', arg);
+      console.log('check_device msg:', arg);
 
       if (!!arg.success) {
         console.log('GETDEVICE SUCESS');
@@ -130,6 +133,10 @@
         $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
         $('.adbdev').removeClass('disabled').removeAttr('disabled');
+        if (!remote.getGlobal('mounted')) {
+          $('#updateBadge').addClass('disabled');
+          $('#updateBadge').attr('disabled');
+        }
 
         if (arg.success.endsWith(':5555')) {
           $('#wirelessbtn')[0].onclick = disconnectWireless;
@@ -193,6 +200,18 @@
         $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
       }
     });
+
+    ipcRenderer.on('ask_device', (event, arg) => {
+      console.log('ask_device msg came ! ');
+      $('#processingModal').modal('hide');
+      dialog.showMessageBox(null, {
+        type: 'info',
+        buttons: ['Understood'],
+        title: 'Missing device',
+        message: `This action cannot be performed without a device attached.`,
+      });
+    });
+
     // screenhot stuff
     async function makeScreenshot(selector = 'body') {
       return new Promise((resolve, reject) => {
@@ -229,8 +248,6 @@
 
 <nav class="navbar navbar-expand-md" style="padding: 10px">
 
-{#  <a class="navbar-brand" href="index.twig">Q-S-L</a>#}
-
   <img src="quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -240,11 +257,6 @@
   {% block navbar %}
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      {#
-      <li class="nav-item active">
-        <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
-      </li>
-      #}
       <li class="nav-item">
         <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', ''));">
           <i class="fa fa-folder-open-o"></i>
