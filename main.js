@@ -75,9 +75,10 @@ ipcMain.on('get_device_info', async (event, arg) => {
   return;
 });
 
-ipcMain.on('check_device', async (event, arg) => {
-  console.log('check_device received');
-  event.reply('check_device', { success: global.adbDevice });
+ipcMain.on('start_track_device', async (event, arg) => {
+  console.log('start_track_device received');
+  await tools.trackDevices();
+  event.reply('start_track_device', { success: global.adbDevice });
 });
 
 ipcMain.on('connect_wireless', async (event, arg) => {
@@ -110,7 +111,7 @@ ipcMain.on('check_deps', async (event, arg) => {
 
 ipcMain.on('mount', async (event, arg) => {
   await tools.mount();
-  setTimeout(() => checkMount(event), 2000);
+  setTimeout(() => checkMount(event), 3000);
 
   return;
 });
@@ -339,7 +340,7 @@ function createWindow () {
   })
   win.setMenu(null);
   win.maximize(true);
-  win.loadURL(`file://${__dirname}/views/index.twig`)
+  win.loadURL(`file://${__dirname}/views/index.twig`);
   global.twig.view = {
     tmpdir: global.tmpdir,
     platform: global.platform,
@@ -355,10 +356,7 @@ function createWindow () {
     global.win.webContents.openDevTools();
   }
 
-  setTimeout(tools.trackDevices, 1000);
   setTimeout(checkVersion, 2000);
-  //
-
 }
 
 

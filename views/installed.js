@@ -1,3 +1,4 @@
+console.log('ONLOAD INSTALLED');
 
 ipcRenderer.on('get_installed', (event, arg) => {
   console.log('get_installed msg came ! ', arg.success);

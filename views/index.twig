@@ -1,7 +1,44 @@
 {% extends 'layout.twig' %}
 
-{% block onload %}
-  {{ parent() }}
+{% block body %}
+
+<div id="mainbody">
+
+  <div class="card text-white bg-primary">
+    <div class="card-header">
+      <h2 class="mb-0">
+        <i class="fa fa-list-ul"></i> System check
+      </h2>
+    </div>
+    <div class="card-body">
+      <h3>
+        Platform: {{ platform }} {{ arch }}
+      </h3>
+      <h3>
+        Temp Dir: {{ tmpdir }}
+      </h3>
+      <h3>
+        Mount Dir: {{ mountFolder }}
+      </h3>
+      <h3>
+        Sidenoder Dir: {{ sidenoderHome }}
+      </h3>
+      <h3>
+        <div class="badge badge-warning" id="adbCheckIndicator">ADB - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="rcloneCheckIndicator">RCLONE - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="zipCheckIndicator">7zip Archiver - checking..</div>
+      </h3>
+      <h3>
+        <div class="badge badge-warning text-left" id="scrcpyCheckIndicator">SCRCPY - checking..</div>
+      </h3>
+    </div>
+  </div>
+</div>
+
 <script>
   console.log('ONLOAD INDEX');
   console.log('sending check_deps');
@@ -93,50 +130,5 @@
   });
 
   console.log('ONLOAD');
-
-
 </script>
-{% endblock %}
-
-{% block body %}
-
-<div id="mainbody">
-
-  <div class="card text-white bg-primary">
-    <div class="card-header">
-      <h2 class="mb-0">
-        <i class="fa fa-list-ul"></i> System check
-      </h2>
-    </div>
-    <div class="card-body">
-      <h3>
-        Platform: {{ platform }} {{ arch }}
-      </h3>
-      <h3>
-        Temp Dir: {{ tmpdir }}
-      </h3>
-      <h3>
-        Mount Dir: {{ mountFolder }}
-      </h3>
-      <h3>
-        Sidenoder Dir: {{ sidenoderHome }}
-      </h3>
-      <h3>
-        <div class="badge badge-warning" id="adbCheckIndicator">ADB - checking..</div>
-      </h3>
-      <h3>
-        <div class="badge badge-warning text-left" id="rcloneCheckIndicator">RCLONE - checking..</div>
-      </h3>
-      <h3>
-        <div class="badge badge-warning text-left" id="zipCheckIndicator">7zip Archiver - checking..</div>
-      </h3>
-      <h3>
-        <div class="badge badge-warning text-left" id="scrcpyCheckIndicator">SCRCPY - checking..</div>
-      </h3>
-    </div>
-  </div>
-
-
-
-</div>
 {% endblock %}
