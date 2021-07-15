@@ -59,8 +59,8 @@ function getDirSize(el, path) {
   el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
   setTimeout(async () => {
-    const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
-    el.outerText = size + ' Mb';
+    const size = await readSizeRecursive(path);
+    el.outerText = formatBytes(size);
   }, 100);
 }
 
@@ -84,7 +84,7 @@ function loadDir(path, list) {
   const upDirTr = `<tr onclick="getDir('${upDir}')"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
   let rows = '';
   let cards = '';
-
+  let cards_first = [];
   for (const item of list) {
     // console.log(item);
     if (!item.createdAt) {
@@ -146,7 +146,7 @@ function loadDir(path, list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
-    cards += `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
+    const card = `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
       ${newribbon}
@@ -167,9 +167,20 @@ function loadDir(path, list) {
 
       </div>
     </div>`;
+
+    if (cards_first.length < 50) {
+      cards_first.push(card);
+      continue;
+    }
+
+    cards += card;
   }
 
   $('#listTableStart')[0].innerHTML = $('#listTableEnd')[0].innerHTML = upDirTr;
-  $('#browseCardBody')[0].innerHTML = cards;
+  $('#browseCardBody')[0].innerHTML = cards_first.join('\n');
   $('#listTable')[0].innerHTML = rows;
+
+  if (cards) setTimeout(() => {
+    $('#browseCardBody')[0].innerHTML += cards;
+  }, 100);
 }
