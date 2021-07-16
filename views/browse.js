@@ -1,4 +1,4 @@
-const fs = require('fs'),
+const fs = require('fs').promises,
   path = require('path');
 
 console.log('ONLOAD BROWSE');
@@ -42,11 +42,11 @@ function getDir(newpath = '', resetCache = false) {
 }
 
 async function readSizeRecursive(item) {
-  const stats = fs.lstatSync(item);
+  const stats = await fs.lstat(item);
   if (!stats.isDirectory()) return stats.size;
 
   let total = 0;
-  const list = await fs.promises.readdir(item);
+  const list = await fs.readdir(item);
   for (const diritem of list) {
     const size = await readSizeRecursive(path.join(item, diritem));
     total += size;
@@ -55,13 +55,11 @@ async function readSizeRecursive(item) {
   return total;
 }
 
-function getDirSize(el, path) {
+async function getDirSize(el, path) {
   el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
-  setTimeout(async () => {
-    const size = await readSizeRecursive(path);
-    el.outerText = formatBytes(size);
-  }, 100);
+  const size = await readSizeRecursive(path);
+  el.outerText = formatBytes(size);
 }
 
 function oculusInfo(package) {

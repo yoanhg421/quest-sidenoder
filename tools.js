@@ -1,12 +1,13 @@
 const exec = require('child_process').exec;
-const ApkReader = require('adbkit-apkreader');
+// const fs = require('fs');
 const fs = require('fs');
+const fsp = fs.promises;
 const util = require('util');
 const path = require('path');
 const crypto = require('crypto');
 const commandExists = require('command-exists');
-const fsExtra = require('fs-extra'); // TODO: fs
 
+const ApkReader = require('adbkit-apkreader');
 const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
 const fetch = require('node-fetch');
@@ -14,12 +15,13 @@ const WAE = require('web-auto-extractor').default
 // const ApkReader = require('node-apk-parser');
 
 require('fix-path')();
+adb.kill();
 
 const pkg = require('./package.json');
 
 const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
-const configLocation = path.join(sidenoderHome, 'config.json');
+const configLocation = path.join(global.sidenoderHome, 'config.json');
 
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
@@ -54,8 +56,12 @@ module.exports =
   enableMTP,
   startSCRCPY,
   rebootDevice,
+  getLaunchActiviy,
   getActivities,
   startActivity,
+  checkAppTools,
+  backupAppData,
+  restoreAppData,
   getDeviceInfo,
   getStorageInfo,
   getUserInfo,
@@ -237,6 +243,12 @@ async function getStorageInfo() {
   };
 }
 
+async function getLaunchActiviy(package) {
+  console.log('startApp()', package);
+  const activity = await adbShell(`adb shell dumpsys package ${package} | grep -A 1 'filter' | head -n 1 | cut -d ' ' -f 10`);
+  return startActivity(activity.replace('\n', ''));
+}
+
 async function getActivities(package, activity = false) {
   console.log('getActivities()', package);
 
@@ -253,11 +265,45 @@ async function getActivities(package, activity = false) {
 
 async function startActivity(activity) {
   console.log('startActivity()', activity);
+  wakeUp();
   const result = await adbShell(`am start ${activity}`); // TODO activity selection
 
   console.log('startActivity', activity, result);
   return result;
 }
+async function checkAppTools(package) {
+  const backupPath = path.join(global.sidenoderHome, 'backup_data', package);
+  const availableBackup = await adbFileExists(`/sdcard/Android/data/${package}`);
+  let availableRestore = false;
+  let availableConfig = false;
+  if (await fsp.exists(backupPath)) {
+    try {
+      availableRestore = await fsp.readFile(`${backupPath}/time.txt`, 'utf8');
+    }
+    catch (err) {
+      availableRestore = 1;
+    }
+  }
+
+  if (availableBackup) {
+    availableConfig = await adbShell(`cat /sdcard/Android/data/${package}/private/config.json 1>&1 2> /dev/null`);
+    try {
+      availableConfig = availableConfig && JSON.parse(availableConfig);
+    }
+    catch(e) {
+      console.error('availableConfig', e);
+      availableConfig = false;
+    }
+  }
+
+  return {
+    success: true,
+    package,
+    availableRestore,
+    availableConfig,
+  };
+}
+
 
 async function checkUpdateAvailable() {
   console.log('Checking local version vs latest github version')
@@ -313,7 +359,7 @@ async function connectWireless() {
       const port = await device.tcpip();
       await device.waitForDevice();
       console.log('set tcpip', port);
-      changeConfig('lastIp', ip);
+      await changeConfig('lastIp', ip);
     }
 
     const deviceTCP = await adb.connect(ip, 5555);
@@ -324,7 +370,7 @@ async function connectWireless() {
   }
   catch (err) {
     console.error('connectWireless', err);
-    changeConfig('lastIp', '');
+    await changeConfig('lastIp', '');
     return false;
   }
 }
@@ -338,7 +384,7 @@ async function disconnectWireless() {
     const res = await adb.disconnect(ip, 5555);
     // const res = await adb.usb(global.adbDevice);
     console.log('disconnectWireless', { ip, res });
-    // changeConfig('lastIp', '');
+    // await changeConfig('lastIp', '');
     // await getDeviceSync();
     return res;
   }
@@ -378,7 +424,7 @@ async function isIdle() {
 }
 
 async function wakeUp() {
-  if (!await isIdle()) return;
+  if (!(await isIdle())) return;
   return adbShell(`input keyevent KEYCODE_POWER`);
 }
 
@@ -459,15 +505,24 @@ async function getDeviceSync(attempt = 0) {
  * @param cmd {string}
  * @return {Promise<string>}
  */
-async function adbShell(cmd, deviceId = global.adbDevice) {
+async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
   try {
     if (!deviceId) {
       throw 'device not defined';
     }
 
+    // console.time(cmd);
     const r = await adb.getDevice(deviceId).shell(cmd);
+    // console.timeLog(cmd);
+    if (skipRead) {
+      console.log(`adbShell[${deviceId}]`, { cmd, skipRead });
+      return true;
+    }
+
     let output = await adbkit.util.readAll(r);
+    // console.timeLog(cmd);
     output = await output.toString();
+    // console.timeEnd(cmd);
     console.log(`adbShell[${deviceId}]`, { cmd, output });
     // adb.util.readAll;
     return output;
@@ -479,14 +534,24 @@ async function adbShell(cmd, deviceId = global.adbDevice) {
   }
 }
 
+// on empty dirrectory return false
+async function adbFileExists(path) {
+  const r = await adbShell(`ls "${path}" 1>&1 2> /dev/null`);
+  return r;
+}
+
 async function adbPull(orig, dest, sync = false) {
   console.log('adbPull', orig, dest);
   const transfer = sync
     ? await sync.pull(orig)
     : await adb.getDevice(global.adbDevice).pull(orig);
   return new Promise(function(resolve, reject) {
+    let c = 0;
     transfer.on('progress', (stats) => {
-      console.log(orig + ' pulled', stats);
+      c++;
+      if (c % 20 != 1) return; // skip 20 events
+
+      // console.log(orig + ' pulled', stats);
       const res = {
         cmd: 'pull',
         bytes: stats.bytesTransferred,
@@ -513,27 +578,33 @@ async function adbPull(orig, dest, sync = false) {
 }
 
 async function adbPullFolder(orig, dest, sync = false) {
+  console.log('pullFolder', orig, dest);
   let need_close = false;
-  if (!sync) {
+  /*if (!sync) {
     need_close = true;
     sync = await adb.getDevice(global.adbDevice).syncService();
-  }
+  }*/
 
-  console.log('pullFolder', orig, dest);
-  const files = await sync.readdir(orig);
+  let actions = [];
+  await fsp.mkdir(dest, { recursive: true });
+  const files = sync
+    ? await sync.readdir(orig)
+    : await adb.getDevice(global.adbDevice).readdir(orig);
+
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
     const new_dest = path.join(dest, file.name);
     if (file.isFile()) {
-      await adbPull(new_orig, new_dest, sync);
+      actions.push(adbPull(new_orig, new_dest, sync)); // file.size
       continue;
     }
 
-    fs.mkdirSync(new_dest, { recursive: true });
-    await adbPullFolder(new_orig, new_dest, sync);
+    actions.push(adbPullFolder(new_orig, new_dest, sync));
   }
 
-  if (need_close) sync.end();
+  await Promise.all(actions);
+
+  // if (need_close) sync.end();
 
   return true;
 }
@@ -543,11 +614,16 @@ async function adbPush(orig, dest, sync = false) {
   const transfer = sync
     ? await sync.pushFile(orig, dest)
     : await adb.getDevice(global.adbDevice).push(orig, dest);
-  const stats = fs.lstatSync(orig);
+  const stats = await fsp.lstat(orig);
   const size = stats.size;
 
   return new Promise(function(resolve, reject) {
+    let c = 0
     transfer.on('progress', (stats) => {
+      c++;
+      if (c % 20 != 1) return; // skip 20 events
+
+      // console.log(orig + ' pushed', stats);
       const res = {
         cmd: 'push',
         bytes: stats.bytesTransferred,
@@ -558,7 +634,6 @@ async function adbPush(orig, dest, sync = false) {
         name: orig,
       }
       win.webContents.send('process_data', res);
-      console.log(orig + ' pushed', stats);
     });
     transfer.on('end', () => {
       console.log(orig, 'push complete');
@@ -576,26 +651,29 @@ async function adbPush(orig, dest, sync = false) {
 async function adbPushFolder(orig, dest, sync = false) {
   console.log('pushFolder', orig, dest);
 
-  let need_close = false;
+  /*let need_close = false;
   if (!sync) {
     need_close = true;
     sync = await adb.getDevice(global.adbDevice).syncService();
-  }
+  }*/
 
-  await adbShell(`mkdir -p ${dest}`);
-  const files = fs.readdirSync(orig, { withFileTypes: true });
+  let actions = [];
+  await adbShell(`mkdir -p ${dest}`, global.adbDevice, true);
+  const files = await fsp.readdir(orig, { withFileTypes: true });
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
     const new_dest = path.join(dest, file.name);
     if (file.isFile()) {
-      await adbPush(new_orig, new_dest, sync);
+      actions.push(adbPush(new_orig, new_dest, sync));
       continue;
     }
 
-    await adbPushFolder(new_orig, new_dest, sync);
+    actions.push(adbPushFolder(new_orig, new_dest, sync));
   }
 
-  if (need_close) sync.end();
+  await Promise.all(actions);
+
+  // if (need_close) sync.end();
 
   return true;
 }
@@ -605,7 +683,15 @@ async function adbInstall(apk) {
   const temp_path = '/data/local/tmp/install.apk';
 
   await adbPush(apk, temp_path);
-  return adb.getDevice(global.adbDevice).installRemote(temp_path);
+  try {
+    await adb.getDevice(global.adbDevice).installRemote(temp_path);
+  }
+  catch (err) {
+    adbShell(`rm ${temp_path}`);
+    throw err;
+  }
+
+  return true;
 }
 
 function execShellCommand(cmd, buffer = 5000) {
@@ -634,9 +720,9 @@ function execShellCommand(cmd, buffer = 5000) {
 
 
 async function trackDevices() {
+  console.log('trackDevices()');
   await getDeviceSync();
 
-  console.log('trackDevices()');
   try {
     const tracker = await adb.trackDevices()
     tracker.on('add', async (device) => {
@@ -659,29 +745,6 @@ async function trackDevices() {
     returnError(err);
   }
 }
-
-/*async function checkMount(){
-  console.log('checkMount()')
-  try {
-    list = await getDir(global.mountFolder);
-    if (list.length > 0) {
-      global.mounted = true
-      updateRcloneProgress();
-      return true
-    }
-    global.mounted = false
-    return false;
-  }
-  catch (e) {
-    console.log('entering catch block');
-    console.log(e);
-    console.log('leaving catch block');
-    global.mounted = false
-    return false
-  }
-
-  return false;
-}*/
 
 async function appInfo(args) {
   const { res, package } = args;
@@ -768,6 +831,14 @@ async function checkMount() {
     const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
       method: 'post',
     });
+    if (!(await fsp.readdir(global.mountFolder)).length) {
+      return new Promise((res, rej) => {
+        setTimeout(() => {
+          checkMount().then(res).catch(rej);
+        }, 1000);
+      });
+    }
+
     global.mounted = resp.ok;
     return resp.ok;
     //setTimeout(updateRcloneProgress, 2000);
@@ -835,9 +906,8 @@ async function fetchBinary(bin) {
   const resp = await fetch(binUrl);
   if (!resp.ok) throw new Error(`Can't download '${binUrl}': ${resp.statusText}`);
 
-  fs.writeFileSync(binPath, await resp.buffer());
-  fs.chmodSync(binPath, 0o755);
-
+  await fsp.writeFile(binPath, await resp.buffer());
+  await fsp.chmod(binPath, 0o755);
   return changeConfig(cfgKey, binPath);
 }
 
@@ -850,7 +920,7 @@ function returnError(message) {
 }
 
 
-async function killRClone(){
+async function killRClone() {
   const killCmd = platform == 'win'
     ? `taskkill.exe /F /IM rclone.exe /T` // TODO: need test
     : `killall -9 rclone`;
@@ -873,13 +943,13 @@ async function killRClone(){
   })
 }
 
-function parseRcloneSections() {
+async function parseRcloneSections() {
   if (!global.currentConfiguration.rcloneConf) return;
-  if (!fs.existsSync(global.currentConfiguration.rcloneConf)) {
+  if (!(await fsp.exists(global.currentConfiguration.rcloneConf))) {
     return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
   }
 
-  const cfg = fs.readFileSync(global.currentConfiguration.rcloneConf, 'utf8');
+  const cfg = await fsp.readFile(global.currentConfiguration.rcloneConf, 'utf8');
 
   if (!cfg) return console.error('rclone config is empty', global.currentConfiguration.rcloneConf);
 
@@ -892,7 +962,7 @@ function parseRcloneSections() {
 
   global.rcloneSections = sections;
   if (sections.length && !global.currentConfiguration.cfgSection) {
-    changeConfig('cfgSection', sections[0]);
+    await changeConfig('cfgSection', sections[0]);
   }
 
   // console.log({ sections });
@@ -907,13 +977,13 @@ async function mount() {
 
   if (platform == 'win') {
     // folder must NOT exist on windows
-    if (fs.existsSync(global.mountFolder))
+    if (await fsp.exists(global.mountFolder))
       await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`);
   }
   else {
     await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
     await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
-    fs.mkdirSync(global.mountFolder, { recursive: true });
+    await fsp.mkdir(global.mountFolder, { recursive: true });
   }
 
    // TODO: temoporary
@@ -921,17 +991,17 @@ async function mount() {
     const rcloneConf = path.join(sidenoderHome, 'rclone.conf');
 
     const epath = path.join(__dirname , 'a.enc'); // 'a'
-    const data = fs.readFileSync(epath, 'utf8');
+    const data = await fsp.readFile(epath, 'utf8');
     const buff = Buffer.from(data, 'base64');
     const cfg = buff.toString('ascii');
-    fs.writeFileSync(rcloneConf, cfg);
+    await fsp.writeFile(rcloneConf, cfg);
 
-    changeConfig('rcloneConf', rcloneConf);
+    await changeConfig('rcloneConf', rcloneConf);
   }
 
   // const buff = new Buffer(data);
   // const base64data = buff.toString('base64');
-  // fs.writeFileSync(epath + '.enc', base64data);
+  // await fsp.writeFile(epath + '.enc', base64data);
   //console.log(cpath);
 
   const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
@@ -940,9 +1010,11 @@ async function mount() {
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" "${global.currentConfiguration.cfgSection}": "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
       console.log('rclone error:', error);
-      if (error.message.search('transport endpoint is not connected')) {
-        console.log('GEVONDE')
-      }
+      win.webContents.send('check_mount', { success: false });
+      checkMount();
+      /*if (error.message.search('transport endpoint is not connected')) {
+        console.log('GEVONDE');
+      }*/
 
       return;
     }
@@ -982,11 +1054,11 @@ async function getDir(folder) {
   }
 
   try {
-    const files = fs.readdirSync(folder/*, { withFileTypes: true }*/);
+    const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
     try {
       if (files.includes('GameList.txt')) {
-        const list = fs.readFileSync(path.join(folder, 'GameList.txt'), 'utf8').split('\n');
+        const list = (await fsp.readFile(path.join(folder, 'GameList.txt'), 'utf8')).split('\n');
         for (const line of list) {
           const meta = line.split(';');
           gameList[meta[1]] = {
@@ -1006,7 +1078,7 @@ async function getDir(folder) {
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
 
-      const info = fs.lstatSync(path.join(folder, fileName));
+      const info = await fsp.lstat(path.join(folder, fileName));
       let steamId = false,
         oculusId = false,
         imagePath = false,
@@ -1128,21 +1200,66 @@ async function cleanUpFoldername(simpleName) {
 }
 
 async function getObbs(folder){
-  const files = fs.readdirSync(folder, { withFileTypes: true });
-  let fileNames = await Promise.all(files.map(async (fileEnt) => {
-    return path.join(folder, fileEnt.name).replace(/\\/g, '/')
+  const files = await fsp.readdir(folder);
+  let fileNames = await Promise.all(files.map(async (file) => {
+    return path.join(folder, file).replace(/\\/g, '/');
   }));
 
   return fileNames;
 }
 
 async function getDirListing(folder){
-  const files = fs.readdirSync(folder, { withFileTypes: true });
-  let fileNames = await Promise.all(files.map(async (fileEnt) => {
-    return path.join(folder, fileEnt.name).replace(/\\/g, '/')
+  const files = await fsp.readdir(folder);
+  let fileNames = await Promise.all(files.map(async (file) => {
+    return path.join(folder, file).replace(/\\/g, '/')
   }));
 
   return fileNames;
+}
+
+const backupPrefsPath = '/sdcard/Download/backup/data/data';
+
+async function backupAppData(packageName, backupPath = path.join(global.sidenoderHome, 'backup_data')) {
+  console.log('backupAppData()', packageName);
+  backupPath = path.join(backupPath, packageName);
+  if (await adbFileExists(`/sdcard/Android/data/${packageName}`)) {
+    await adbPullFolder(`/sdcard/Android/data/${packageName}`, path.join(backupPath, 'Android', packageName));
+  }
+  else {
+    console.log(`skip backup Android/data/${packageName}`);
+  }
+
+  await copyAppPrefs(packageName);
+  await adbPullFolder(`${backupPrefsPath}/${packageName}`, path.join(backupPath, 'data', packageName));
+  await adbShell(`rm "${backupPrefsPath}/${packageName}"`);
+
+  fsp.writeFile(`${backupPath}/time.txt`, Date.now());
+  return true;
+}
+
+async function restoreAppData(packageName, backupPath = path.join(global.sidenoderHome, 'backup_data')) {
+  console.log('restoreAppData()', packageName);
+  backupPath = path.join(backupPath, packageName);
+  if (!(await fsp.exists(backupPath))) throw `Backup not found ${backupPath}`;
+
+  await adbPushFolder(path.join(backupPath, 'Android', packageName), `/sdcard/Android/data/${packageName}`);
+  await adbPushFolder(path.join(backupPath, 'data', packageName), `${backupPrefsPath}/${packageName}`);
+  await restoreAppPrefs(packageName);
+  return true;
+}
+
+async function copyAppPrefs(packageName, removeAfter = false) {
+  const cmd = removeAfter ? 'mv -f' : 'cp -rf';
+  await adbShell(`mkdir -p "${backupPrefsPath}"`);
+  return adbShell(`run-as ${packageName} ${cmd} "/data/data/${packageName}" "${backupPrefsPath}/"`);
+}
+
+async function restoreAppPrefs(packageName, removeAfter = true) {
+  const cmd = removeAfter ? 'mv -f' : 'cp -rf';
+  const backup_path = `${backupPrefsPath}/${packageName}`;
+  if (!(await adbFileExists(backup_path))) return;
+
+  return adbShell(`run-as ${packageName} ${cmd} "${backup_path}" "/data/data/"`);
 }
 
 async function sideloadFolder(arg) {
@@ -1161,6 +1278,7 @@ async function sideloadFolder(arg) {
     push_obb: false,
     done: false,
     update: false,
+    error: '',
   }
 
   win.webContents.send('sideload_process', res);
@@ -1194,12 +1312,14 @@ async function sideloadFolder(arg) {
       tempapk = global.tmpdir + '/' + path.basename(apkfile);
       console.log('is remote, copying to '+ tempapk)
 
-      if (fs.existsSync(tempapk)) {
+      if (await fsp.exists(tempapk)) {
         console.log('is remote, ' + tempapk + 'already exists, using');
         res.download = 'skip';
       }
       else {
-        await fsExtra.copyFile(apkfile, tempapk);
+        if (await fsp.exists(tempapk + '.part')) fsp.unlink(tempapk + '.part');
+        await fsp.copyFile(apkfile, tempapk + '.part');
+        await fsp.rename(tempapk + '.part', tempapk);
         res.download = 'done';
       }
       apkfile = tempapk;
@@ -1218,13 +1338,12 @@ async function sideloadFolder(arg) {
     console.log('package info read success (' + apkfile + ')')
   }
   catch (e) {
+    // returnError(e);
     console.error(e);
     res.aapt = 'fail';
     res.done = 'fail';
     res.error = e;
-    win.webContents.send('sideload_process', res);
-    // returnError(e);
-    return;
+    return win.webContents.send('sideload_process', res);
   }
 
   if (!packageName) {
@@ -1234,8 +1353,7 @@ async function sideloadFolder(arg) {
     res.aapt = 'fail';
     res.done = 'fail';
     res.error = e;
-    win.webContents.send('sideload_process', res);
-    return;
+    return win.webContents.send('sideload_process', res);
   }
 
 
@@ -1258,13 +1376,16 @@ async function sideloadFolder(arg) {
 
   res.backup = 'processing';
   win.webContents.send('sideload_process', res);
-  const backup_path = `${global.tmpdir}/sidenoder_restore_backup/${packageName}`;
+  // const backup_path = `${global.tmpdir}/sidenoder_restore_backup/`;
+  const backup_path = '/sdcard/Download/backup/Android/data/';
 
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
     try {
-      fs.mkdirSync(backup_path, { recursive: true });
-      await adbPullFolder(`/sdcard/Android/data/${packageName}`, backup_path);
+      await adbShell(`mkdir -p "${backup_path}"`);
+      await adbShell(`mv "/sdcard/Android/data/${packageName}" "${backup_path}"`);
+      await copyAppPrefs(packageName);
+      // await backupAppData(packageName, backup_path);
       res.backup = 'done';
     }
     catch (e) {
@@ -1297,36 +1418,6 @@ async function sideloadFolder(arg) {
     res.uninstall = 'skip';
   }
 
-  res.restore = 'processing';
-  win.webContents.send('sideload_process', res);
-
-  if (installed) {
-    console.log('doing adb push appdata (ignore error)');
-    try {
-      await adbPushFolder(backup_path, `/sdcard/Android/data/${packageName}`);
-
-      res.restore = 'done';
-      /*try {
-        //TODO: check settings
-        fs.rmdirSync(`${global.tmpdir}/sidenoder_restore_backup/${packageName}/`, { recursive: true });
-      }
-      catch (err) {
-        console.error(`Error while deleting ${dir}.`);
-      }*/
-    }
-    catch (e) {
-      console.error('restore', e);
-      res.restore = 'fail';
-      res.error = e;
-    // TODO: maybe return;
-    }
-  }
-  else {
-    res.restore = 'skip';
-  }
-
-  win.webContents.send('sideload_process', res);
-
   console.log('doing adb install');
   res.apk = 'processing';
   win.webContents.send('sideload_process', res);
@@ -1337,22 +1428,50 @@ async function sideloadFolder(arg) {
 
     if (fromremote) {
       //TODO: check settings
-      fs.unlinkSync(tempapk);
+      await fsp.unlink(tempapk);
     }
 
     res.apk = 'done';
-    res.remove_obb = 'processing';
-    win.webContents.send('sideload_process', res);
   }
   catch (e) {
+    // returnError(e);
     console.error(e);
     res.apk = 'fail';
+    res.done = 'fail';
     res.error = e;
-    win.webContents.send('sideload_process', res);
+    return win.webContents.send('sideload_process', res);
   }
 
+  res.restore = 'processing';
+  win.webContents.send('sideload_process', res);
+
+  if (installed || await adbFileExists(`${backup_path}${packageName}`)) {
+    console.log('doing adb push appdata (ignore error)');
+    try {
+      // await restoreAppData(packageName, backup_path);
+      await adbShell(`mv "${backup_path}${packageName}" "/sdcard/Android/data/"`);
+      await restoreAppPrefs(packageName);
+      res.restore = 'done';
+
+      //TODO: check settings
+      // await fsp.rmdir(path.join(backup_path, packageName), { recursive: true });
+    }
+    catch (e) {
+      console.error('restore', e);
+      res.restore = 'fail';
+      res.error = e;
+      // TODO: maybe return;
+    }
+  }
+  else {
+    res.restore = 'skip';
+  }
+
+  res.remove_obb = 'processing';
+  win.webContents.send('sideload_process', res);
+
   try {
-    if (!fs.existsSync(location + '/' + packageName)) throw 'Can`t find obbs folder';
+    if (!(await fsp.exists(path.join(location, packageName)))) throw 'Can`t find obbs folder';
     obbFolder = packageName;
     console.log('DATAFOLDER to copy:' + obbFolder);
   }
@@ -1380,7 +1499,7 @@ async function sideloadFolder(arg) {
     res.download_obb = 'processing';
     win.webContents.send('sideload_process', res);
 
-    obbFiles = await getObbs(location + '/' + obbFolder);
+    obbFiles = await getObbs(path.join(location, obbFolder));
     if (obbFiles.length > 0) {
       console.log('obbFiles: ', obbFiles.length);
 
@@ -1388,12 +1507,7 @@ async function sideloadFolder(arg) {
       res.push_obb = '0/' + obbFiles.length;
       win.webContents.send('sideload_process', res);
 
-      if (!fs.existsSync(global.tmpdir + '/' + packageName)) {
-        fs.mkdirSync(global.tmpdir + '/' + packageName);
-      }
-      else {
-        console.log(global.tmpdir + '/' + packageName + ' already exists');
-      }
+      await fsp.mkdir(global.tmpdir + '/' + packageName, { recursive: true });
 
       //TODO, make name be packageName instead of foldername
       for (const item of obbFiles) {
@@ -1403,14 +1517,16 @@ async function sideloadFolder(arg) {
         let name = item.substring(n + 1);
 
         if (fromremote) {
-          tempobb = global.tmpdir + '/' + packageName + '/' + path.basename(item);
+          tempobb = path.join(global.tmpdir, packageName, path.basename(item));
           console.log('obb is remote, copying to ' + tempobb);
 
-          if (fs.existsSync(tempobb)) {
+          if (await fsp.exists(tempobb)) {
             console.log('obb is remote, ' + tempobb + 'already exists, using');
           }
           else {
-            await fsExtra.copyFile(item, tempobb);
+            if (await fsp.exists(tempobb + '.part')) fsp.unlink(tempobb + '.part');
+            await fsp.copyFile(item, tempobb + '.part');
+            await fsp.rename(tempobb + '.part', tempobb);
           }
 
           res.download_obb = (+res.download_obb.split('/')[0] + 1) + '/' + obbFiles.length;
@@ -1419,7 +1535,7 @@ async function sideloadFolder(arg) {
 
           await adbPush(tempobb, `/sdcard/Android/obb/${obbFolder}/${name}`);
           //TODO: check settings
-          fs.rmdirSync(tempobb, { recursive: true });
+          await fsp.rmdir(tempobb, { recursive: true });
         }
         else {
           await adbPush(item, `/sdcard/Android/obb/${obbFolder}/${name}`);
@@ -1535,14 +1651,14 @@ async function getInstalledAppsWithUpdates() {
 }
 
 
-function detectInstallTxt(files, folder) {
+async function detectInstallTxt(files, folder) {
   if (typeof files == 'string') {
     folder = files;
     files = false;
   }
 
   if (!files) {
-    files = fs.readdirSync(folder);
+    files = await fsp.readdir(folder);
   }
 
   const installTxNames = [
@@ -1554,7 +1670,7 @@ function detectInstallTxt(files, folder) {
 
   for (const name of installTxNames) {
     if (files.includes(name)) {
-      return fs.readFileSync(path.join(folder, name), 'utf8');
+      return await fsp.readFile(path.join(folder, name), 'utf8');
     }
   }
 
@@ -1568,8 +1684,8 @@ async function getApkFromFolder(folder){
     install_desc: false,
   }
 
-  const files = fs.readdirSync(folder);
-  res.install_desc = detectInstallTxt(files);
+  const files = await fsp.readdir(folder);
+  res.install_desc = await detectInstallTxt(files);
 
   for (file of files) {
     if (file.endsWith('.apk')) {
@@ -1618,7 +1734,9 @@ async function updateRcloneProgress() {
 }
 
 async function init() {
-  initLogs();
+  fsp.exists = (path) => fsp.access(path).then(() => true).catch(e => false);
+
+  await initLogs();
 
   console.log({ platform, arch }, process.platform, process.arch, process.argv);
   if (platform == 'win') {
@@ -1654,13 +1772,13 @@ async function init() {
   }
 }
 
-function initLogs() {
+async function initLogs() {
   const log_path = path.join(sidenoderHome, 'debug_last.log');
-  if (fs.existsSync(log_path)) {
-    fs.unlinkSync(log_path);
+  if (await fsp.exists(log_path)) {
+    await fsp.unlink(log_path);
   }
   else {
-    fs.mkdirSync(sidenoderHome, { recursive: true });
+    await fsp.mkdir(sidenoderHome, { recursive: true });
   }
 
   const log_file = fs.createWriteStream(log_path, { flags: 'w' });
@@ -1708,7 +1826,7 @@ function initLogs() {
 
 
 
-function reloadConfig() {
+async function reloadConfig() {
   const defaultConfig = {
     allowOtherDevices: false,
     cacheOculusGames: true,
@@ -1722,35 +1840,32 @@ function reloadConfig() {
     scrcpyCrop: '1600:900:2017:510',
     lastIp: '',
   };
-  try {
-    if (fs.existsSync(configLocationOld)) {
-      fs.renameSync(configLocationOld, configLocation);
-    }
 
-    if (fs.existsSync(configLocation)) {
-      console.log('Config exist, using ' + configLocation);
-      global.currentConfiguration = Object.assign(defaultConfig, require(configLocation));
-    }
-    else {
-      console.log('Config doesnt exist, creating ') + configLocation;
-      fs.writeFileSync(configLocation, JSON.stringify(defaultConfig))
-      global.currentConfiguration = defaultConfig;
-    }
+  if (await fsp.exists(configLocationOld)) {
+    await fsp.rename(configLocationOld, configLocation);
+  }
 
-    parseRcloneSections();
+
+  if (await fsp.exists(configLocation)) {
+    console.log('Config exist, using ' + configLocation);
+    global.currentConfiguration = Object.assign(defaultConfig, require(configLocation));
   }
-  catch (err) {
-    console.error('loadConfig', err);
+  else {
+    console.log('Config doesnt exist, creating ') + configLocation;
+    await fsp.writeFile(configLocation, JSON.stringify(defaultConfig))
+    global.currentConfiguration = defaultConfig;
   }
+
+  await parseRcloneSections();
 }
 
-function changeConfig(key, value) {
+async function changeConfig(key, value) {
   console.log('cfg.update', key, value);
 
   global.currentConfiguration[key] = value;
-  fs.writeFileSync(configLocation, JSON.stringify(global.currentConfiguration));
+  await fsp.writeFile(configLocation, JSON.stringify(global.currentConfiguration));
 
-  if (key == 'rcloneConf') parseRcloneSections();
+  if (key == 'rcloneConf') await parseRcloneSections();
 
   return value;
 }

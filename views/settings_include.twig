@@ -96,8 +96,8 @@
     $('#' + key)
       .val(remote.getGlobal('currentConfiguration')[key])
       .on('change', (e) => {
-      ipcRenderer.send('change_config', {key, val: e.target.value});
-    });
+        ipcRenderer.send('change_config', {key, val: e.target.value});
+      });
   }
 
   for (const key of CHKBOXES) {

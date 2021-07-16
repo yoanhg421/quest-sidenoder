@@ -38,6 +38,7 @@
     });
   });
 
+
   ipcRenderer.removeAllListeners('ask_sideload');
   ipcRenderer.on('ask_sideload', (event, arg) => {
     console.log('ask_sideload msg came ! ', arg);

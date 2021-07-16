@@ -105,13 +105,13 @@
         </a>
       </li>
       <li class="nav-item">
-        <a id="remotebtn" disabled="disabled" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
+        <a id="remotebtn" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
           <i class="fa fa-folder-open-o"></i>
             Remote
         </a>
       </li>
       <li class="nav-item">
-        <a class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+        <a class="adbdev btn btn-primary disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
           <i class="fa fa-list"></i>
            Installed
         </a>
@@ -176,13 +176,12 @@
 
   ipcRenderer.send('start_track_device', '');
 
+  loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');
   loadInclude('modals/processing.twig', 'processingmodaldiv');
   loadInclude('modals/app_start.twig', 'appstartmodaldiv');
-  loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv');
   loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
-  loadInclude('device_info.twig', 'device_infoDiv');
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();
@@ -205,9 +204,7 @@
       .removeClass('btn-danger')
       .removeClass('btn-success')
       .addClass('btn-warning');
-    $('#remotebtn')
-      .attr('disabled', 'disabled')
-      .addClass('disabled');
+    $('#remotebtn').addClass('disabled');
     ipcRenderer.send('mount', 'bla');
   }
 
@@ -258,15 +255,11 @@
         .removeClass('btn-danger')
         .addClass('btn-success')
         .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
-      $('#remotebtn')
-        .removeAttr('disabled')
-        .removeClass('disabled');
+      $('#remotebtn').removeClass('disabled');
 
       if (!remote.getGlobal('adbDevice')) return;
 
-      $('#updateBadge')
-        .removeClass('disabled')
-        .removeAttr('disabled');
+      $('#updateBadge').removeClass('disabled');
     }
     else {
       $('#mountrefresh').removeClass('fa-spin');
@@ -275,13 +268,9 @@
         .removeClass('btn-warning')
         .addClass('btn-danger')
         .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
-      $('#remotebtn')
-        .attr('disabled', 'disabled')
-        .addClass('disabled');
+      $('#remotebtn').addClass('disabled');
 
-      $('#updateBadge')
-        .attr('disabled', 'disabled')
-        .addClass('disabled');
+      $('#updateBadge').addClass('disabled');
     }
   });
 
@@ -295,13 +284,9 @@
         .addClass('btn-success')
         .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
-      $('a.adbdev')
-        .removeClass('disabled')
-        .removeAttr('disabled');
+      $('a.adbdev').removeClass('disabled');
       if (!remote.getGlobal('mounted')) {
-        $('#updateBadge')
-          .addClass('disabled')
-          .attr('disabled');
+        $('#updateBadge').addClass('disabled');
       }
 
       if (arg.success.endsWith(':5555')) {
@@ -321,9 +306,7 @@
         .addClass('btn-danger')
         .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
 
-      $('a.adbdev')
-        .addClass('disabled')
-        .attr('disabled', 'disabled');
+      $('a.adbdev').addClass('disabled');
 
       $('#wirelessbtn')[0].onclick = connectWireless;
       $('#wirelessbtn')

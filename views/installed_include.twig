@@ -2,7 +2,7 @@
   <div class="card-header">
     <h2 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h2>
     <h2 class="mb-0 pull-right">
-      <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled" disabled="disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
+      <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
     </h2>
   </div>
   <div class="card-body">
@@ -25,9 +25,7 @@
   loadInclude('searchform.twig', 'searchformdiv');
 
   if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
-    $('#updateBadge')
-      .removeClass('disabled')
-      .removeAttr('disabled');
+    $('#updateBadge').removeClass('disabled');
   }
 
 </script>

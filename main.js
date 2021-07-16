@@ -68,12 +68,16 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
 });
 
 ipcMain.on('get_device_info', async (event, arg) => {
+  getDeviceInfo(event);
+});
+
+async function getDeviceInfo(event) {
   console.log('get_device_info received');
   const res = await tools.getDeviceInfo();
 
   event.reply('get_device_info', res);
   return;
-});
+}
 
 ipcMain.on('start_track_device', async (event, arg) => {
   console.log('start_track_device received');
@@ -111,7 +115,7 @@ ipcMain.on('check_deps', async (event, arg) => {
 
 ipcMain.on('mount', async (event, arg) => {
   await tools.mount();
-  setTimeout(() => checkMount(event), 3000);
+  setTimeout(() => checkMount(event), 1000);
 
   return;
 });
@@ -122,7 +126,7 @@ ipcMain.on('check_mount', async (event, arg) => {
 
 async function checkMount(event) {
   await tools.checkMount();
-  event.reply('check_mount', { success: global.mounted, mountFolder: global.mountFolder });
+  event.reply('check_mount', { success: global.mounted });
   if (global.mounted) {
     tools.updateRcloneProgress()
   }
@@ -139,7 +143,9 @@ ipcMain.on('start_sideload', async (event, arg) => {
   }
 
   event.reply('start_sideload', { success: true, path: arg.path });
-  tools.sideloadFolder(arg);
+  await tools.sideloadFolder(arg);
+  getDeviceInfo(event);
+
   return;
 });
 
@@ -186,7 +192,7 @@ ipcMain.on('get_dir', async (event, arg) => {
     const lastslashindex = install.path.lastIndexOf('/');
     const folder = install.path.substring(0, lastslashindex);
 
-    install.install_desc = tools.detectInstallTxt(folder);
+    install.install_desc = await tools.detectInstallTxt(folder);
 
     event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
     return;
@@ -292,6 +298,7 @@ ipcMain.on('uninstall', async (event, arg) => {
   console.log('uninstall received');
   resp = await tools.uninstall(arg);
   event.reply('uninstall', { success: true });
+  getDeviceInfo(event);
   return;
 });
 
@@ -305,6 +312,33 @@ ipcMain.on('start_activity', async (event, arg) => {
   console.log('start_activity received', arg);
   const resp = await tools.startActivity(arg);
   event.reply('start_activity', { success: !!resp });
+  return;
+});
+ipcMain.on('start_app', async (event, arg) => {
+  console.log('start_app received', arg);
+  const activity = await tools.getLaunchActiviy(arg);
+  const resp = await tools.startActivity(activity);
+  event.reply('start_app', { success: !!resp });
+  return;
+});
+
+ipcMain.on('app_tools', async (event, arg) => {
+  console.log('app_tools received', arg);
+  const resp = await tools.checkAppTools(arg);
+  event.reply('app_tools', resp);
+  return;
+});
+
+ipcMain.on('data_backup', async (event, arg) => {
+  console.log('data_backup received', arg);
+  const resp = await tools.backupAppData(arg);
+  event.reply('data_backup', { success: resp });
+  return;
+});
+ipcMain.on('data_restore', async (event, arg) => {
+  console.log('data_restore received', arg);
+  const resp = await tools.restoreAppData(arg);
+  event.reply('data_restore', { success: resp });
   return;
 });
 
@@ -360,13 +394,11 @@ function createWindow () {
 }
 
 
-try {
-  tools.reloadConfig();
-}
-catch (e) {
-  returnError('Could not (re)load config file.')
-  return
-}
+tools.reloadConfig().catch(e => {
+  console.error('reloadConfig', e);
+  // tools.returnError('Could not (re)load config file.');
+});
+
 
 // DEFAULT
 app.whenReady().then(createWindow)
