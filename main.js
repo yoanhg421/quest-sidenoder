@@ -329,6 +329,12 @@ ipcMain.on('app_tools', async (event, arg) => {
   return;
 });
 
+ipcMain.on('app_backup', async (event, arg) => {
+  console.log('app_backup received', arg);
+  const resp = await tools.backupApp(arg);
+  event.reply('app_backup', { success: resp });
+  return;
+});
 ipcMain.on('data_backup', async (event, arg) => {
   console.log('data_backup received', arg);
   const resp = await tools.backupAppData(arg);

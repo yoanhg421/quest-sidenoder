@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.5.0",
+  "version": "0.4.5",
   "description": "SideNoder - oculus quest tool for sideloading, device tweaks, application managing, etc",
   "main": "main.js",
   "dependencies": {
@@ -33,8 +33,7 @@
     "afterPack": "./removeLocales.js",
     "mac": {
       "target": [
-        "dir",
-        "tar.gz"
+        "dir"
       ]
     },
     "win": {

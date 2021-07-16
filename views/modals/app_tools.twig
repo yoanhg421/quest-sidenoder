@@ -24,10 +24,12 @@
           <hr/>
         </div>
         <div class="card-body text-center">
-          <a class="adbdev btn btn-info" id="backupAppBtn" ><i class="fa fa-download"></i> Backup app + obbs</a>
-          <a class="adbdev btn btn-info" id="backupDataBtn"><i class="fa fa-download"></i> Backup appdata</a><br/>
-          <a class="adbdev btn btn-success disabled" id="restoreDataBtn"><i class="fa fa-upload"></i> Restore appdata</a>
-          <a class="btn btn-primary disabled" id="backupAppPath"><i class="fa fa-folder-open"></i> Open backup folder</a>
+          <a class="adbdev btn btn-info mb-1" id="startAppBtn"><i class="fa fa-play"></i> Launch</a>
+          <a class="adbdev btn btn-danger mb-1" id="uninstallAppBtn"><i class="fa fa-trash-o"></i> Uninstall</a>
+          <a class="adbdev btn btn-info mb-1" id="backupAppBtn" ><i class="fa fa-download"></i> Backup app + obbs</a>
+          <a class="adbdev btn btn-info mb-1" id="backupDataBtn"><i class="fa fa-download"></i> Backup appdata</a>
+          <a class="adbdev btn btn-success mb-1 disabled" id="restoreDataBtn"><i class="fa fa-upload"></i> Restore appdata</a>
+          <a class="btn btn-primary mb-1 disabled" id="backupAppPath"><i class="fa fa-folder-open"></i> Open backup folder</a>
         </div>
         <div style="min-height: 45px">
           <small class="transfer_state" ></small>
@@ -87,6 +89,18 @@
 
     $('#packageName').text(package);
 
+    $('#startAppBtn').click(({target}) => {
+      startApp(package);
+      return true;
+    });
+    $('#uninstallAppBtn').click(({target}) => {
+      uninstall(target, package);
+      return true;
+    });
+    $('#backupAppBtn').click(({target}) => {
+      setAppBackupPath(package);
+      return true;
+    });
     $('#backupDataBtn').click(({target}) => {
       target.classList.add('disabled');
       ipcRenderer.send('data_backup', package);
@@ -120,13 +134,19 @@
 
     $('#appToolModal').modal('show');
   });
-  /*ipcRenderer.on('start_activity', (event, arg) => {
-    console.log('start_activity msg came: ', arg); // prints "ping"
-    $('#appToolModal').modal('hide');
-  });*/
 
-  /*$('#startActivityButton').on('click', function(){
-    $('#appToolModal').modal('hide');
-    ipcRenderer.send('start_activity', $('#appActivities').val());
-  });*/
+  async function setAppBackupPath(package) {
+    const file = await dialog.showOpenDialog(null, {
+      title: 'Set backup path',
+      message: 'Browse location for new backup',
+      properties: ['openDirectory'],
+    });
+    if (file.canceled) return;
+
+    console.log('setAppBackupPath', package, file);
+    const location = file.filePaths[0];
+
+    ipcRenderer.send('app_backup', { location, package });
+    return path;
+  }
 </script>

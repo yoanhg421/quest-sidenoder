@@ -15,7 +15,7 @@ const WAE = require('web-auto-extractor').default
 // const ApkReader = require('node-apk-parser');
 
 require('fix-path')();
-adb.kill();
+// adb.kill();
 
 const pkg = require('./package.json');
 
@@ -60,6 +60,7 @@ module.exports =
   getActivities,
   startActivity,
   checkAppTools,
+  backupApp,
   backupAppData,
   restoreAppData,
   getDeviceInfo,
@@ -245,7 +246,7 @@ async function getStorageInfo() {
 
 async function getLaunchActiviy(package) {
   console.log('startApp()', package);
-  const activity = await adbShell(`adb shell dumpsys package ${package} | grep -A 1 'filter' | head -n 1 | cut -d ' ' -f 10`);
+  const activity = await adbShell(`dumpsys package ${package} | grep -A 1 'filter' | head -n 1 | cut -d ' ' -f 10`);
   return startActivity(activity.replace('\n', ''));
 }
 
@@ -1217,8 +1218,26 @@ async function getDirListing(folder){
   return fileNames;
 }
 
-const backupPrefsPath = '/sdcard/Download/backup/data/data';
 
+async function backupApp({ location, package }) {
+  console.log('backupApp()', package, location);
+  let apk = await adbShell(`pm list packages -f ${package}`);
+  console.log({apk});
+  apk = apk.replace('package:', '').replace(`=${package}\n`, '');
+  console.log({apk});
+
+  location = path.join(location, package);
+  await fsp.mkdir(location, { recursive: true });
+  await adbPull(apk, path.join(location, 'base.apk'));
+  const obbsPath = `/sdcard/Android/obb/${package}`;
+  if (!(await adbFileExists(obbsPath))) return true;
+
+  await adbPullFolder(obbsPath, path.join(location, package));
+
+  return true;
+}
+
+const backupPrefsPath = '/sdcard/Download/backup/data/data';
 async function backupAppData(packageName, backupPath = path.join(global.sidenoderHome, 'backup_data')) {
   console.log('backupAppData()', packageName);
   backupPath = path.join(backupPath, packageName);
@@ -1738,7 +1757,7 @@ async function init() {
 
   await initLogs();
 
-  console.log({ platform, arch }, process.platform, process.arch, process.argv);
+  console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
   if (platform == 'win') {
     global.nullcmd = '> null'
     global.nullerror = '2> null'
