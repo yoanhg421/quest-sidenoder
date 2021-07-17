@@ -903,7 +903,7 @@ async function checkDeps(arg){
 
       res[arg].cmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
       await execShellCommand(`${res[arg].cmd} start-server`);
-      if (global.execError && !global.execError.includes('daemon started successfully')) throw global.execError;
+      if (global.execError && !global.execError.toString().includes('daemon started successfully')) throw global.execError;
       res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`${res[arg].cmd} --version`);
       if (global.execError) throw global.execError;
       await trackDevices();
