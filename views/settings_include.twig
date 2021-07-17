@@ -78,6 +78,7 @@
   console.log('ONLOAD settings');
   const OPT_KEYS = [
     'cfgSection',
+    'adbPath',
     'rclonePath',
     'rcloneConf',
     'scrcpyPath',
@@ -117,9 +118,13 @@
     remote.getGlobal('win').webContents.openDevTools();
   });
 
-  $('#rclonePathBtn').on('click', (e) => setRclone());
-  $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
-  $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
+  $('#adbPathBtn').on('click', (e) => setCustomPath('adbPath', 'Android Debug Bridge custom path', 'Browse to adb binary'));
+  $('#rclonePathBtn').on('click', (e) => setCustomPath('rclonePath', 'RClone custom path', 'Browse to rclone binary'));
+  $('#scrcpyPathBtn').on('click', (e) => setCustomPath('scrcpyPath', 'SCRCPY custom path', 'Browse to scrcpy binary'));
+  $('#rcloneConfBtn').on('click', (e) => setCustomPath('rcloneConf', 'RClone config location', 'Browse to rclone config', [{
+    name: 'Config', extensions: ['conf', 'cfg', 'ini'],
+    name: 'All', extensions: ['*'],
+  }]));
 
   ipcRenderer.removeAllListeners('device_tweaks');
   ipcRenderer.on('change_config', (event, { key, val }) => {
@@ -128,58 +133,21 @@
     $(`#${key}`).val(val).addClass('is-valid');
   });
 
-
-  async function setRclone() {
+  async function setCustomPath(key, title, message, filters) {
+    filters = filters || [{
+      name: 'Exe', extensions: ['exe'],
+      name: 'All', extensions: ['*'],
+    }];
     const file = await dialog.showOpenDialog(null, {
-      title: 'RClone custom path',
-      message: 'Browse to rclone',
       properties: ['openFile'],
-      filters: [{
-        name: 'Exe', extensions: ['exe'],
-        name: 'All', extensions: ['*'],
-      }],
+      title,
+      message,
+      filters,
     });
     if (file.canceled) return;
-    const rclonePath = file.filePaths[0];
-    $('#rclonePath').val(rclonePath);
-    ipcRenderer.send('change_config', {key: 'rclonePath', val: rclonePath});
-    return rclonePath;
+    const val = file.filePaths[0];
+    $(`#${key}`).val(val);
+    ipcRenderer.send('change_config', {key, val});
+    return val;
   }
-
-  async function setRcloneConf() {
-    const file = await dialog.showOpenDialog(null, {
-      title: 'RClone config location',
-      message: 'Browse to rclone config',
-      properties: ['openFile'],
-      filters: [{
-        name: 'Config', extensions: ['conf', 'cfg', 'ini'],
-        name: 'All', extensions: ['*'],
-      }],
-    });
-    if (file.canceled) return;
-
-    const rcloneConf = file.filePaths[0];
-    $('#rcloneConf').val(rcloneConf);
-    ipcRenderer.send('change_config', {key: 'rcloneConf', val: rcloneConf});
-    return rcloneConf;
-  }
-
-  async function setSCRCPY() {
-    const file = await dialog.showOpenDialog(null, {
-      title: 'SCRCPY custom path',
-      message: 'Browse to scrcpy',
-      properties: ['openFile'],
-      filters: [{
-        name: 'Exe', extensions: ['exe'],
-        name: 'All', extensions: ['*'],
-      }],
-    });
-    if (file.canceled) return;
-
-    const scrcpyPath = file.filePaths[0];
-    $('#scrcpyPath').val(scrcpyPath);
-    ipcRenderer.send('change_config', {key: 'scrcpyPath', val: scrcpyPath});
-    return rclonePath;
-  }
-
 }</script>
