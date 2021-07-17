@@ -4,10 +4,10 @@
   </div>
   <div class="card-body">
     <div class="card-text container">
-      <div class="alert alert-dismissible alert-warning">
+      <div class="alert alert-warning"><small>
         <i class="fa fa-exclamation-triangle"></i>
-        WARNING: Some of this tweaks may reset to default when you restart your headset
-      </div>
+        WARNING: All changes your own risk. Some of this tweaks may reset to default when you restart your headset
+      </small></div>
       <div class="card bg-primary mb-1">
         <div class="card-header">Tools:</div>
         <div class="card-body">
@@ -220,7 +220,7 @@
 
   ipcRenderer.removeAllListeners('device_tweaks');
   ipcRenderer.on('device_tweaks', (event, arg) => {
-    console.log('device_tweaks ! ', arg);
+    // console.log('device_tweaks ! ', arg);
     if (arg.cmd == 'get') {
       for (const key of TWEAKS_KEYS) {
         if (arg[key]) $('#' + key).val(arg[key]);
@@ -239,15 +239,15 @@
   });
 
   for (const key of TWEAKS_KEYS) {
-    $('#' + key).on('change', function (e) {
-      $(e.target).removeClass('is-valid');
-      ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: e.target.value });
+    $('#' + key).on('change', function ({ target }) {
+      $(target).removeClass('is-valid');
+      ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: target.value });
     });
   }
 
   for (const key of TWEAKS_CHECKBOXES) {
-    $('#' + key).on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: e.target.checked});
+    $('#' + key).on('change.bootstrapSwitch', ({ target }) => {
+      ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: target.checked});
     });
   }
 

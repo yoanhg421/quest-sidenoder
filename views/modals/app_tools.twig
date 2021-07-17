@@ -9,21 +9,34 @@
         </button>
       </div>
       <div class="modal-body">
-        <div class="card-body" id="configsCard">
+        <h4 class="text-center" id="packageName"></h4>
+        <hr/>
+        <div class="card-body" id="configsCard" style="display: none">
+          <div class="alert alert-warning"><small>
+            <i class="fa fa-exclamation-triangle"></i>
+            WARNING: All changes your own risk. Recommend to backup appdata before
+          </small></div>
           <div class="form-group">
-            <label class="mb-1" for="mp_name">
+            <label class="mb-1" for="app_username">
               <h6 class="card-title mb-0">User/Multiplayer name</h6>
               <small class="card-text">
                 Just rename, without account id reseting
               </small>
             </label>
-            <input id="app_mp_name" class="adbdev form-control" value="" />
+            <input id="app_username" class="adbdev form-control" value="" />
           </div>
+          <hr/>
         </div>
-        <div class="text-center">
-          <a class="adbdev btn btn-info"><i id="backupAppBtn" class="fa fa-download"></i> Backup app + obbs</a>
-          <a class="adbdev btn btn-info"><i id="backupDataBtn" class="fa fa-download"></i> Backup appdata</a>
-          <a class="adbdev btn btn-success"><i id="restoreDataBtn" class="fa fa-upload"></i> Restore appdata</a><br/>
+        <div class="card-body text-center">
+          <a class="adbdev btn btn-info mb-1" id="startAppBtn"><i class="fa fa-play"></i> Launch</a>
+          <a class="adbdev btn btn-danger mb-1" id="uninstallAppBtn"><i class="fa fa-trash-o"></i> Uninstall</a>
+          <a class="adbdev btn btn-info mb-1" id="backupAppBtn" ><i class="fa fa-download"></i> Backup app + obbs</a>
+          <a class="adbdev btn btn-info mb-1" id="backupDataBtn"><i class="fa fa-download"></i> Backup appdata</a>
+          <a class="adbdev btn btn-success mb-1 disabled" id="restoreDataBtn"><i class="fa fa-upload"></i> Restore appdata</a>
+          <a class="btn btn-primary mb-1 disabled" id="backupAppPath"><i class="fa fa-folder-open"></i> Open backup folder</a>
+        </div>
+        <div style="min-height: 45px">
+          <small class="transfer_state" ></small>
         </div>
       </div>
       <div class="modal-footer">
@@ -35,20 +48,127 @@
 <script>
   console.log('ONLOAD APPTOOL MODAL');
 
+  ipcRenderer.removeAllListeners('process_data');
+  ipcRenderer.on('process_data', (event, data) => {
+    console.log('process_data received', data);
+    if (!data)  return $('.transfer_state').text('');
+
+    let line = `${data.cmd}: ${formatBytes(data.bytes)}`;
+    if (data.size) {
+      line+= ` of ${formatBytes(data.size)} (${data.percentage}%)`;
+    }
+
+    if (data.speedAvg) {
+      line+= ` - ${formatBytes(data.speedAvg)}/s (${formatEta(data.eta)})`;
+    }
+
+    const name = data.name.split('/').pop();
+    $('.transfer_state').html(`${line}<br/> ${name}`);
+  });
+
+
+  ipcRenderer.removeAllListeners('app_backup');
+  ipcRenderer.on('app_backup', (event, arg) => {
+    $('#backupAppBtn').removeClass('disabled');
+  });
+  ipcRenderer.removeAllListeners('data_backup');
+  ipcRenderer.on('data_backup', (event, arg) => {
+    $('#backupDataBtn').removeClass('disabled');
+    $('#restoreDataBtn').removeClass('disabled');
+    /*if (arg.error) {
+      return $('#transfer_state').html(`<b class="text-danger">Error: ${arg.error}</b>`);
+    }
+
+    loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv', () => {
+      ipcRenderer.send('app_tools', arg.package);
+    });*/
+  });
+  ipcRenderer.removeAllListeners('data_restore');
+  ipcRenderer.on('data_restore', (event, arg) => {
+    $('#restoreDataBtn').removeClass('disabled');
+  });
+
+  ipcRenderer.removeAllListeners('app_config_set');
+  ipcRenderer.on('app_config_set', (event, { success, key, val }) => {
+
+    $(`#app_${key}`).val(val).addClass(success ? 'is-valid' : 'is-invalid');
+  });
+
   ipcRenderer.removeAllListeners('app_tools');
   ipcRenderer.on('app_tools', (event, arg) => {
     console.log('app_tools msg came: ', arg);
-
     $('#processingModal').modal('hide');
+
+    const {
+      package,
+      backupPath,
+      availableRestore,
+      availableConfig,
+    } = arg;
+
+    $('#packageName').text(package);
+
+    $('#startAppBtn').click(({target}) => {
+      startApp(package);
+      return true;
+    });
+    $('#uninstallAppBtn').click(({target}) => {
+      uninstall(target, package);
+      return true;
+    });
+    $('#backupAppBtn').click(({target}) => {
+      target.classList.add('disabled');
+      setAppBackupPath(package);
+      return true;
+    });
+    $('#backupDataBtn').click(({target}) => {
+      target.classList.add('disabled');
+      ipcRenderer.send('data_backup', package);
+      return true;
+    });
+    $('#restoreDataBtn').click((e) => {
+      target.classList.add('disabled');
+      ipcRenderer.send('data_restore', package);
+      return true;
+    });
+    $('#backupAppPath').click((e) => {
+      shell.openPath(path.join(remote.getGlobal('sidenoderHome'), 'backup_data', package));
+      return true;
+    });
+
+    if (availableRestore) {
+      $('#backupAppPath').removeClass('disabled');
+      $('#restoreDataBtn')
+        .removeClass('disabled')
+        .append(`(${new Date(+availableRestore).toLocaleString()})`);
+    }
+
+    if (availableConfig) {
+      $('#configsCard').show();
+      $('#app_username')
+      .val(availableConfig.username)
+      .change(({target}) => {
+        $(target).removeClass('is-valid');
+        ipcRenderer.send('app_config_set', { package,  key: 'username', val: target.value });
+        return true;
+      });
+    }
+
     $('#appToolModal').modal('show');
   });
-  /*ipcRenderer.on('start_activity', (event, arg) => {
-    console.log('start_activity msg came: ', arg); // prints "ping"
-    $('#appToolModal').modal('hide');
-  });*/
 
-  /*$('#startActivityButton').on('click', function(){
-    $('#appToolModal').modal('hide');
-    ipcRenderer.send('start_activity', $('#appActivities').val());
-  });*/
+  async function setAppBackupPath(package) {
+    const file = await dialog.showOpenDialog(null, {
+      title: 'Set backup path',
+      message: 'Browse location for new backup',
+      properties: ['openDirectory'],
+    });
+    if (file.canceled) return $('#backupAppBtn').removeClass('disabled');
+
+    console.log('setAppBackupPath', package, file);
+    const location = file.filePaths[0];
+
+    ipcRenderer.send('app_backup', { location, package });
+    return path;
+  }
 </script>

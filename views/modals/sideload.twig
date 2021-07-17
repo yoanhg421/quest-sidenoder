@@ -4,7 +4,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="sideloadModalLabel"><i id="sideloadRefresh" class="fa fa-refresh fa-spin"></i> Sideloading</h5>
-        <small class="mountcopystatus"></small>
+        <small class="transfer_state"></small>
       </div>
       <div class="modal-body">
         <span id="sideloadText"></span>
@@ -102,7 +102,7 @@
   ipcRenderer.removeAllListeners('process_data');
   ipcRenderer.on('process_data', (event, data) => {
     console.log('process_data received', data);
-    if (!data)  return $('.mountcopystatus').text('');
+    if (!data)  return $('.transfer_state').text('');
 
     let line = `${data.cmd}: ${formatBytes(data.bytes)}`;
     if (data.size) {
@@ -114,7 +114,7 @@
     }
 
     const name = data.name.split('/').pop();
-    $('.mountcopystatus').html(`${line}<br/> ${name}`);
+    $('.transfer_state').html(`${line}<br/> ${name}`);
   });
 
   ipcRenderer.removeAllListeners('start_sideload');
@@ -128,7 +128,7 @@
     const file= path.substring(lastslashindex  + 1)
 
     $('#sideloadModal').modal('show');
-    $('#sideloadModal > div > div > div.modal-body > #sideloadText').html('pending: <br/><b>'+file+'</b>')
+    $('#sideloadText').html('pending: <br/><b>'+file+'</b>');
   });
 
   ipcRenderer.removeAllListeners('sideload_process');
@@ -181,10 +181,16 @@
 
     if (arg.done) {
       badgeState($('#sideloadDoneBadge'), arg.done);
-      ipcRenderer.send('get_device_info', '');
 
-      $('#sideloadDoneBtn').removeClass('disabled').removeClass('btn-primary').addClass('btn-success').html('Done');
-      $('#sideloadRefresh').removeClass('fa-refresh').removeClass('fa-spin').addClass('fa-check-circle-o');
+      $('#sideloadDoneBtn')
+        .removeClass('disabled')
+        .removeClass('btn-primary')
+        .addClass('btn-success')
+        .html('Done');
+      $('#sideloadRefresh')
+        .removeClass('fa-refresh')
+        .removeClass('fa-spin')
+        .addClass('fa-check-circle-o');
     }
 
     if (arg.update) {

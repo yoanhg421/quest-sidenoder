@@ -9,10 +9,10 @@
         </button>
       </div>
       <div class="modal-body">
-        <div class="alert alert-dismissible alert-warning">
+        <div class="alert alert-warning"><small>
           <i class="fa fa-exclamation-triangle"></i>
           WARNING: Info auto parsed and can contains mistakes
-        </div>
+        </small></div>
         <div class="text-center">
           <div id="appinfoSlider" class="cbp-fwslider">
             <ul></ul>
@@ -42,14 +42,14 @@
   <script src="js/jquery.cbpFWSlider.min.js"></script>
 <script>
   console.log('ONLOAD APPINFO MODAL');
-
+  const appinfoSlider = $('#appinfoSlider');
   $('#appinfoModal').on('hidden.bs.modal', () => {
     console.log('appinfo closed');
-    $('#appinfoGenres').html('');
-    $('#appinfoModalLabel').text('');
-    $('#appinfoText').html('');
-    $('#appinfoAbout').html('');
-    $('#appinfoSlider').html('<ul></ul>');
+    $('#appinfoGenres')[0].innerHTML = '';
+    $('#appinfoModalLabel')[0].innerHTML = '';
+    $('#appinfoText')[0].innerHTML = '';
+    $('#appinfoAbout')[0].innerHTML = '';
+    appinfoSlider[0].innerHTML = '';
   })
 
   ipcRenderer.removeAllListeners('app_info');
@@ -75,24 +75,28 @@
       }
     }
 
+    let slides = '<ul>';
     if (data.header_image) {
-      $('#appinfoSlider ul').append(`<li><img src="${data.header_image}" width="800" style="max-height: 405px;" alt="header"/></li>`);
+      slides+= `<li><img src="${data.header_image}" width="800" style="max-height: 405px;" alt="header"/></li>`;
     }
 
     if (data.movies) {
       for (const movie of data.movies) {
         if (!movie.mp4) continue;
-        $('#appinfoSlider ul').append(`<li><video width="600" style="max-height: 360px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`);
+        slides+= `<li><video width="600" style="max-height: 360px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`;
       }
     }
 
     if (data.screenshots) {
       for (const screenshot of data.screenshots) {
-        $('#appinfoSlider ul').append(`<li><img src="${screenshot.path_thumbnail}" width="800" style="max-height: 405px;" alt="${screenshot.id}" /></li>`);
+        slides+= `<li><img src="${screenshot.path_thumbnail}" width="800" style="max-height: 405px;" alt="${screenshot.id}" /></li>`;
       }
     }
 
-    $('#appinfoSlider').cbpFWSlider({current: 0});
+    slides+= '</ul>';
+
+    appinfoSlider[0].innerHTML = slides;
+    appinfoSlider.cbpFWSlider({current: 0});
     $('#appinfoModal').modal('show');
   });
 

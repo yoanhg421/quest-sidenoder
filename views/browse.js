@@ -1,12 +1,10 @@
-const fs = require('fs'),
+const fs = require('fs').promises,
   path = require('path');
 
 console.log('ONLOAD BROWSE');
 
 ipcRenderer.on('get_dir', (event, arg) => {
-  console.log('get_dir msg came: ');
-  console.log(arg);
-  $('#listTable tbody').html('');
+  console.log('get_dir msg came: ', arg.path);
   if (arg.success) {
     $('#path').html(arg.path);
     loadDir(arg.path, arg.list);
@@ -31,7 +29,7 @@ function fixIcons() {
 }
 
 // call get_dir when selection is made
-function getDir(newpath = false, resetCache = false) {
+function getDir(newpath = '', resetCache = false) {
   if (!newpath.endsWith('.apk')) {
     $('#processingModal').modal('show');
   }
@@ -44,11 +42,11 @@ function getDir(newpath = false, resetCache = false) {
 }
 
 async function readSizeRecursive(item) {
-  const stats = fs.lstatSync(item);
+  const stats = await fs.lstat(item);
   if (!stats.isDirectory()) return stats.size;
 
   let total = 0;
-  const list = await fs.promises.readdir(item);
+  const list = await fs.readdir(item);
   for (const diritem of list) {
     const size = await readSizeRecursive(path.join(item, diritem));
     total += size;
@@ -57,13 +55,11 @@ async function readSizeRecursive(item) {
   return total;
 }
 
-function getDirSize(el, path) {
+async function getDirSize(el, path) {
   el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
-  setTimeout(async () => {
-    const size = (await readSizeRecursive(path) / 1024 / 1024).toFixed(2);
-    el.outerText = size + ' Mb';
-  }, 100);
+  const size = await readSizeRecursive(path);
+  el.outerText = formatBytes(size);
 }
 
 function oculusInfo(package) {
@@ -86,16 +82,20 @@ function loadDir(path, list) {
   const upDirTr = `<tr onclick="getDir('${upDir}')"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
   let rows = '';
   let cards = '';
-
+  let cards_first = [];
   for (const item of list) {
     // console.log(item);
     if (!item.createdAt) {
-      $('#listTable tbody').append(`<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`);
+      rows += `<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`;
       continue;
     }
 
     const createdAt = item.createdAt.getTime();
-    const fullPath = item.filePath.replace('\\', '/').replace('', ':').split('\'').join('\\\'');
+    const fullPath = item.filePath
+      .replace('\\', '/')
+      .replace('', ':')
+      .split('\'')
+      .join('\\\'');
     const symblink = item.isLink ? `<small style="font-family: FontAwesome" class="text-secondary fa-link"></small> ` : '';
     const name = symblink + item.name;
 
@@ -144,7 +144,7 @@ function loadDir(path, list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
-    cards+= `<div class="col mb-3 listitem" style="min-width: 250px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
+    const card = `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
       ${newribbon}
@@ -165,10 +165,20 @@ function loadDir(path, list) {
 
       </div>
     </div>`;
+
+    if (cards_first.length < 50) {
+      cards_first.push(card);
+      continue;
+    }
+
+    cards += card;
   }
 
-  $('#listTableStart tbody').html(upDirTr);
-  $('#listTableEnd tbody').html(upDirTr);
-  $('#browseCardBody')[0].innerHTML = cards;
+  $('#listTableStart')[0].innerHTML = $('#listTableEnd')[0].innerHTML = upDirTr;
+  $('#browseCardBody')[0].innerHTML = cards_first.join('\n');
   $('#listTable')[0].innerHTML = rows;
+
+  if (cards) setTimeout(() => {
+    $('#browseCardBody')[0].innerHTML += cards;
+  }, 100);
 }

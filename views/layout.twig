@@ -27,193 +27,42 @@
 
     function loadInclude(template, id = null, complete = null) {
       if (!id) {
-        $('#mainbody').html('');
-        $('#mainbody').load(template, complete);
+        $('#mainbody')
+          .html('')
+          .load(template, complete);
       }
       else {
         $(`#${id}`).load(template, complete);
       }
     }
-  </script>
 
-  <script src="browse.js"></script>
-  <script src="installed.js"></script>
-
-  <script>
-    $(function() {
-      loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
-      loadInclude('modals/confirm.twig', 'confirmmodaldiv');
-      loadInclude('modals/processing.twig', 'processingmodaldiv');
-      loadInclude('modals/app_start.twig', 'appstartmodaldiv');
-      loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv');
-      loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
-      loadInclude('device_info.twig', 'device_infoDiv');
-
-      document.ondragover = document.ondrop = (ev) => {
-        ev.preventDefault();
+    function formatEta(seconds) {
+      if (seconds == null) { return 'Starting...'; }
+      hours = Math.floor(seconds / 3600);
+      seconds -= hours * 3600;
+      minutes = Math.floor(seconds / 60);
+      seconds -= minutes * 60;
+      if (hours > 0) {
+        return hours + 'h ' + minutes + 'm ' + seconds + 's';
       }
-
-      document.body.ondrop = (ev) => {
-        ev.preventDefault();
-        if (!ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
-
-        if (ev.dataTransfer.files[0].path.endsWith('.apk')) {
-          ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g, '/'));
-        }
-      }
-    });
-
-    ipcRenderer.on('notify_update', (event, arg) => {
-      console.log('notify_update msg came ! ');
-      dialog.showMessageBox(null, {
-        type: 'info',
-        buttons: ['Cancel', 'Download'],
-        title: `Update available ${arg.current} to ${arg.remote}`,
-        message: `sidenoder-${arg.remote} is now available on github.`,
-        detail: arg.description,
-      })
-      .then(({ response }) => {
-        if (response === 1) shell.openExternal(arg.url);
-      })
-    });
-
-    function checkMount() {
-      $('#mountrefresh').addClass('fa-spin');
-      $('#mountbtn').removeClass('btn-danger');
-      $('#mountbtn').removeClass('btn-success');
-      $('#mountbtn').addClass('btn-warning');
-      $('#remotebtn').attr('disabled', 'disabled');
-      $('#remotebtn').addClass('disabled');
-      ipcRenderer.send('mount', 'bla');
-    }
-
-    ipcRenderer.on('log', (event, arg) => {
-      console.log('log came');
-      console.log(arg);
-    });
-
-    //edit btn on top
-    ipcRenderer.on('check_mount', (event, arg) => {
-      console.log('check_mount responded: ', arg); // prints "ping"
-      if (arg.success) {
-        $('#mountrefresh').removeClass('fa-spin');
-        $('#mountbtn').removeClass('btn-warning');
-        $('#mountbtn').removeClass('btn-danger');
-        $('#mountbtn').addClass('btn-success');
-        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
-        $('#remotebtn').removeAttr('disabled');
-        $('#remotebtn').removeClass('disabled');
-
-        if (!remote.getGlobal('adbDevice')) return;
-
-        $('#updateBadge').removeClass('disabled');
-        $('#updateBadge').removeAttr('disabled');
+      else if (minutes > 0) {
+        return minutes + 'm ' + seconds + 's';
       }
       else {
-        $('#mountrefresh').removeClass('fa-spin');
-        $('#mountbtn').removeClass('btn-success');
-        $('#mountbtn').removeClass('btn-warning');
-        $('#mountbtn').addClass('btn-danger');
-        $('#mountbtn').html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
-        $('#remotebtn').attr('disabled', 'disabled');
-        $('#remotebtn').addClass('disabled');
-
-        $('#updateBadge').attr('disabled', 'disabled');
-        $('#updateBadge').addClass('disabled');
+        return seconds + 's';
       }
-    });
-
-    ipcRenderer.on('check_device', (event, arg) => {
-      console.log('check_device msg:', arg);
-
-      if (!!arg.success) {
-        console.log('GETDEVICE SUCESS');
-        $('#devicebtn').removeClass('btn-danger');
-        $('#devicebtn').addClass('btn-success');
-        $('#devicebtn').html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
-
-        $('.adbdev').removeClass('disabled').removeAttr('disabled');
-        if (!remote.getGlobal('mounted')) {
-          $('#updateBadge').addClass('disabled');
-          $('#updateBadge').attr('disabled');
-        }
-
-        if (arg.success.endsWith(':5555')) {
-          $('#wirelessbtn')[0].onclick = disconnectWireless;
-          $('#wirelessbtn').removeClass('btn-danger');
-          $('#wirelessbtn').addClass('btn-success');
-          $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
-        }
-
-        ipcRenderer.send('get_device_info', '');
-        ipcRenderer.send('mp_name', { cmd: 'get' });
-      }
-      else {
-        $('#devicebtn').removeClass('btn-success');
-        $('#devicebtn').addClass('btn-danger');
-        $('#devicebtn').html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
-
-        $('.adbdev').addClass('disabled').attr('disabled', 'disabled');
-
-        $('#wirelessbtn')[0].onclick = connectWireless;
-        $('#wirelessbtn').removeClass('btn-success');
-        $('#wirelessbtn').addClass('btn-danger');
-        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
-      }
-    });
-
-    function connectWireless() {
-      $('#wirelessrefresh').addClass('fa-spin');
-      $('#wirelessbtn').removeClass('btn-danger');
-      $('#wirelessbtn').addClass('btn-warning');
-      ipcRenderer.send('connect_wireless', '');
-    }
-    function disconnectWireless() {
-      $('#wirelessrefresh').addClass('fa-spin');
-      $('#wirelessbtn').removeClass('btn-success');
-      $('#wirelessbtn').addClass('btn-warning');
-      ipcRenderer.send('disconnect_wireless', '');
     }
 
-    ipcRenderer.on('connect_wireless', (event, arg) => {
-      console.log('check_wireless msg came FROM BE to fe:', arg);
-      $('#wirelessrefresh').removeClass('fa-spin');
+    function formatBytes(bytes) {
+      const sizes = ['b', 'Kb', 'Mb', 'Gb', 'Tb'];
+      if (bytes == 0) return '0 b';
 
-      if (arg.success) {
-        console.log('WIRELESS CONNECTED');
-        $('#wirelessbtn')[0].onclick = disconnectWireless;
-        $('#wirelessbtn').removeClass('btn-danger');
-        $('#wirelessbtn').addClass('btn-success');
-        $('#wirelessbtn').html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
-
-        dialog.showMessageBox(null, {
-          type: 'info',
-          buttons: ['Ok'],
-          title: 'Device connected by TCP',
-          message: 'Now you can unplug USB cable and continue used the programm by wireless connection',
-        })
-      }
-      else {
-        $('#wirelessbtn')[0].onclick = connectWireless;
-        $('#wirelessbtn').removeClass('btn-success');
-        $('#wirelessbtn').addClass('btn-danger');
-        $('#wirelessbtn').html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
-      }
-    });
-
-    ipcRenderer.on('ask_device', (event, arg) => {
-      console.log('ask_device msg came ! ');
-      $('#processingModal').modal('hide');
-      dialog.showMessageBox(null, {
-        type: 'info',
-        buttons: ['Understood'],
-        title: 'Missing device',
-        message: `This action cannot be performed without a device attached.`,
-      });
-    });
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+      return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+    }
 
     // screenhot stuff
-    async function makeScreenshot(selector = 'body') {
+    /*async function makeScreenshot(selector = 'body') {
       return new Promise((resolve, reject) => {
         let node = document.querySelector(selector);
         html2canvas(node, {
@@ -233,16 +82,8 @@
       fs.writeFile('outt.png', base64Data, 'base64', (err) => {
         console.log(err);
       });
-    }
+    }*/
   </script>
-
-
-  {% block onload %}
-    <script>
-
-    </script>
-  {% endblock %}
-
 </head>
 <body>
 
@@ -264,13 +105,13 @@
         </a>
       </li>
       <li class="nav-item">
-        <a id="remotebtn" disabled="disabled" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
+        <a id="remotebtn" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
           <i class="fa fa-folder-open-o"></i>
             Remote
         </a>
       </li>
       <li class="nav-item">
-        <a class="adbdev btn btn-primary disabled" disabled="disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+        <a class="adbdev btn btn-primary disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
           <i class="fa fa-list"></i>
            Installed
         </a>
@@ -333,33 +174,197 @@
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script>
 
+  loadInclude('device_info.twig', 'device_infoDiv');
+  loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
+  loadInclude('modals/confirm.twig', 'confirmmodaldiv');
+  loadInclude('modals/processing.twig', 'processingmodaldiv');
+  loadInclude('modals/app_start.twig', 'appstartmodaldiv');
+  loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
 
-  function formatEta(seconds) {
-    if (seconds == null) { return 'Starting...'; }
-    hours = Math.floor(seconds / 3600);
-    seconds -= hours * 3600;
-    minutes = Math.floor(seconds / 60);
-    seconds -= minutes * 60;
-    if (hours > 0) {
-      return hours + 'h ' + minutes + 'm ' + seconds + 's';
+  document.ondragover = document.ondrop = (ev) => {
+    ev.preventDefault();
+  }
+
+  document.body.ondrop = (ev) => {
+    ev.preventDefault();
+    if (!ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
+
+    if (ev.dataTransfer.files[0].path.endsWith('.apk')) {
+      ipcRenderer.send('filedrop', ev.dataTransfer.files[0].path.replace(/\\/g, '/'));
     }
-    else if (minutes > 0) {
-      return minutes + 'm ' + seconds + 's';
+  }
+
+  // actions
+
+  function checkMount() {
+    $('#mountrefresh').addClass('fa-spin');
+    $('#mountbtn')
+      .removeClass('btn-danger')
+      .removeClass('btn-success')
+      .addClass('btn-warning');
+    $('#remotebtn').addClass('disabled');
+    ipcRenderer.send('mount', 'bla');
+  }
+
+  function connectWireless() {
+    $('#wirelessrefresh').addClass('fa-spin');
+    $('#wirelessbtn')
+      .removeClass('btn-danger')
+      .addClass('btn-warning');
+    ipcRenderer.send('connect_wireless', '');
+  }
+  function disconnectWireless() {
+    $('#wirelessrefresh').addClass('fa-spin');
+    $('#wirelessbtn')
+      .removeClass('btn-success')
+      .addClass('btn-warning');
+    ipcRenderer.send('disconnect_wireless', '');
+  }
+
+  // events
+
+
+  ipcRenderer.on('log', (event, arg) => {
+    console.log('log came');
+    console.log(arg);
+  });
+
+  ipcRenderer.on('notify_update', (event, arg) => {
+    console.log('notify_update msg came ! ');
+    dialog.showMessageBox(null, {
+      type: 'info',
+      buttons: ['Cancel', 'Download'],
+      title: `Update available ${arg.current} to ${arg.remote}`,
+      message: `sidenoder-${arg.remote} is now available on github.`,
+      detail: arg.description,
+    })
+    .then(({ response }) => {
+      if (response === 1) shell.openExternal(arg.url);
+    })
+  });
+
+  //edit btn on top
+  ipcRenderer.on('check_mount', (event, arg) => {
+    console.log('check_mount responded: ', arg); // prints "ping"
+    if (arg.success) {
+      $('#mountrefresh').removeClass('fa-spin');
+      $('#mountbtn')
+        .removeClass('btn-warning')
+        .removeClass('btn-danger')
+        .addClass('btn-success')
+        .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
+      $('#remotebtn').removeClass('disabled');
+
+      if (!remote.getGlobal('adbDevice')) return;
+
+      $('#updateBadge').removeClass('disabled');
     }
     else {
-      return seconds + 's';
+      $('#mountrefresh').removeClass('fa-spin');
+      $('#mountbtn')
+        .removeClass('btn-success')
+        .removeClass('btn-warning')
+        .addClass('btn-danger')
+        .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
+      $('#remotebtn').addClass('disabled');
+
+      $('#updateBadge').addClass('disabled');
+
+      if (arg.error)
+        dialog.showMessageBox(null, {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'RCLONE MOUNT FAILED',
+          message: 'Rclone failed on mount command',
+          detail: arg.error.toString(),
+        });
     }
-  }
+  });
 
-  function formatBytes(bytes) {
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes == 0) return '0 B';
+  ipcRenderer.on('check_device', (event, arg) => {
+    console.log('check_device msg:', arg);
 
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
-  }
+    if (!!arg.success) {
+      console.log('GETDEVICE SUCESS');
+      $('#devicebtn')
+        .removeClass('btn-danger')
+        .addClass('btn-success')
+        .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
+      $('a.adbdev').removeClass('disabled');
+      if (!remote.getGlobal('mounted')) {
+        $('#updateBadge').addClass('disabled');
+      }
+
+      if (arg.success.endsWith(':5555')) {
+        $('#wirelessbtn')[0].onclick = disconnectWireless;
+        $('#wirelessbtn')
+          .removeClass('btn-danger')
+          .addClass('btn-success')
+          .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+      }
+
+      ipcRenderer.send('get_device_info', '');
+      ipcRenderer.send('mp_name', { cmd: 'get' });
+    }
+    else {
+      $('#devicebtn')
+        .removeClass('btn-success')
+        .addClass('btn-danger')
+        .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
+
+      $('a.adbdev').addClass('disabled');
+
+      $('#wirelessbtn')[0].onclick = connectWireless;
+      $('#wirelessbtn')
+        .removeClass('btn-success')
+        .addClass('btn-danger')
+        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
+    }
+  });
+
+  ipcRenderer.on('connect_wireless', (event, arg) => {
+    console.log('check_wireless msg came FROM BE to fe:', arg);
+    $('#wirelessrefresh').removeClass('fa-spin');
+
+    if (arg.success) {
+      console.log('WIRELESS CONNECTED');
+      $('#wirelessbtn')[0].onclick = disconnectWireless;
+      $('#wirelessbtn')
+        .removeClass('btn-danger')
+        .addClass('btn-success')
+        .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+
+      dialog.showMessageBox(null, {
+        type: 'info',
+        buttons: ['Ok'],
+        title: 'Device connected by TCP',
+        message: 'Now you can unplug USB cable and continue used the programm by wireless connection',
+      })
+    }
+    else {
+      $('#wirelessbtn')[0].onclick = connectWireless;
+      $('#wirelessbtn')
+        .removeClass('btn-success')
+        .addClass('btn-danger')
+        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
+    }
+  });
+
+  ipcRenderer.on('ask_device', (event, arg) => {
+    console.log('ask_device msg came ! ');
+    $('#processingModal').modal('hide');
+    dialog.showMessageBox(null, {
+      type: 'info',
+      buttons: ['Understood'],
+      title: 'Missing device',
+      message: `This action cannot be performed without a device attached.`,
+    });
+  });
 </script>
+<script src="browse.js"></script>
+<script src="installed.js"></script>
+
 </body>
 </html>
 

@@ -68,17 +68,16 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
 });
 
 ipcMain.on('get_device_info', async (event, arg) => {
+  getDeviceInfo(event);
+});
+
+async function getDeviceInfo(event) {
   console.log('get_device_info received');
   const res = await tools.getDeviceInfo();
 
   event.reply('get_device_info', res);
   return;
-});
-
-ipcMain.on('check_device', async (event, arg) => {
-  console.log('check_device received');
-  event.reply('check_device', { success: global.adbDevice });
-});
+}
 
 ipcMain.on('connect_wireless', async (event, arg) => {
   console.log('connect_wireless received');
@@ -110,7 +109,7 @@ ipcMain.on('check_deps', async (event, arg) => {
 
 ipcMain.on('mount', async (event, arg) => {
   await tools.mount();
-  setTimeout(() => checkMount(event), 2000);
+  setTimeout(() => checkMount(event), 1000);
 
   return;
 });
@@ -121,7 +120,7 @@ ipcMain.on('check_mount', async (event, arg) => {
 
 async function checkMount(event) {
   await tools.checkMount();
-  event.reply('check_mount', { success: global.mounted, mountFolder: global.mountFolder });
+  event.reply('check_mount', { success: global.mounted });
   if (global.mounted) {
     tools.updateRcloneProgress()
   }
@@ -138,7 +137,9 @@ ipcMain.on('start_sideload', async (event, arg) => {
   }
 
   event.reply('start_sideload', { success: true, path: arg.path });
-  tools.sideloadFolder(arg);
+  await tools.sideloadFolder(arg);
+  getDeviceInfo(event);
+
   return;
 });
 
@@ -185,7 +186,7 @@ ipcMain.on('get_dir', async (event, arg) => {
     const lastslashindex = install.path.lastIndexOf('/');
     const folder = install.path.substring(0, lastslashindex);
 
-    install.install_desc = tools.detectInstallTxt(folder);
+    install.install_desc = await tools.detectInstallTxt(folder);
 
     event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
     return;
@@ -291,6 +292,7 @@ ipcMain.on('uninstall', async (event, arg) => {
   console.log('uninstall received');
   resp = await tools.uninstall(arg);
   event.reply('uninstall', { success: true });
+  getDeviceInfo(event);
   return;
 });
 
@@ -306,11 +308,26 @@ ipcMain.on('start_activity', async (event, arg) => {
   event.reply('start_activity', { success: !!resp });
   return;
 });
+ipcMain.on('start_app', async (event, arg) => {
+  console.log('start_app received', arg);
+  const activity = await tools.getLaunchActiviy(arg);
+  const resp = await tools.startActivity(activity);
+  event.reply('start_app', { success: !!resp });
+  return;
+});
+
 
 ipcMain.on('change_config', async (event, { key, val }) => {
   console.log('change_config received', {key, val});
-  await tools.changeConfig(key, val);
-  event.reply('change_config', { success: true, config: global.currentConfiguration });
+  val = await tools.changeConfig(key, val);
+  event.reply('change_config', { success: true, key, val });
+  return;
+});
+
+ipcMain.on('app_config_set', async (event, { package, key, val }) => {
+  console.log('change_config received', { package, key, val });
+  res = await tools.changeAppConfig(package, key, val);
+  event.reply('app_config_set', res);
   return;
 });
 
@@ -322,6 +339,31 @@ ipcMain.on('app_info', async (event, arg) => {
   return;
 });
 
+ipcMain.on('app_tools', async (event, arg) => {
+  console.log('app_tools received', arg);
+  const resp = await tools.checkAppTools(arg);
+  event.reply('app_tools', resp);
+  return;
+});
+
+ipcMain.on('app_backup', async (event, arg) => {
+  console.log('app_backup received', arg);
+  const resp = await tools.backupApp(arg);
+  event.reply('app_backup', { success: resp });
+  return;
+});
+ipcMain.on('data_backup', async (event, arg) => {
+  console.log('data_backup received', arg);
+  const resp = await tools.backupAppData(arg);
+  event.reply('data_backup', { success: resp });
+  return;
+});
+ipcMain.on('data_restore', async (event, arg) => {
+  console.log('data_restore received', arg);
+  const resp = await tools.restoreAppData(arg);
+  event.reply('data_restore', { success: resp });
+  return;
+});
 
 
 
@@ -339,7 +381,7 @@ function createWindow () {
   })
   win.setMenu(null);
   win.maximize(true);
-  win.loadURL(`file://${__dirname}/views/index.twig`)
+  win.loadURL(`file://${__dirname}/views/index.twig`);
   global.twig.view = {
     tmpdir: global.tmpdir,
     platform: global.platform,
@@ -355,20 +397,15 @@ function createWindow () {
     global.win.webContents.openDevTools();
   }
 
-  setTimeout(tools.trackDevices, 1000);
   setTimeout(checkVersion, 2000);
-  //
-
 }
 
 
-try {
-  tools.reloadConfig();
-}
-catch (e) {
-  returnError('Could not (re)load config file.')
-  return
-}
+tools.reloadConfig().catch(e => {
+  console.error('reloadConfig', e);
+  // tools.returnError('Could not (re)load config file.');
+});
+
 
 // DEFAULT
 app.whenReady().then(createWindow)

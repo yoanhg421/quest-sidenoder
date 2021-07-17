@@ -2,15 +2,15 @@
   <div class="card-header">
     <h2 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h2>
     <h2 class="mb-0 pull-right">
-      <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled" disabled="disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
+      <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
     </h2>
   </div>
   <div class="card-body">
     <div class="card-text container">
       <div id="searchformdiv"></div>
       <br>
-      <table class="table table-striped table-condensed text-white" id="listTable">
-        <tbody>
+      <table class="table table-striped table-condensed text-white">
+        <tbody id="listTable">
         </tbody>
       </table>
     </div>
@@ -26,7 +26,6 @@
 
   if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
     $('#updateBadge').removeClass('disabled');
-    $('#updateBadge').removeAttr('disabled');
   }
 
 </script>

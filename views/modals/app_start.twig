@@ -35,8 +35,7 @@
     for (const activity of arg.activities) {
       options+= `<option value="${activity}">${activity.split('/')[1]}</option>`;
     }
-
-    $("#appActivities").html(options);
+    $('#appActivities').html(options);
 
     $('#appStartModal').modal('show');
   });

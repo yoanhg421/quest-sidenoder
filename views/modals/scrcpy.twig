@@ -10,7 +10,7 @@
       </div>
       <div class="modal-body">
         <div class="card-body">
-          <div class="alert alert-dismissible alert-warning">
+          <div class="alert alert-warning">
             <i class="fa fa-exclamation-triangle"></i>
             WARNING: You need installed <a class="btn btn-sm btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy#linux')">scrcpy</a>
           </div>
@@ -85,23 +85,28 @@
     'scrcpyControl',
   ];
 
+  let options = '';
   for (let i = 1; i <= 10; i++) {
-    $('#scrcpyBitrate').append(`<option value="${i}">${i} Mbits/s</option>`);
+    options+= `<option value="${i}">${i} Mbits/s</option>`;
   }
+  $('#scrcpyBitrate').html(options);
 
   for (const key of OPT_KEYS) {
-    $('#' + key).val(remote.getGlobal('currentConfiguration')[key]);
-    $('#' + key).on('change', (e) => {
-      ipcRenderer.send('change_config', {key, val: e.target.value});
-    });
+    $('#' + key)
+      .val(remote.getGlobal('currentConfiguration')[key])
+      .on('change', (e) => {
+        ipcRenderer.send('change_config', {key, val: e.target.value});
+        return;
+      });
   }
 
   for (const key of CHKBOXES) {
+    const el = $('#' + key);
     if (remote.getGlobal('currentConfiguration')[key]) {
-      $('#' + key).prop('checked', true);
+      el.prop('checked', true);
     }
 
-    $('#' + key).on('change.bootstrapSwitch', (e) => {
+    el.on('change.bootstrapSwitch', (e) => {
       ipcRenderer.send('change_config', {key, val: e.target.checked});
     });
   }
