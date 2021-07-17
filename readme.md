@@ -22,8 +22,9 @@ What makes sidenoder better than other sideloaders ?
 ## Running the compiled version
 
 #### Run precompiled release on windows:
-1. Download and unpack(or run Setup.exe) the latest [windows release](https://github.com/vKolerts/quest-sidenoder/releases/latest)
-2. Run the `sidenoder.exe` application
+1. Install latest [winfsp](https://github.com/billziss-gh/winfsp/releases/latest)
+2. Download and unpack(or run Setup.exe) the latest [windows release](https://github.com/vKolerts/quest-sidenoder/releases/latest)
+3. Run the `sidenoder.exe` application
 
 #### Run precompiled release on linux:
 1. Download and unpack the latest [AppImage/deb](https://github.com/vKolerts/quest-sidenoder/releases/latest)
