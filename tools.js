@@ -858,13 +858,15 @@ async function appInfo(args) {
   return { data };
 }
 
-async function checkMount() {
+async function checkMount(attempt = 0) {
   console.log('checkMount()')
   try {
     const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
       method: 'post',
     });
-    if (!(await fsp.readdir(global.mountFolder)).length) {
+    attempt++;
+
+    if (!(await fsp.readdir(global.mountFolder)).length && attempt < 15) {
       return new Promise((res, rej) => {
         setTimeout(() => {
           checkMount().then(res).catch(rej);
@@ -894,7 +896,17 @@ async function checkDeps(arg){
 
   try {
     if (arg == 'adb') {
-      res[arg].version = await adb.version();
+      let globalAdb = false;
+      try {
+        globalAdb = await commandExists('adb');
+      } catch (e) {}
+
+      res[arg].cmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
+      await execShellCommand(`${res[arg].cmd} start-server`);
+      if (global.execError && !global.execError.includes('daemon started successfully')) throw global.execError;
+      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`${res[arg].cmd} --version`);
+      if (global.execError) throw global.execError;
+      await trackDevices();
     }
 
     if (arg == 'rclone') {
@@ -902,14 +914,15 @@ async function checkDeps(arg){
       // res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
       res[arg].cmd = await fetchBinary('rclone');
       res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
-      if (!res[arg].version) throw global.execError;
+      if (global.execError) throw global.execError;
     }
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
       res[arg].version = await execShellCommand(`${res[arg].cmd} --help`);
-      if (res[arg].version) res[arg].version = res[arg].version.split('\n')[1];
-      else throw global.execError;
+      if (global.execError) throw global.execError;
+      res[arg].version = res[arg].version && res[arg].version.split('\n')[1];
+      console.log(res[arg].version);
     }
 
     if (arg == 'scrcpy') {
@@ -919,7 +932,8 @@ async function checkDeps(arg){
     }
   }
   catch (e) {
-    res[arg].error = e;
+    console.error('checkDeps', arg, e);
+    res[arg].error = e && e.toString();
   }
 
   res.success = true;
@@ -935,12 +949,27 @@ async function fetchBinary(bin) {
 
   const binPath = path.join(sidenoderHome, file);
   const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
-  console.log('fetchBinary', { bin, cfgKey, binUrl, binPath, file });
+  console.log('fetchBinary', { bin, cfgKey, binUrl, binPath });
   const resp = await fetch(binUrl);
   if (!resp.ok) throw new Error(`Can't download '${binUrl}': ${resp.statusText}`);
 
-  await fsp.writeFile(binPath, await resp.buffer());
-  await fsp.chmod(binPath, 0o755);
+  if (await fsp.exists(binPath)) await fsp.unlink(binPath);
+  await fsp.writeFile(binPath, await resp.buffer(), { mode: 0o755 });
+  // await fsp.chmod(binPath, 0o755);
+
+  if (bin == 'adb' && global.platform == 'win') {
+    const libFile = 'AdbWinApi.dll';
+    const libPath = path.join(sidenoderHome, libFile);
+    const libUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${libFile}`;
+    console.log('fetchBinary', { libUrl, libPath });
+    const resp = await fetch(libUrl);
+    if (!resp.ok) throw new Error(`Can't download '${libUrl}': ${resp.statusText}`);
+
+    await fsp.libPath
+    await fsp.writeFile(libPath, await resp.buffer(), { mode: 0o755 });
+    // await fsp.chmod(libPath, 0o755);
+  }
+
   return changeConfig(cfgKey, binPath);
 }
 
@@ -961,16 +990,16 @@ async function killRClone() {
   return new Promise((res, rej) => {
     exec(killCmd, (error, stdout, stderr) => {
       if (error) {
-        console.log(`error: ${error.message}`, error);
+        console.log(killCmd, 'error:', error);
         return rej(error);
       }
 
       if (stderr) {
-        console.log('stderr:', stderr);
+        console.log(killCmd, 'stderr:', stderr);
         return rej(stderr);
       }
 
-      console.log('stdout:', stdout);
+      console.log(killCmd, 'stdout:', stdout);
       return res(stdout);
     });
   })
@@ -1040,11 +1069,11 @@ async function mount() {
   const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
   const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
-  exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" "${global.currentConfiguration.cfgSection}": "${global.mountFolder}"`, (error, stdout, stderr) => {
+  exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
-      console.log('rclone error:', error);
-      win.webContents.send('check_mount', { success: false });
-      checkMount();
+      console.error('rclone error:', error);
+      win.webContents.send('check_mount', { success: false, error });
+      // checkMount();
       /*if (error.message.search('transport endpoint is not connected')) {
         console.log('GEVONDE');
       }*/
@@ -1368,7 +1397,7 @@ async function sideloadFolder(arg) {
         res.download = 'skip';
       }
       else {
-        if (await fsp.exists(tempapk + '.part')) fsp.unlink(tempapk + '.part');
+        if (await fsp.exists(tempapk + '.part')) await fsp.unlink(tempapk + '.part');
         await fsp.copyFile(apkfile, tempapk + '.part');
         await fsp.rename(tempapk + '.part', tempapk);
         res.download = 'done';
@@ -1575,7 +1604,7 @@ async function sideloadFolder(arg) {
             console.log('obb is remote, ' + tempobb + 'already exists, using');
           }
           else {
-            if (await fsp.exists(tempobb + '.part')) fsp.unlink(tempobb + '.part');
+            if (await fsp.exists(tempobb + '.part')) await fsp.unlink(tempobb + '.part');
             await fsp.copyFile(item, tempobb + '.part');
             await fsp.rename(tempobb + '.part', tempobb);
           }
@@ -1882,9 +1911,10 @@ async function reloadConfig() {
     allowOtherDevices: false,
     cacheOculusGames: true,
     autoMount: true,
+    adbPath: '',
     rclonePath: '',
     rcloneConf: '',
-    cfgSection: 'VRP-mirror10',
+    cfgSection: 'VRP_mirror10',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
     scrcpyBitrate: '5',
