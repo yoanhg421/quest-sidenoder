@@ -79,12 +79,6 @@ async function getDeviceInfo(event) {
   return;
 }
 
-ipcMain.on('start_track_device', async (event, arg) => {
-  console.log('start_track_device received');
-  await tools.trackDevices();
-  event.reply('start_track_device', { success: global.adbDevice });
-});
-
 ipcMain.on('connect_wireless', async (event, arg) => {
   console.log('connect_wireless received');
   if (!global.adbDevice && !global.currentConfiguration.lastIp) {

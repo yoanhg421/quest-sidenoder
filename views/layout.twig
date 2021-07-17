@@ -174,8 +174,6 @@
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script>
 
-  ipcRenderer.send('start_track_device', '');
-
   loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');
@@ -271,6 +269,15 @@
       $('#remotebtn').addClass('disabled');
 
       $('#updateBadge').addClass('disabled');
+
+      if (arg.error)
+        dialog.showMessageBox(null, {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'RCLONE MOUNT FAILED',
+          message: 'Rclone failed on mount command',
+          detail: arg.error.toString(),
+        });
     }
   });
 
