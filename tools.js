@@ -60,6 +60,7 @@ module.exports =
   getActivities,
   startActivity,
   checkAppTools,
+  changeAppConfig,
   backupApp,
   backupAppData,
   restoreAppData,
@@ -272,6 +273,20 @@ async function startActivity(activity) {
   console.log('startActivity', activity, result);
   return result;
 }
+
+async function readAppCfg(package) {
+  let config = await adbShell(`cat /sdcard/Android/data/${package}/private/config.json 1>&1 2> /dev/null`);
+  try {
+    config = config && JSON.parse(config);
+  }
+  catch (e) {
+    console.error('readAppCfg', e);
+    config = false;
+  }
+
+  return config;
+}
+
 async function checkAppTools(package) {
   const backupPath = path.join(global.sidenoderHome, 'backup_data', package);
   const availableBackup = await adbFileExists(`/sdcard/Android/data/${package}`);
@@ -287,14 +302,7 @@ async function checkAppTools(package) {
   }
 
   if (availableBackup) {
-    availableConfig = await adbShell(`cat /sdcard/Android/data/${package}/private/config.json 1>&1 2> /dev/null`);
-    try {
-      availableConfig = availableConfig && JSON.parse(availableConfig);
-    }
-    catch(e) {
-      console.error('availableConfig', e);
-      availableConfig = false;
-    }
+    availableConfig = await readAppCfg(package);
   }
 
   return {
@@ -303,6 +311,30 @@ async function checkAppTools(package) {
     availableRestore,
     availableConfig,
   };
+}
+
+async function changeAppConfig(package, key, val) {
+  console.log('changeAppConfig()', { package, key, val });
+  const res = {
+    package,
+    key,
+    val,
+    success: false,
+  };
+
+  let config = await readAppCfg(package);
+  try {
+    config = Object.assign(config, { [key]: val });
+    adbShell(`echo '${JSON.stringify(config)}' > "/sdcard/Android/data/${package}/private/config.json"`);
+    config = await readAppCfg(package);
+    res.val = config && config[key];
+    res.success = !!config;
+  }
+  catch(e) {
+    console.error('changeAppConfig', res, e);
+  }
+
+  return res;
 }
 
 
@@ -1250,7 +1282,7 @@ async function backupAppData(packageName, backupPath = path.join(global.sidenode
 
   await copyAppPrefs(packageName);
   await adbPullFolder(`${backupPrefsPath}/${packageName}`, path.join(backupPath, 'data', packageName));
-  await adbShell(`rm "${backupPrefsPath}/${packageName}"`);
+  await adbShell(`rm -r "${backupPrefsPath}/${packageName}"`);
 
   fsp.writeFile(`${backupPath}/time.txt`, Date.now());
   return true;

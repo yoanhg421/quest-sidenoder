@@ -322,6 +322,29 @@ ipcMain.on('start_app', async (event, arg) => {
   return;
 });
 
+
+ipcMain.on('change_config', async (event, { key, val }) => {
+  console.log('change_config received', {key, val});
+  val = await tools.changeConfig(key, val);
+  event.reply('change_config', { success: true, key, val });
+  return;
+});
+
+ipcMain.on('app_config_set', async (event, { package, key, val }) => {
+  console.log('change_config received', { package, key, val });
+  res = await tools.changeAppConfig(package, key, val);
+  event.reply('app_config_set', res);
+  return;
+});
+
+ipcMain.on('app_info', async (event, arg) => {
+  console.log('app_info received', arg);
+  const res = await tools.appInfo(arg);
+  // console.log({ res });
+  event.reply('app_info', res);
+  return;
+});
+
 ipcMain.on('app_tools', async (event, arg) => {
   console.log('app_tools received', arg);
   const resp = await tools.checkAppTools(arg);
@@ -347,22 +370,6 @@ ipcMain.on('data_restore', async (event, arg) => {
   event.reply('data_restore', { success: resp });
   return;
 });
-
-ipcMain.on('change_config', async (event, { key, val }) => {
-  console.log('change_config received', {key, val});
-  await tools.changeConfig(key, val);
-  event.reply('change_config', { success: true, config: global.currentConfiguration });
-  return;
-});
-
-ipcMain.on('app_info', async (event, arg) => {
-  console.log('app_info received', arg);
-  const res = await tools.appInfo(arg);
-  // console.log({ res });
-  event.reply('app_info', res);
-  return;
-});
-
 
 
 

@@ -12,14 +12,18 @@
         <h4 class="text-center" id="packageName"></h4>
         <hr/>
         <div class="card-body" id="configsCard" style="display: none">
+          <div class="alert alert-warning"><small>
+            <i class="fa fa-exclamation-triangle"></i>
+            WARNING: All changes your own risk. Recommend to backup appdata before
+          </small></div>
           <div class="form-group">
-            <label class="mb-1" for="app_user_name">
+            <label class="mb-1" for="app_username">
               <h6 class="card-title mb-0">User/Multiplayer name</h6>
               <small class="card-text">
                 Just rename, without account id reseting
               </small>
             </label>
-            <input id="app_user_name" class="adbdev form-control" value="" />
+            <input id="app_username" class="adbdev form-control" value="" />
           </div>
           <hr/>
         </div>
@@ -63,9 +67,14 @@
   });
 
 
+  ipcRenderer.removeAllListeners('app_backup');
+  ipcRenderer.on('app_backup', (event, arg) => {
+    $('#backupAppBtn').removeClass('disabled');
+  });
   ipcRenderer.removeAllListeners('data_backup');
   ipcRenderer.on('data_backup', (event, arg) => {
     $('#backupDataBtn').removeClass('disabled');
+    $('#restoreDataBtn').removeClass('disabled');
     /*if (arg.error) {
       return $('#transfer_state').html(`<b class="text-danger">Error: ${arg.error}</b>`);
     }
@@ -73,6 +82,16 @@
     loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv', () => {
       ipcRenderer.send('app_tools', arg.package);
     });*/
+  });
+  ipcRenderer.removeAllListeners('data_restore');
+  ipcRenderer.on('data_restore', (event, arg) => {
+    $('#restoreDataBtn').removeClass('disabled');
+  });
+
+  ipcRenderer.removeAllListeners('app_config_set');
+  ipcRenderer.on('app_config_set', (event, { success, key, val }) => {
+
+    $(`#app_${key}`).val(val).addClass(success ? 'is-valid' : 'is-invalid');
   });
 
   ipcRenderer.removeAllListeners('app_tools');
@@ -98,6 +117,7 @@
       return true;
     });
     $('#backupAppBtn').click(({target}) => {
+      target.classList.add('disabled');
       setAppBackupPath(package);
       return true;
     });
@@ -107,6 +127,7 @@
       return true;
     });
     $('#restoreDataBtn').click((e) => {
+      target.classList.add('disabled');
       ipcRenderer.send('data_restore', package);
       return true;
     });
@@ -124,10 +145,11 @@
 
     if (availableConfig) {
       $('#configsCard').show();
-      $('#app_user_name')
+      $('#app_username')
       .val(availableConfig.username)
-      .change((e) => {
-        ipcRenderer.send('app_config_set', { package,  data: { username: e.target.value }});
+      .change(({target}) => {
+        $(target).removeClass('is-valid');
+        ipcRenderer.send('app_config_set', { package,  key: 'username', val: target.value });
         return true;
       });
     }
@@ -141,7 +163,7 @@
       message: 'Browse location for new backup',
       properties: ['openDirectory'],
     });
-    if (file.canceled) return;
+    if (file.canceled) return $('#backupAppBtn').removeClass('disabled');
 
     console.log('setAppBackupPath', package, file);
     const location = file.filePaths[0];

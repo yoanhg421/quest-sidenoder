@@ -96,6 +96,7 @@
     $('#' + key)
       .val(remote.getGlobal('currentConfiguration')[key])
       .on('change', (e) => {
+        $(target).removeClass('is-valid');
         ipcRenderer.send('change_config', {key, val: e.target.value});
       });
   }
@@ -117,6 +118,17 @@
   });
 
   $('#rclonePathBtn').on('click', (e) => setRclone());
+  $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
+  $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
+
+  ipcRenderer.removeAllListeners('device_tweaks');
+  ipcRenderer.on('change_config', (event, { key, val }) => {
+    if (!OPT_KEYS.includes(key)) return;
+
+    $(`#${key}`).val(val).addClass('is-valid');
+  });
+
+
   async function setRclone() {
     const file = await dialog.showOpenDialog(null, {
       title: 'RClone custom path',
@@ -134,7 +146,6 @@
     return rclonePath;
   }
 
-  $('#rcloneConfBtn').on('click', (e) => setRcloneConf());
   async function setRcloneConf() {
     const file = await dialog.showOpenDialog(null, {
       title: 'RClone config location',
@@ -153,7 +164,6 @@
     return rcloneConf;
   }
 
-  $('#scrcpyPathBtn').on('click', (e) => setSCRCPY());
   async function setSCRCPY() {
     const file = await dialog.showOpenDialog(null, {
       title: 'SCRCPY custom path',
