@@ -96,9 +96,9 @@
   for (const key of OPT_KEYS) {
     $('#' + key)
       .val(remote.getGlobal('currentConfiguration')[key])
-      .on('change', (e) => {
+      .on('change', ({ target }) => {
         $(target).removeClass('is-valid');
-        ipcRenderer.send('change_config', {key, val: e.target.value});
+        ipcRenderer.send('change_config', {key, val: target.value});
       });
   }
 
@@ -108,8 +108,8 @@
       el.prop('checked', true);
     }
 
-    el.on('change.bootstrapSwitch', (e) => {
-      ipcRenderer.send('change_config', {key, val: e.target.checked});
+    el.on('change.bootstrapSwitch', ({ target }) => {
+      ipcRenderer.send('change_config', {key, val: target.checked});
     });
   }
 

@@ -949,28 +949,28 @@ async function fetchBinary(bin) {
 
   const binPath = path.join(sidenoderHome, file);
   const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
-  console.log('fetchBinary', { bin, cfgKey, binUrl, binPath });
-  const resp = await fetch(binUrl);
-  if (!resp.ok) throw new Error(`Can't download '${binUrl}': ${resp.statusText}`);
-
-  if (await fsp.exists(binPath)) await fsp.unlink(binPath);
-  await fsp.writeFile(binPath, await resp.buffer(), { mode: 0o755 });
-  // await fsp.chmod(binPath, 0o755);
+  await fetchFile(libUrl, binPath);
 
   if (bin == 'adb' && global.platform == 'win') {
     const libFile = 'AdbWinApi.dll';
-    const libPath = path.join(sidenoderHome, libFile);
     const libUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${libFile}`;
-    console.log('fetchBinary', { libUrl, libPath });
-    const resp = await fetch(libUrl);
-    if (!resp.ok) throw new Error(`Can't download '${libUrl}': ${resp.statusText}`);
+    await fetchFile(libUrl, path.join(sidenoderHome, libFile));
 
-    await fsp.libPath
-    await fsp.writeFile(libPath, await resp.buffer(), { mode: 0o755 });
-    // await fsp.chmod(libPath, 0o755);
+    const usbLibFile = 'AdbWinUsbApi.dll';
+    const usbLibUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${usbLibFile}`;
+    await fetchFile(usbLibUrl, path.join(sidenoderHome, usbLibFile));
   }
 
   return changeConfig(cfgKey, binPath);
+}
+
+async function fetchFile(url, dest) {
+  console.log('fetchFile', { url, dest });
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Can't download '${url}': ${resp.statusText}`);
+
+  if (await fsp.exists(dest)) await fsp.unlink(dest);
+  return fsp.writeFile(dest, await resp.buffer(), { mode: 0o755 });
 }
 
 function returnError(message) {

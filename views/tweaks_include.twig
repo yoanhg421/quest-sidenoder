@@ -246,7 +246,7 @@
   }
 
   for (const key of TWEAKS_CHECKBOXES) {
-    $('#' + key).on('change.bootstrapSwitch', ({target}) => {
+    $('#' + key).on('change.bootstrapSwitch', ({ target }) => {
       ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: target.checked});
     });
   }
