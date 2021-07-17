@@ -544,7 +544,7 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
       throw 'device not defined';
     }
 
-    // console.time(cmd);
+    global.adbError = null;
     const r = await adb.getDevice(deviceId).shell(cmd);
     // console.timeLog(cmd);
     if (skipRead) {
@@ -553,11 +553,8 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
     }
 
     let output = await adbkit.util.readAll(r);
-    // console.timeLog(cmd);
     output = await output.toString();
-    // console.timeEnd(cmd);
     console.log(`adbShell[${deviceId}]`, { cmd, output });
-    // adb.util.readAll;
     return output;
   }
   catch (err) {
@@ -684,6 +681,9 @@ async function adbPush(orig, dest, sync = false) {
 async function adbPushFolder(orig, dest, sync = false) {
   console.log('pushFolder', orig, dest);
 
+  const stat = await fsp.lstat(orig);
+  if (stat.isFile()) return adbPush(orig, dest);
+
   /*let need_close = false;
   if (!sync) {
     need_close = true;
@@ -729,6 +729,7 @@ async function adbInstall(apk) {
 
 function execShellCommand(cmd, buffer = 5000) {
   console.log({cmd});
+  global.execError = null;
   return new Promise((resolve, reject) => {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
@@ -739,7 +740,6 @@ function execShellCommand(cmd, buffer = 5000) {
 
       if (stdout) {
         console.log('exec_stdout', stdout);
-        global.execError = null;
         return resolve(stdout);
       }
       else {
