@@ -949,7 +949,7 @@ async function fetchBinary(bin) {
 
   const binPath = path.join(sidenoderHome, file);
   const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
-  await fetchFile(libUrl, binPath);
+  await fetchFile(binUrl, binPath);
 
   if (bin == 'adb' && global.platform == 'win') {
     const libFile = 'AdbWinApi.dll';
