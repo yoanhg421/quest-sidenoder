@@ -153,6 +153,7 @@ ipcMain.on('folder_install', async (event, { path, update }) => {
   }
 
   const install = await tools.getApkFromFolder(path);
+  console.log({ install });
   event.reply('ask_sideload', { success: true, install, update });
   return;
 });
@@ -216,7 +217,6 @@ ipcMain.on('get_dir', async (event, arg) => {
     notSupported.push(item);
   }
 
-
   response = {};
   response.success = true;
   response.list = dirList.concat(incList, notSupported);
@@ -224,8 +224,7 @@ ipcMain.on('get_dir', async (event, arg) => {
   // console.log(response.list, response.list.length, incList.length, notSupported.length);
   win.webContents.send('get_dir',response);
   //event.reply('get_dir', response)
-})
-
+});
 
 ipcMain.on('enable_mtp', async (event, arg) => {
   console.log('enable_mtp received');
@@ -392,7 +391,6 @@ function createWindow () {
     currentConfiguration: global.currentConfiguration
   }
 
-  //tools.checkUpdateAvailable();
   if (process.argv[2] == '--dev') {
     global.win.webContents.openDevTools();
   }
