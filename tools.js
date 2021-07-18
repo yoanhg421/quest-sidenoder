@@ -27,8 +27,12 @@ let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
 
-init();
+let grep_cmd = '| grep ';
+if (platform == 'win') {
+  grep_cmd = '| findstr ';
+}
 
+init();
 
 
 module.exports =
@@ -44,7 +48,6 @@ module.exports =
   getDir,
   returnError,
   sideloadFolder,
-  checkUpdateAvailable,
   getInstalledApps,
   getInstalledAppsWithUpdates,
   getApkFromFolder,
@@ -337,27 +340,6 @@ async function changeAppConfig(package, key, val) {
   return res;
 }
 
-
-async function checkUpdateAvailable() {
-  console.log('Checking local version vs latest github version')
-  remotehead = await execShellCommand('git ls-remote origin HEAD')
-  await execShellCommand('git fetch')
-  localhead = await execShellCommand('git rev-parse HEAD')
-  //console.log(`remotehead: ${remotehead}|`)
-  //console.log(`localhead: ${localhead}|`)
-
-  if (remotehead.startsWith(localhead.replace(/(\r\n|\n|\r)/gm,""))) {
-    global.updateAvailable = false;
-    return false;
-  }
-  else {
-    console.log('')
-    console.log('A update is available, please pull the latest version from github!')
-    console.log('')
-    global.updateAvailable = true;
-    return true;
-  }
-}
 // Implementation ----------------------------------
 
 async function getDeviceIp() {
@@ -385,8 +367,6 @@ async function connectWireless() {
   if (!ip) return false;
 
   try {
-    // await execShellCommand(`adb tcpip 5555`);
-    // const res = await execShellCommand(`adb connect ${ip}:5555`);
     if (global.adbDevice) {
       const device = adb.getDevice(global.adbDevice);
       const port = await device.tcpip();
@@ -412,7 +392,6 @@ async function disconnectWireless() {
   const ip = await getDeviceIp();
   if (!ip) return false;
 
-  // const res = await execShellCommand(`adb disconnect ${ip}:5555`);
   try {
     const res = await adb.disconnect(ip, 5555);
     // const res = await adb.usb(global.adbDevice);
@@ -682,6 +661,7 @@ async function adbPushFolder(orig, dest, sync = false) {
   console.log('pushFolder', orig, dest);
 
   const stat = await fsp.lstat(orig);
+  console.log({ orig, stat }, stat.isFile());
   if (stat.isFile()) return adbPush(orig, dest);
 
   /*let need_close = false;
@@ -727,25 +707,24 @@ async function adbInstall(apk) {
   return true;
 }
 
-function execShellCommand(cmd, buffer = 5000) {
+function execShellCommand(cmd, ignoreError = false, buffer = 100) {
   console.log({cmd});
-  global.execError = null;
   return new Promise((resolve, reject) => {
     exec(cmd,  {maxBuffer: 1024 * buffer}, (error, stdout, stderr) => {
       if (error) {
-        console.error('exec_error', error);
-        global.execError = error;
-        return resolve(false);
+        if (ignoreError) return resolve(false);
+        console.error('exec_error', cmd, error);
+        return reject(error);
       }
 
-      if (stdout) {
-        console.log('exec_stdout', stdout);
+      if (stdout || !stderr) {
+        console.log('exec_stdout', cmd, stdout);
         return resolve(stdout);
       }
       else {
-        console.error('exec_stderr', stderr);
-        global.execError = stderr;
-        return resolve(false);
+        if (ignoreError) return resolve(false);
+        console.error('exec_stderr', cmd, stderr);
+        return reject(stderr);
       }
     });
   });
@@ -902,10 +881,16 @@ async function checkDeps(arg){
       } catch (e) {}
 
       res[arg].cmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
-      await execShellCommand(`${res[arg].cmd} start-server`);
-      if (global.execError && !global.execError.toString().includes('daemon started successfully')) throw global.execError;
+      try {
+        await execShellCommand(`${res[arg].cmd} start-server`);
+      }
+      catch (err) {
+        if (!err.toString().includes('daemon started successfully'))
+          throw err;
+      }
+
       res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`${res[arg].cmd} --version`);
-      if (global.execError) throw global.execError;
+
       await trackDevices();
     }
 
@@ -914,21 +899,22 @@ async function checkDeps(arg){
       // res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
       res[arg].cmd = await fetchBinary('rclone');
       res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
-      if (global.execError) throw global.execError;
     }
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --help`);
-      if (global.execError) throw global.execError;
-      res[arg].version = res[arg].version && res[arg].version.split('\n')[1];
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "Version"`);
       console.log(res[arg].version);
     }
 
     if (arg == 'scrcpy') {
       res[arg].cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
-      if (!res[arg].version) res[arg].version = global.execError; // don`t know why version at std_err((
+      try {
+        res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+      }
+      catch(err) {
+        res[arg].version = err; // don`t know why version at std_err((
+      }
     }
   }
   catch (e) {
@@ -1031,22 +1017,26 @@ async function parseRcloneSections() {
   return sections;
 }
 
+async function umount() {
+  if (platform == 'win') {
+    if (!(await fsp.exists(global.mountFolder))) return;
+    await fsp.rmdir(dir, { recursive: true });
+  }
+  else {
+    await execShellCommand(`umount ${global.mountFolder}`, true);
+    await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
+    await fsp.mkdir(global.mountFolder, { recursive: true });
+  }
+}
+
 async function mount() {
   if (await checkMount(global.mountFolder)) {
     // return;
     await killRClone();
   }
 
-  if (platform == 'win') {
-    // folder must NOT exist on windows
-    if (await fsp.exists(global.mountFolder))
-      await execShellCommand(`rmdir "${global.mountFolder}" ${global.nullerror}`);
-  }
-  else {
-    await execShellCommand(`umount ${global.mountFolder} ${global.nullerror}`);
-    await execShellCommand(`fusermount -uz ${global.mountFolder} ${global.nullerror}`);
-    await fsp.mkdir(global.mountFolder, { recursive: true });
-  }
+  await umount();
+
 
    // TODO: temoporary
   if (!global.currentConfiguration.rcloneConf) {
@@ -1503,7 +1493,6 @@ async function sideloadFolder(arg) {
   win.webContents.send('sideload_process', res);
 
   try {
-    // await execShellCommand(`adb install -g -d "${apkfile}"`);
     await adbInstall(apkfile);
 
     if (fromremote) {
@@ -1765,7 +1754,8 @@ async function getApkFromFolder(folder){
   }
 
   const files = await fsp.readdir(folder);
-  res.install_desc = await detectInstallTxt(files);
+  res.install_desc = await detectInstallTxt(files, folder);
+  console.log({ files });
 
   for (file of files) {
     if (file.endsWith('.apk')) {
@@ -1775,7 +1765,7 @@ async function getApkFromFolder(folder){
   }
 
   returnError('No apk found in ' + folder);
-  return;
+  return res;
 }
 
 async function uninstall(packageName){
@@ -1798,7 +1788,7 @@ async function updateRcloneProgress() {
       speedAvg: transferring.speedAvg,
       eta: transferring.eta,
       name: transferring.name,
-    }
+    };
     //console.log('sending rclone data');
     win.webContents.send('process_data', rcloneProgress);
   }
@@ -1814,19 +1804,11 @@ async function updateRcloneProgress() {
 }
 
 async function init() {
-  fsp.exists = (path) => fsp.access(path).then(() => true).catch(e => false);
+  fsp.exists = (p) => fsp.access(p).then(() => true).catch(e => false);
 
   await initLogs();
 
   console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
-  if (platform == 'win') {
-    global.nullcmd = '> null'
-    global.nullerror = '2> null'
-  }
-  else {
-    global.nullcmd = '> /dev/null'
-    global.nullerror = '2> /dev/null'
-  }
 
   try {
     const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json');

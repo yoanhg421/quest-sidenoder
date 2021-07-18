@@ -108,25 +108,25 @@
 
     $('#packageName').text(package);
 
-    $('#startAppBtn').click(({target}) => {
+    $('#startAppBtn').click(({ target }) => {
       startApp(package);
       return true;
     });
-    $('#uninstallAppBtn').click(({target}) => {
+    $('#uninstallAppBtn').click(({ target }) => {
       uninstall(target, package);
       return true;
     });
-    $('#backupAppBtn').click(({target}) => {
+    $('#backupAppBtn').click(({ target }) => {
       target.classList.add('disabled');
       setAppBackupPath(package);
       return true;
     });
-    $('#backupDataBtn').click(({target}) => {
+    $('#backupDataBtn').click(({ target }) => {
       target.classList.add('disabled');
       ipcRenderer.send('data_backup', package);
       return true;
     });
-    $('#restoreDataBtn').click((e) => {
+    $('#restoreDataBtn').click(({ target }) => {
       target.classList.add('disabled');
       ipcRenderer.send('data_restore', package);
       return true;
@@ -147,7 +147,7 @@
       $('#configsCard').show();
       $('#app_username')
       .val(availableConfig.username)
-      .change(({target}) => {
+      .change(({ target }) => {
         $(target).removeClass('is-valid');
         ipcRenderer.send('app_config_set', { package,  key: 'username', val: target.value });
         return true;
