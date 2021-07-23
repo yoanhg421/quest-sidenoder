@@ -268,14 +268,14 @@
   });
 
   for (const key of TWEAKS_KEYS) {
-    $id('' + key).on('change', function ({ target }) {
+    $id(key).on('change', function ({ target }) {
       $(target).removeClass('is-valid');
       ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: target.value });
     });
   }
 
   for (const key of TWEAKS_CHECKBOXES) {
-    $id('' + key).on('change.bootstrapSwitch', ({ target }) => {
+    $id(key).on('change.bootstrapSwitch', ({ target }) => {
       ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: target.checked});
     });
   }

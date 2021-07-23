@@ -174,11 +174,11 @@ function loadDir(path, list) {
     cards += card;
   }
 
-  $id('listTableStart')[0].innerHTML = $id('listTableEnd')[0].innerHTML = upDirTr;
-  $id('browseCardBody')[0].innerHTML = cards_first.join('\n');
-  $id('listTable')[0].innerHTML = rows;
+  id('listTableStart').innerHTML = id('listTableEnd').innerHTML = upDirTr;
+  id('browseCardBody').innerHTML = cards_first.join('\n');
+  id('listTable').innerHTML = rows;
 
   if (cards) setTimeout(() => {
-    $id('browseCardBody')[0].innerHTML += cards;
+    id('browseCardBody').innerHTML += cards;
   }, 100);
 }

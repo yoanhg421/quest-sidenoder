@@ -42,19 +42,19 @@
   <script src="js/jquery.cbpFWSlider.min.js"></script>
 <script>
   console.log('ONLOAD APPINFO MODAL');
-  const appinfoSlider = $('#appinfoSlider');
-  $('#appinfoModal').on('hidden.bs.modal', () => {
+  const appinfoSlider = $id('appinfoSlider');
+  $id('appinfoModal').on('hidden.bs.modal', () => {
     console.log('appinfo closed');
-    $('#appinfoGenres')[0].innerHTML = '';
-    $('#appinfoModalLabel')[0].innerHTML = '';
-    $('#appinfoText')[0].innerHTML = '';
-    $('#appinfoAbout')[0].innerHTML = '';
+    id('appinfoGenres').innerHTML = '';
+    id('appinfoModalLabel').innerHTML = '';
+    id('appinfoText').innerHTML = '';
+    id('appinfoAbout').innerHTML = '';
     appinfoSlider[0].innerHTML = '';
   })
 
   ipcRenderer.removeAllListeners('app_info');
   ipcRenderer.on('app_info', (event, arg) => {
-    $('#processingModal').modal('hide');
+    $id('processingModal').modal('hide');
     console.log('app_info received');
     // console.log('app_info received', arg);
     if (!arg || !arg.success)  return console.log(arg);
@@ -62,16 +62,16 @@
     if (!data)  return;
 
 
-    if (data.name) $('#appinfoModalLabel').text(data.name);
-    if (data.short_description) $('#appinfoShortDesc').html(data.short_description);
-    if (data.detailed_description) $('#appinfoText').html(data.detailed_description);
-    if (data.about_the_game) $('#appinfoAbout').html(data.about_the_game);
-    if (data.supported_languages) $('#supportedLanguages').html(data.supported_languages.replace('русский', '<b>русский</b>'));
+    if (data.name) $id('appinfoModalLabel').text(data.name);
+    if (data.short_description) $id('appinfoShortDesc').html(data.short_description);
+    if (data.detailed_description) $id('appinfoText').html(data.detailed_description);
+    if (data.about_the_game) $id('appinfoAbout').html(data.about_the_game);
+    if (data.supported_languages) $id('supportedLanguages').html(data.supported_languages.replace('русский', '<b>русский</b>'));
     if (data.genres) {
       for (const genre of data.genres) {
         const genre_text = genre.description || genre;
         if (['Бесплатно', 'Free'].includes(genre_text)) continue;
-        $('#appinfoGenres').append(`<span class="badge badge-secondary">${genre_text}</span> `);
+        $id('appinfoGenres').append(`<span class="badge badge-secondary">${genre_text}</span> `);
       }
     }
 
@@ -97,7 +97,7 @@
 
     appinfoSlider[0].innerHTML = slides;
     appinfoSlider.cbpFWSlider({current: 0});
-    $('#appinfoModal').modal('show');
+    $id('appinfoModal').modal('show');
   });
 
 </script>

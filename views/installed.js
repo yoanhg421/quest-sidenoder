@@ -32,12 +32,12 @@ function getUpdates() {
 }
 
 function update(elem) {
-  $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
+  elem.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
   ipcRenderer.send('folder_install', { path: elem.dataset.path, update: true });
 }
 
 function uninstall(elem, packageName) {
-  $(elem).html(`<i class="fa fa-refresh fa-spin"></i> Please wait`);
+  elem.innerHTML = `<i class="fa fa-refresh fa-spin"></i> Please wait`;
   ipcRenderer.send('uninstall', packageName);
 }
 
@@ -77,7 +77,7 @@ function drawInstalledApps(apps) {
     rows += row;
   }
 
-  $id('listTable')[0].innerHTML = rows;
+  id('listTable').innerHTML = rows;
 }
 
 

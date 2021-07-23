@@ -89,10 +89,10 @@
   for (let i = 1; i <= 10; i++) {
     options+= `<option value="${i}">${i} Mbits/s</option>`;
   }
-  $('#scrcpyBitrate').html(options);
+  id('scrcpyBitrate').innerHTML = options;
 
   for (const key of OPT_KEYS) {
-    $('#' + key)
+    $id(key)
       .val(remote.getGlobal('currentConfiguration')[key])
       .on('change', (e) => {
         ipcRenderer.send('change_config', {key, val: e.target.value});
@@ -101,7 +101,7 @@
   }
 
   for (const key of CHKBOXES) {
-    const el = $('#' + key);
+    const el = $id('' + key);
     if (remote.getGlobal('currentConfiguration')[key]) {
       el.prop('checked', true);
     }
@@ -111,10 +111,10 @@
     });
   }
 
-  $('#crop_quest1').on('click', () => $('#scrcpyCrop').val('1280:720:1500:350').trigger('change'));
-  $('#crop_quest2').on('click', () => $('#scrcpyCrop').val('1600:900:2017:510').trigger('change'));
+  $id('crop_quest1').on('click', () => $id('scrcpyCrop').val('1280:720:1500:350').trigger('change'));
+  $id('crop_quest2').on('click', () => $id('scrcpyCrop').val('1600:900:2017:510').trigger('change'));
 
-  $('#scrcpy_start').on('click', () => {
+  $id('scrcpy_start').on('click', () => {
     ipcRenderer.send('scrcpy_start');
   });
 }</script>

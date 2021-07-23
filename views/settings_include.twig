@@ -89,12 +89,14 @@
     'cacheOculusGames',
   ];
 
+  let options = '';
   for (const section of remote.getGlobal('rcloneSections')) {
-    $id('cfgSection').append(`<option value="${section}">${section}</option`);
+    options+= `<option value="${section}">${section}</option>`;
   }
+  id('cfgSection').innerHTML = options;
 
   for (const key of OPT_KEYS) {
-    $id('' + key)
+    $id(key)
       .val(remote.getGlobal('currentConfiguration')[key])
       .on('change', ({ target }) => {
         $(target).removeClass('is-valid');

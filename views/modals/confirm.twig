@@ -29,10 +29,10 @@
 
 <script>
   //setup listener for confirm btn, takes path form data dir, and sends start_sideload
-  $('#confirmSideloadButton').on('click', function(){
-    $('#confirmModal').modal('hide');
+  $id('confirmSideloadButton').on('click', function(){
+    $id('confirmModal').modal('hide');
     //
-    data = {path: $('#confirmSideloadButton').data('path'), update: $('#confirmSideloadButton').data('update')}
+    data = {path: $id('confirmSideloadButton').data('path'), update: $id('confirmSideloadButton').data('update')}
     loadInclude('modals/sideload.twig', 'sideloadmodaldiv', () => {
       ipcRenderer.send('start_sideload', data);
     });
@@ -42,24 +42,24 @@
   ipcRenderer.removeAllListeners('ask_sideload');
   ipcRenderer.on('ask_sideload', (event, arg) => {
     console.log('ask_sideload msg came ! ', arg);
-    $('#processingModal').modal('hide');
+    $id('processingModal').modal('hide');
     const { success, install, update } = arg;
     if (!success) return;
 
     const lastslashindex = install.path.lastIndexOf('/');
     const file= install.path.substring(lastslashindex  + 1);
 
-    $('#confirmSideloadButton').data('path', install.path);
-    $('#confirmSideloadButton').data('update', !!update);
-    $('#confirmModalMessage').html('Do you want to sideload: <br><b>' + file + '</b>');
+    $id('confirmSideloadButton').data('path', install.path);
+    $id('confirmSideloadButton').data('update', !!update);
+    $id('confirmModalMessage').html('Do you want to sideload: <br><b>' + file + '</b>');
     if (install.install_desc) {
-      $('#confirmModalInstallDesc').html(install.install_desc);
-      $('#confirmModalInstallCont').show();
+      $id('confirmModalInstallDesc').html(install.install_desc);
+      $id('confirmModalInstallCont').show();
     }
     else {
-      $('#confirmModalInstallCont').hide();
+      $id('confirmModalInstallCont').hide();
     }
 
-    $('#confirmModal').modal('show');
+    $id('confirmModal').modal('show');
   });
 </script>

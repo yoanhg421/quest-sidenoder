@@ -21,25 +21,25 @@
       if (percent > 80) bg = 'warning';
       if (percent > 95) bg = 'danger';
 
-      $id('storageDiv').html(`
+      id('storageDiv').innerHTML = `
       <span class="pull-left push-left">Size: ${storage.size}</span>
       <span class="pull-right push-right">Available: ${storage.free}</span>
       <center>Used: ${storage.used}(${storage.percent})</center>
       <div class="progress" style="border: 1px solid #666;">
         <div class="progress-bar progress-bar-striped bg-${bg}" role="progressbar" style="width: ${storage.percent};" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>`)
+      </div>`;
     }
 
     if (user) {
-      $id('deviceUserName').html(user.name);
+      id('deviceUserName').innerHTML = user.name;
     }
 
     if (fw) {
-      $id('deviceFwVersion').html(fw.version);
+      id('deviceFwVersion').innerHTML = fw.version;
     }
 
     if (battery) {
-      $id('deviceBatteryLevel').html(battery.level);
+      id('deviceBatteryLevel').innerHTML = battery.level;
     }
   });
 </script>
