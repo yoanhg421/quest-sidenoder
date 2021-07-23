@@ -21,7 +21,7 @@
       if (percent > 80) bg = 'warning';
       if (percent > 95) bg = 'danger';
 
-      $('#storageDiv').html(`
+      $id('storageDiv').html(`
       <span class="pull-left push-left">Size: ${storage.size}</span>
       <span class="pull-right push-right">Available: ${storage.free}</span>
       <center>Used: ${storage.used}(${storage.percent})</center>
@@ -31,15 +31,15 @@
     }
 
     if (user) {
-      $('#deviceUserName').html(user.name);
+      $id('deviceUserName').html(user.name);
     }
 
     if (fw) {
-      $('#deviceFwVersion').html(fw.version);
+      $id('deviceFwVersion').html(fw.version);
     }
 
     if (battery) {
-      $('#deviceBatteryLevel').html(battery.level);
+      $id('deviceBatteryLevel').html(battery.level);
     }
   });
 </script>

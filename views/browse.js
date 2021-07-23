@@ -6,12 +6,12 @@ console.log('ONLOAD BROWSE');
 ipcRenderer.on('get_dir', (event, arg) => {
   console.log('get_dir msg came: ', arg.path);
   if (arg.success) {
-    $('#path').html(arg.path);
+    $id('path').html(arg.path);
     loadDir(arg.path, arg.list);
     fixIcons();
   }
 
-  $('#processingModal').modal('hide');
+  $id('processingModal').modal('hide');
 });
 
 
@@ -31,7 +31,7 @@ function fixIcons() {
 // call get_dir when selection is made
 function getDir(newpath = '', resetCache = false) {
   if (!newpath.endsWith('.apk')) {
-    $('#processingModal').modal('show');
+    $id('processingModal').modal('show');
   }
 
   if (resetCache) {
@@ -63,17 +63,17 @@ async function getDirSize(el, path) {
 }
 
 function oculusInfo(package) {
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   ipcRenderer.send('app_info', { res: 'oculus', package });
 }
 function steamInfo(package) {
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   ipcRenderer.send('app_info', { res: 'steam', package });
 }
 
 
 function install(path) {
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   ipcRenderer.send('folder_install', { path, update: false });
 }
 
@@ -174,11 +174,11 @@ function loadDir(path, list) {
     cards += card;
   }
 
-  $('#listTableStart')[0].innerHTML = $('#listTableEnd')[0].innerHTML = upDirTr;
-  $('#browseCardBody')[0].innerHTML = cards_first.join('\n');
-  $('#listTable')[0].innerHTML = rows;
+  $id('listTableStart')[0].innerHTML = $id('listTableEnd')[0].innerHTML = upDirTr;
+  $id('browseCardBody')[0].innerHTML = cards_first.join('\n');
+  $id('listTable')[0].innerHTML = rows;
 
   if (cards) setTimeout(() => {
-    $('#browseCardBody')[0].innerHTML += cards;
+    $id('browseCardBody')[0].innerHTML += cards;
   }, 100);
 }

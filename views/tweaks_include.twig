@@ -252,39 +252,39 @@
     // console.log('device_tweaks ! ', arg);
     if (arg.cmd == 'get') {
       for (const key of TWEAKS_KEYS) {
-        if (arg[key]) $('#' + key).val(arg[key]);
+        if (arg[key]) $id('' + key).val(arg[key]);
       }
 
       for (const key of TWEAKS_CHECKBOXES) {
-        if (arg[key]) $('#' + key).prop('checked', arg[key] == '1');
+        if (arg[key]) $id('' + key).prop('checked', arg[key] == '1');
       }
     }
 
     if (arg.cmd == 'set') {
       for (const key of TWEAKS_KEYS) {
-        if (typeof arg[key] != 'undefined') $('#' + key).addClass('is-valid');
+        if (typeof arg[key] != 'undefined') $id('' + key).addClass('is-valid');
       }
     }
   });
 
   for (const key of TWEAKS_KEYS) {
-    $('#' + key).on('change', function ({ target }) {
+    $id('' + key).on('change', function ({ target }) {
       $(target).removeClass('is-valid');
       ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: target.value });
     });
   }
 
   for (const key of TWEAKS_CHECKBOXES) {
-    $('#' + key).on('change.bootstrapSwitch', ({ target }) => {
+    $id('' + key).on('change.bootstrapSwitch', ({ target }) => {
       ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: target.checked});
     });
   }
 
 
   if (remote.getGlobal('currentConfiguration').snapshotsDelete) {
-    $('#snapshotsDelete').prop('checked', true);
+    $id('snapshotsDelete').prop('checked', true);
   }
-  $('#snapshotsDelete').on('change.bootstrapSwitch', (e) => {
+  $id('snapshotsDelete').on('change.bootstrapSwitch', (e) => {
     ipcRenderer.send('change_config', {key: 'snapshotsDelete', val: e.target.checked});
   });
 
@@ -294,26 +294,26 @@
     alert(`Command sended: \n ${arg.success}`);
   })
 
-  $('#enableMTP').on('click', function (e) {
+  $id('enableMTP').on('click', function (e) {
     ipcRenderer.send('enable_mtp', '');
   });
-  $('#scrcpyCfg').on('click', function (e) {
-    $('#scrcpyModal').modal('show');
+  $id('scrcpyCfg').on('click', function (e) {
+    $id('scrcpyModal').modal('show');
   });
-  $('#rebootDevice').on('click', function (e) {
+  $id('rebootDevice').on('click', function (e) {
     ipcRenderer.send('reboot_device', '');
   });
-  $('#rebootBootloader').on('click', function (e) {
+  $id('rebootBootloader').on('click', function (e) {
     ipcRenderer.send('reboot_bootloader', '');
   });
-  $('#sideloadeFw').on('click', function (e) {
-    ipcRenderer.send('sideload_update', $('#updateFwPath').val());
+  $id('sideloadeFw').on('click', function (e) {
+    ipcRenderer.send('sideload_update', $id('updateFwPath').val());
   });
 
-  $('#updateFwPathBtn').on('click', updateFwPath);
+  $id('updateFwPathBtn').on('click', updateFwPath);
 
   async function updateFwPath() {
-    $('#updateFwPath').removeClass('is-valid');
+    $id('updateFwPath').removeClass('is-valid');
     const file = await dialog.showOpenDialog(null, {
       properties: ['openFile'],
       title: 'Update.zip path',
@@ -325,7 +325,7 @@
     if (file.canceled) return;
 
     const val = file.filePaths[0];
-    $('#updateFwPath')
+    $id('updateFwPath')
       .val(val)
       .addClass('is-valid');
     return val;

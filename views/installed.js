@@ -4,30 +4,30 @@ ipcRenderer.on('get_installed', (event, arg) => {
   console.log('get_installed msg came ! ', arg.success);
   if (arg.success) {
     drawInstalledApps(arg.apps);
-    $('#updateBadge').show();
+    $id('updateBadge').show();
   }
 
-  $('#processingModal').modal('hide');
+  $id('processingModal').modal('hide');
 });
 
 ipcRenderer.on('get_installed_with_updates', (event, arg) => {
   console.log('get_installed msg came ! ', arg.success);
   if (arg.success) {
     drawInstalledApps(arg.apps);
-    $('#updateBadge').hide();
+    $id('updateBadge').hide();
   }
 
-  $('#processingModal').modal('hide');
+  $id('processingModal').modal('hide');
 });
 
 ipcRenderer.on('uninstall', (event, arg) => {
   console.log('uninstall msg came ! ');
-  $('#appToolModal').modal('hide');
+  $id('appToolModal').modal('hide');
   loadInclude('installed_include.twig');
 });
 
 function getUpdates() {
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   ipcRenderer.send('get_installed_with_updates', '');
 }
 
@@ -47,7 +47,7 @@ function startApp(packageName) {
 }
 
 function appTools(packageName) {
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv', () => {
     ipcRenderer.send('app_tools', packageName);
   });
@@ -77,7 +77,7 @@ function drawInstalledApps(apps) {
     rows += row;
   }
 
-  $('#listTable')[0].innerHTML = rows;
+  $id('listTable')[0].innerHTML = rows;
 }
 
 

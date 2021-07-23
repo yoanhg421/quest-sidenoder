@@ -3,7 +3,7 @@
     <input class="form-control" placeholder="Type a word and find occurrences using [ENTER]" type="text"
          name="t1" value="" style="border: 1px solid #000" />
     <div class="input-group-append">
-      <button class="btn btn-primary dropdown-toggle" type="button" onclick="$('#searchdropdownmenu').toggle()"
+      <button class="btn btn-primary dropdown-toggle" type="button" onclick="$id('searchdropdownmenu').toggle()"
           aria-haspopup="true" aria-expanded="false">Sort
       </button>
       <div id="searchdropdownmenu" class="dropdown-menu" style="right: 0;left: auto;">
@@ -59,9 +59,9 @@
 
   //sort
   function sortItems(key, asc) {
-    sortElements($('#browseCardBody'), key, asc);
-    sortElements($('#listTable'), key, asc);
-    $('#searchdropdownmenu').hide();
+    sortElements($id('browseCardBody'), key, asc);
+    sortElements($id('listTable'), key, asc);
+    $id('searchdropdownmenu').hide();
   }
 
   function sortElements(el, key, asc) {

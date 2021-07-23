@@ -90,11 +90,11 @@
   ];
 
   for (const section of remote.getGlobal('rcloneSections')) {
-    $('#cfgSection').append(`<option value="${section}">${section}</option`);
+    $id('cfgSection').append(`<option value="${section}">${section}</option`);
   }
 
   for (const key of OPT_KEYS) {
-    $('#' + key)
+    $id('' + key)
       .val(remote.getGlobal('currentConfiguration')[key])
       .on('change', ({ target }) => {
         $(target).removeClass('is-valid');
@@ -103,7 +103,7 @@
   }
 
   for (const key of CHKBOXES) {
-    const el = $('#' + key);
+    const el = $id('' + key);
     if (remote.getGlobal('currentConfiguration')[key]) {
       el.prop('checked', true);
     }
@@ -114,14 +114,14 @@
   }
 
 
-  $('#debugTool').on('click', (e) => {
+  $id('debugTool').on('click', (e) => {
     remote.getGlobal('win').webContents.openDevTools();
   });
 
-  $('#adbPathBtn').on('click', (e) => setCustomPath('adbPath', 'Android Debug Bridge custom path', 'Browse to adb binary'));
-  $('#rclonePathBtn').on('click', (e) => setCustomPath('rclonePath', 'RClone custom path', 'Browse to rclone binary'));
-  $('#scrcpyPathBtn').on('click', (e) => setCustomPath('scrcpyPath', 'SCRCPY custom path', 'Browse to scrcpy binary'));
-  $('#rcloneConfBtn').on('click', (e) => setCustomPath('rcloneConf', 'RClone config location', 'Browse to rclone config', [{
+  $id('adbPathBtn').on('click', (e) => setCustomPath('adbPath', 'Android Debug Bridge custom path', 'Browse to adb binary'));
+  $id('rclonePathBtn').on('click', (e) => setCustomPath('rclonePath', 'RClone custom path', 'Browse to rclone binary'));
+  $id('scrcpyPathBtn').on('click', (e) => setCustomPath('scrcpyPath', 'SCRCPY custom path', 'Browse to scrcpy binary'));
+  $id('rcloneConfBtn').on('click', (e) => setCustomPath('rcloneConf', 'RClone config location', 'Browse to rclone config', [{
     name: 'Config', extensions: ['conf', 'cfg', 'ini'],
     name: 'All', extensions: ['*'],
   }]));

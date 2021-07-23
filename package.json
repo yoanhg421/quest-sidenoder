@@ -10,7 +10,7 @@
     "compare-versions": "^3.6.0",
     "electron-twig": "^1.1.1",
     "fix-path": "^3.0.0",
-    "jquery": "^3.5.1",
+    "jquery": "^3.6.0",
     "node-fetch": "^2.6.1",
     "web-auto-extractor": "^1.0.17"
   },
