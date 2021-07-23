@@ -43,6 +43,35 @@
         </div>
       </div>
 
+      <div class="card bg-primary mb-1">
+        <div class="card-header">
+          FW Update:
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <small>
+              Reboot to bootloader.
+              <br/>Then go into device and select the "firmware update" option using the volume buttons to move the selection, and power button to select.
+              <br/>After that sideloade update.zip
+            </small>
+          </div>
+          <div class="form-group mb-4">
+            <label for="updateFwPath">Path to update.zip:</label>
+            <div class="input-group mb-2">
+              <input id="updateFwPath" class="form-control" value="" />
+              <a class="btn btn-primary" id="updateFwPathBtn">Browse</a>
+            </div>
+            <a id="rebootBootloader" class="adbdev btn btn-danger">
+              <i class="fa fa-refresh"></i> Reboot to bootloader
+            </a>
+            <a id="sideloadeFw" class="adbdev btn btn-warning">
+              <i class="fa fa-download"></i> Sideloade update.zip
+            </a>
+          </div>
+
+        </div>
+      </div>
+
 
       <div class="card bg-primary mb-1">
         <div class="card-header">Snapshots:</div>
@@ -259,6 +288,12 @@
     ipcRenderer.send('change_config', {key: 'snapshotsDelete', val: e.target.checked});
   });
 
+
+  ipcRenderer.removeAllListeners('cmd_sended');
+  ipcRenderer.on('cmd_sended', (event, arg) => {
+    alert(`Command sended: \n ${arg.success}`);
+  })
+
   $('#enableMTP').on('click', function (e) {
     ipcRenderer.send('enable_mtp', '');
   });
@@ -268,4 +303,32 @@
   $('#rebootDevice').on('click', function (e) {
     ipcRenderer.send('reboot_device', '');
   });
+  $('#rebootBootloader').on('click', function (e) {
+    ipcRenderer.send('reboot_bootloader', '');
+  });
+  $('#sideloadeFw').on('click', function (e) {
+    ipcRenderer.send('sideload_update', $('#updateFwPath').val());
+  });
+
+  $('#updateFwPathBtn').on('click', updateFwPath);
+
+  async function updateFwPath() {
+    $('#updateFwPath').removeClass('is-valid');
+    const file = await dialog.showOpenDialog(null, {
+      properties: ['openFile'],
+      title: 'Update.zip path',
+      message: 'Browse to update.zip',
+      filters: [{
+        name: 'Zip', extensions: ['zip'],
+      }],
+    });
+    if (file.canceled) return;
+
+    const val = file.filePaths[0];
+    $('#updateFwPath')
+      .val(val)
+      .addClass('is-valid');
+    return val;
+  }
+
 }</script>

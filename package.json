@@ -51,32 +51,5 @@
     }
   },
   "author": "vKolerts <str.mail.ru@bk.ru> (https://github.com/vKolerts/quest-sidenoder/)",
-  "license": "MIT",
-  "config": {
-    "forge": {
-      "packagerConfig": {
-        "asar": true
-      },
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "SideNoder"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {
-            "options": {
-              "icon": "./build/icon.png"
-            }
-          }
-        },
-        {
-          "name": "@electron-forge/maker-dmg",
-          "config": {}
-        }
-      ]
-    }
-  }
+  "license": "MIT"
 }

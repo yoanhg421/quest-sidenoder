@@ -59,6 +59,8 @@ module.exports =
   enableMTP,
   startSCRCPY,
   rebootDevice,
+  rebootBootloader,
+  sideloadFile,
   getLaunchActiviy,
   getActivities,
   startActivity,
@@ -473,12 +475,22 @@ async function startSCRCPY() {
     console.log('scrcpy stdout:', stdout);
   });
 
-  return true;
+  return scrcpyCmd;
 }
 
 async function rebootDevice() {
   const res = await adbShell(`reboot`);
   console.log('rebootDevice', { res });
+  return res;
+}
+async function rebootBootloader() {
+  const res = await adbShell(`reboot bootloader`);
+  console.log('rebootBootloader', { res });
+  return res;
+}
+async function sideloadFile(path) {
+  const res = await execShellCommand(`${global.currentConfiguration.adbPath} sideload "${path}"`);
+  console.log('sideloadFile', { res });
   return res;
 }
 
@@ -539,6 +551,10 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
   catch (err) {
     console.error(`adbShell[${deviceId}]: err`, {cmd}, err);
     global.adbError = err;
+    if (err.toString() == `FailError: Failure: 'device offline'`) {
+      getDeviceSync();
+    }
+
     return false;
   }
 }

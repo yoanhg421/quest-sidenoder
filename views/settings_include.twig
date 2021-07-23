@@ -145,6 +145,7 @@
       filters,
     });
     if (file.canceled) return;
+
     const val = file.filePaths[0];
     $(`#${key}`).val(val);
     ipcRenderer.send('change_config', {key, val});
