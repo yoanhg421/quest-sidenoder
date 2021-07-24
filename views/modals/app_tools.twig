@@ -36,7 +36,7 @@
           <a class="btn btn-primary mb-1 disabled" id="backupAppPath"><i class="fa fa-folder-open"></i> Open backup folder</a>
         </div>
         <div style="min-height: 45px">
-          <small class="transfer_state" ></small>
+          <small id="tools_transfer_state" ></small>
         </div>
       </div>
       <div class="modal-footer">
@@ -51,7 +51,7 @@
   ipcRenderer.removeAllListeners('process_data');
   ipcRenderer.on('process_data', (event, data) => {
     console.log('process_data received', data);
-    if (!data)  return $('.transfer_state').text('');
+    if (!data)  return id('tools_transfer_state').innerHTML = '';
 
     let line = `${data.cmd}: ${formatBytes(data.bytes)}`;
     if (data.size) {
@@ -63,41 +63,51 @@
     }
 
     const name = data.name.split('/').pop();
-    $('.transfer_state').html(`${line}<br/> ${name}`);
+    id('tools_transfer_state').innerHTML = `${line}<br/> ${name}`;
   });
 
 
   ipcRenderer.removeAllListeners('app_backup');
   ipcRenderer.on('app_backup', (event, arg) => {
-    $('#backupAppBtn').removeClass('disabled');
+    $id('backupAppBtn').removeClass('disabled');
+    if (arg.error) {
+      id('tools_transfer_state').innerHTML = `<b class="text-danger">Backup Error: ${arg.error}</b>`;
+    }
+    else {
+      id('tools_transfer_state').innerHTML = `<b class="text-success">Backup finished</b>`;
+    }
   });
   ipcRenderer.removeAllListeners('data_backup');
   ipcRenderer.on('data_backup', (event, arg) => {
-    $('#backupDataBtn').removeClass('disabled');
-    $('#restoreDataBtn').removeClass('disabled');
-    /*if (arg.error) {
-      return $('#transfer_state').html(`<b class="text-danger">Error: ${arg.error}</b>`);
+    $id('backupDataBtn').removeClass('disabled');
+    $id('restoreDataBtn').removeClass('disabled');
+    if (arg.error) {
+      id('tools_transfer_state').innerHTML = `<b class="text-danger">Backup Error: ${arg.error}</b>`;
     }
-
-    loadInclude('modals/app_tools.twig', 'apptoolsmodaldiv', () => {
-      ipcRenderer.send('app_tools', arg.package);
-    });*/
+    else {
+      id('tools_transfer_state').innerHTML = `<b class="text-success">Backup finished</b>`;
+    }
   });
   ipcRenderer.removeAllListeners('data_restore');
   ipcRenderer.on('data_restore', (event, arg) => {
-    $('#restoreDataBtn').removeClass('disabled');
+    $id('restoreDataBtn').removeClass('disabled');
+    if (arg.error) {
+      id('tools_transfer_state').innerHTML = `<b class="text-danger">Restore Error: ${arg.error}</b>`;
+    }
+    else {
+      id('tools_transfer_state').innerHTML = `<b class="text-success">Restore finished</b>`;
+    }
   });
 
   ipcRenderer.removeAllListeners('app_config_set');
   ipcRenderer.on('app_config_set', (event, { success, key, val }) => {
-
     $(`#app_${key}`).val(val).addClass(success ? 'is-valid' : 'is-invalid');
   });
 
   ipcRenderer.removeAllListeners('app_tools');
   ipcRenderer.on('app_tools', (event, arg) => {
     console.log('app_tools msg came: ', arg);
-    $('#processingModal').modal('hide');
+    $id('processingModal').modal('hide');
 
     const {
       package,
@@ -106,46 +116,46 @@
       availableConfig,
     } = arg;
 
-    $('#packageName').text(package);
+    $id('packageName').text(package);
 
-    $('#startAppBtn').click(({ target }) => {
+    $id('startAppBtn').click(({ target }) => {
       startApp(package);
       return true;
     });
-    $('#uninstallAppBtn').click(({ target }) => {
+    $id('uninstallAppBtn').click(({ target }) => {
       uninstall(target, package);
       return true;
     });
-    $('#backupAppBtn').click(({ target }) => {
+    $id('backupAppBtn').click(({ target }) => {
       target.classList.add('disabled');
       setAppBackupPath(package);
       return true;
     });
-    $('#backupDataBtn').click(({ target }) => {
+    $id('backupDataBtn').click(({ target }) => {
       target.classList.add('disabled');
       ipcRenderer.send('data_backup', package);
       return true;
     });
-    $('#restoreDataBtn').click(({ target }) => {
+    $id('restoreDataBtn').click(({ target }) => {
       target.classList.add('disabled');
       ipcRenderer.send('data_restore', package);
       return true;
     });
-    $('#backupAppPath').click((e) => {
+    $id('backupAppPath').click((e) => {
       shell.openPath(path.join(remote.getGlobal('sidenoderHome'), 'backup_data', package));
       return true;
     });
 
     if (availableRestore) {
-      $('#backupAppPath').removeClass('disabled');
-      $('#restoreDataBtn')
+      $id('backupAppPath').removeClass('disabled');
+      $id('restoreDataBtn')
         .removeClass('disabled')
         .append(`(${new Date(+availableRestore).toLocaleString()})`);
     }
 
     if (availableConfig) {
-      $('#configsCard').show();
-      $('#app_username')
+      $id('configsCard').show();
+      $id('app_username')
       .val(availableConfig.username)
       .change(({ target }) => {
         $(target).removeClass('is-valid');
@@ -154,7 +164,7 @@
       });
     }
 
-    $('#appToolModal').modal('show');
+    $id('appToolModal').modal('show');
   });
 
   async function setAppBackupPath(package) {
@@ -163,7 +173,7 @@
       message: 'Browse location for new backup',
       properties: ['openDirectory'],
     });
-    if (file.canceled) return $('#backupAppBtn').removeClass('disabled');
+    if (file.canceled) return $id('backupAppBtn').removeClass('disabled');
 
     console.log('setAppBackupPath', package, file);
     const location = file.filePaths[0];

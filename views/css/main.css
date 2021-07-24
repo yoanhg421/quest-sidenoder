@@ -36,6 +36,9 @@ a { cursor: pointer; }
 .alert-warning {
   background-color: #b80;
 }
+.alert-info {
+  background-color: #28b;
+}
 
 .footer {
   position: absolute;

@@ -1,11 +1,11 @@
 <div class="card text-light bg-primary">
   <div class="card-header">
     <h2 class="pull-left mb-0">
-      <a class="btn btn-primary" onclick="shell.openPath($('#path').text())" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
+      <a class="btn btn-primary" onclick="shell.openPath($id('path').text())" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
       <span id="path"></u></span>
     </h2>
     <h2 class="pull-right mb-0">
-      <a class="btn btn-primary" onclick="getDir($('#path').text(), true)"> <i id="refreshfolderbtn" class="fa fa-refresh"></i> Refresh</a>
+      <a class="btn btn-primary" onclick="getDir($id('path').text(), true)"> <i id="refreshfolderbtn" class="fa fa-refresh"></i> Refresh</a>
     </h2>
   </div>
   <div class="card-body">
@@ -36,6 +36,6 @@
 
 
 <script>
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   loadInclude('searchform.twig', 'searchformdiv');
 </script>

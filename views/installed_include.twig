@@ -19,13 +19,13 @@
 
 <script>
   console.log('ONLOAD installed');
-  $('#processingModal').modal('show');
+  $id('processingModal').modal('show');
   ipcRenderer.send('get_installed', '');
 
   loadInclude('searchform.twig', 'searchformdiv');
 
   if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
-    $('#updateBadge').removeClass('disabled');
+    $id('updateBadge').removeClass('disabled');
   }
 
 </script>

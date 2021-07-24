@@ -8,7 +8,8 @@
   <script>window.$ = window.jQuery = require('jquery');</script>
   <!-- <script src="https://unpkg.com/@popperjs/core@2" crossorigin="anonymous"></script> -->
   <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" crossorigin="anonymous"></script> -->
-  <script src="js/bootstrap.min.js" crossorigin="anonymous"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
 
   <!-- Bootstrap CSS -->
   <!-- <link rel="stylesheet" href="css/bootstrap.min.css" crossorigin="anonymous"> -->
@@ -27,8 +28,8 @@
 
     function loadInclude(template, id = null, complete = null) {
       if (!id) {
-        $('#mainbody')
-          .html('')
+        $id('mainbody')
+          // .html('')
           .load(template, complete);
       }
       else {
@@ -197,25 +198,25 @@
   // actions
 
   function checkMount() {
-    $('#mountrefresh').addClass('fa-spin');
-    $('#mountbtn')
+    $id('mountrefresh').addClass('fa-spin');
+    $id('mountbtn')
       .removeClass('btn-danger')
       .removeClass('btn-success')
       .addClass('btn-warning');
-    $('#remotebtn').addClass('disabled');
+    $id('remotebtn').addClass('disabled');
     ipcRenderer.send('mount', 'bla');
   }
 
   function connectWireless() {
-    $('#wirelessrefresh').addClass('fa-spin');
-    $('#wirelessbtn')
+    $id('wirelessrefresh').addClass('fa-spin');
+    $id('wirelessbtn')
       .removeClass('btn-danger')
       .addClass('btn-warning');
     ipcRenderer.send('connect_wireless', '');
   }
   function disconnectWireless() {
-    $('#wirelessrefresh').addClass('fa-spin');
-    $('#wirelessbtn')
+    $id('wirelessrefresh').addClass('fa-spin');
+    $id('wirelessbtn')
       .removeClass('btn-success')
       .addClass('btn-warning');
     ipcRenderer.send('disconnect_wireless', '');
@@ -247,28 +248,28 @@
   ipcRenderer.on('check_mount', (event, arg) => {
     console.log('check_mount responded: ', arg); // prints "ping"
     if (arg.success) {
-      $('#mountrefresh').removeClass('fa-spin');
-      $('#mountbtn')
+      $id('mountrefresh').removeClass('fa-spin');
+      $id('mountbtn')
         .removeClass('btn-warning')
         .removeClass('btn-danger')
         .addClass('btn-success')
         .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
-      $('#remotebtn').removeClass('disabled');
+      $id('remotebtn').removeClass('disabled');
 
       if (!remote.getGlobal('adbDevice')) return;
 
-      $('#updateBadge').removeClass('disabled');
+      $id('updateBadge').removeClass('disabled');
     }
     else {
-      $('#mountrefresh').removeClass('fa-spin');
-      $('#mountbtn')
+      $id('mountrefresh').removeClass('fa-spin');
+      $id('mountbtn')
         .removeClass('btn-success')
         .removeClass('btn-warning')
         .addClass('btn-danger')
         .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED`);
-      $('#remotebtn').addClass('disabled');
+      $id('remotebtn').addClass('disabled');
 
-      $('#updateBadge').addClass('disabled');
+      $id('updateBadge').addClass('disabled');
 
       if (arg.error)
         dialog.showMessageBox(null, {
@@ -286,19 +287,19 @@
 
     if (!!arg.success) {
       console.log('GETDEVICE SUCESS');
-      $('#devicebtn')
+      $id('devicebtn')
         .removeClass('btn-danger')
         .addClass('btn-success')
         .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
 
       $('a.adbdev').removeClass('disabled');
       if (!remote.getGlobal('mounted')) {
-        $('#updateBadge').addClass('disabled');
+        $id('updateBadge').addClass('disabled');
       }
 
       if (arg.success.endsWith(':5555')) {
-        $('#wirelessbtn')[0].onclick = disconnectWireless;
-        $('#wirelessbtn')
+        id('wirelessbtn').onclick = disconnectWireless;
+        $id('wirelessbtn')
           .removeClass('btn-danger')
           .addClass('btn-success')
           .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
@@ -308,15 +309,15 @@
       ipcRenderer.send('mp_name', { cmd: 'get' });
     }
     else {
-      $('#devicebtn')
+      $id('devicebtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
         .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECTED`);
 
       $('a.adbdev').addClass('disabled');
 
-      $('#wirelessbtn')[0].onclick = connectWireless;
-      $('#wirelessbtn')
+      id('wirelessbtn').onclick = connectWireless;
+      $id('wirelessbtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
         .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
@@ -325,12 +326,12 @@
 
   ipcRenderer.on('connect_wireless', (event, arg) => {
     console.log('check_wireless msg came FROM BE to fe:', arg);
-    $('#wirelessrefresh').removeClass('fa-spin');
+    $id('wirelessrefresh').removeClass('fa-spin');
 
     if (arg.success) {
       console.log('WIRELESS CONNECTED');
-      $('#wirelessbtn')[0].onclick = disconnectWireless;
-      $('#wirelessbtn')
+      id('wirelessbtn').onclick = disconnectWireless;
+      $id('wirelessbtn')
         .removeClass('btn-danger')
         .addClass('btn-success')
         .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
@@ -343,8 +344,8 @@
       })
     }
     else {
-      $('#wirelessbtn')[0].onclick = connectWireless;
-      $('#wirelessbtn')
+      id('wirelessbtn').onclick = connectWireless;
+      $id('wirelessbtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
         .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED`);
@@ -353,7 +354,7 @@
 
   ipcRenderer.on('ask_device', (event, arg) => {
     console.log('ask_device msg came ! ');
-    $('#processingModal').modal('hide');
+    $id('processingModal').modal('hide');
     dialog.showMessageBox(null, {
       type: 'info',
       buttons: ['Understood'],

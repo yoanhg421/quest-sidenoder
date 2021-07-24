@@ -28,24 +28,24 @@
   ipcRenderer.removeAllListeners('get_activities');
   ipcRenderer.on('get_activities', (event, arg) => {
     console.log('get_activities msg came: ', arg); // prints "ping"
-    $('#processingModal').modal('hide');
+    $id('processingModal').modal('hide');
     if (!arg.activities) return;
 
     let options = '';
     for (const activity of arg.activities) {
       options+= `<option value="${activity}">${activity.split('/')[1]}</option>`;
     }
-    $('#appActivities').html(options);
+    id('appActivities').innerHTML = options;
 
-    $('#appStartModal').modal('show');
+    $id('appStartModal').modal('show');
   });
   /*ipcRenderer.on('start_activity', (event, arg) => {
     console.log('start_activity msg came: ', arg); // prints "ping"
-    $('#appStartModal').modal('hide');
+    $id('appStartModal').modal('hide');
   });*/
 
-  $('#startActivityButton').on('click', function(){
-    $('#appStartModal').modal('hide');
-    ipcRenderer.send('start_activity', $('#appActivities').val());
+  $id('startActivityButton').on('click', function(){
+    $id('appStartModal').modal('hide');
+    ipcRenderer.send('start_activity', $id('appActivities').val());
   });
 </script>

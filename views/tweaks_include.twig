@@ -43,6 +43,35 @@
         </div>
       </div>
 
+      <div class="card bg-primary mb-1">
+        <div class="card-header">
+          FW Update (experimental):
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <small>
+              Reboot to bootloader.
+              <br/>Then go into device and select the "firmware update" option using the volume buttons to move the selection, and power button to select.
+              <br/>After that sideloade update.zip
+            </small>
+          </div>
+          <div class="form-group mb-4">
+            <label for="updateFwPath">Path to update.zip:</label>
+            <div class="input-group mb-2">
+              <input id="updateFwPath" class="form-control" value="" />
+              <a class="btn btn-primary" id="updateFwPathBtn">Browse</a>
+            </div>
+            <a id="rebootBootloader" class="adbdev btn btn-danger">
+              <i class="fa fa-refresh"></i> Reboot to bootloader
+            </a>
+            <a id="sideloadeFw" class="adbdev btn btn-warning">
+              <i class="fa fa-download"></i> Sideloade update.zip
+            </a>
+          </div>
+
+        </div>
+      </div>
+
 
       <div class="card bg-primary mb-1">
         <div class="card-header">Snapshots:</div>
@@ -223,49 +252,83 @@
     // console.log('device_tweaks ! ', arg);
     if (arg.cmd == 'get') {
       for (const key of TWEAKS_KEYS) {
-        if (arg[key]) $('#' + key).val(arg[key]);
+        if (arg[key]) $id('' + key).val(arg[key]);
       }
 
       for (const key of TWEAKS_CHECKBOXES) {
-        if (arg[key]) $('#' + key).prop('checked', arg[key] == '1');
+        if (arg[key]) $id('' + key).prop('checked', arg[key] == '1');
       }
     }
 
     if (arg.cmd == 'set') {
       for (const key of TWEAKS_KEYS) {
-        if (typeof arg[key] != 'undefined') $('#' + key).addClass('is-valid');
+        if (typeof arg[key] != 'undefined') $id('' + key).addClass('is-valid');
       }
     }
   });
 
   for (const key of TWEAKS_KEYS) {
-    $('#' + key).on('change', function ({ target }) {
+    $id(key).on('change', function ({ target }) {
       $(target).removeClass('is-valid');
       ipcRenderer.send('device_tweaks', { cmd: 'set', [key]: target.value });
     });
   }
 
   for (const key of TWEAKS_CHECKBOXES) {
-    $('#' + key).on('change.bootstrapSwitch', ({ target }) => {
+    $id(key).on('change.bootstrapSwitch', ({ target }) => {
       ipcRenderer.send('device_tweaks', {cmd: 'set', [key]: target.checked});
     });
   }
 
 
   if (remote.getGlobal('currentConfiguration').snapshotsDelete) {
-    $('#snapshotsDelete').prop('checked', true);
+    $id('snapshotsDelete').prop('checked', true);
   }
-  $('#snapshotsDelete').on('change.bootstrapSwitch', (e) => {
+  $id('snapshotsDelete').on('change.bootstrapSwitch', (e) => {
     ipcRenderer.send('change_config', {key: 'snapshotsDelete', val: e.target.checked});
   });
 
-  $('#enableMTP').on('click', function (e) {
+
+  ipcRenderer.removeAllListeners('cmd_sended');
+  ipcRenderer.on('cmd_sended', (event, arg) => {
+    alert(`Command sended: \n ${arg.success}`);
+  })
+
+  $id('enableMTP').on('click', function (e) {
     ipcRenderer.send('enable_mtp', '');
   });
-  $('#scrcpyCfg').on('click', function (e) {
-    $('#scrcpyModal').modal('show');
+  $id('scrcpyCfg').on('click', function (e) {
+    $id('scrcpyModal').modal('show');
   });
-  $('#rebootDevice').on('click', function (e) {
+  $id('rebootDevice').on('click', function (e) {
     ipcRenderer.send('reboot_device', '');
   });
+  $id('rebootBootloader').on('click', function (e) {
+    ipcRenderer.send('reboot_bootloader', '');
+  });
+  $id('sideloadeFw').on('click', function (e) {
+    ipcRenderer.send('sideload_update', $id('updateFwPath').val());
+  });
+
+  $id('updateFwPathBtn').on('click', updateFwPath);
+
+  async function updateFwPath() {
+    $id('updateFwPath').removeClass('is-valid');
+    const file = await dialog.showOpenDialog(null, {
+      properties: ['openFile'],
+      title: 'Update.zip path',
+      message: 'Browse to update.zip',
+      filters: [{
+        name: 'Zip', extensions: ['zip'],
+      }],
+    });
+    if (file.canceled) return;
+
+    const val = file.filePaths[0];
+    $id('updateFwPath')
+      .val(val)
+      .addClass('is-valid');
+    return val;
+  }
+
 }</script>

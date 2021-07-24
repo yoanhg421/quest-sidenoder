@@ -234,8 +234,14 @@ ipcMain.on('enable_mtp', async (event, arg) => {
     return;
   }
 
-  res = await tools.enableMTP();
-  event.reply('enable_mtp', { success: !!res });
+  try {
+    const res = await tools.enableMTP();
+    event.reply('cmd_sended', { success: res });
+  }
+  catch (err) {
+    event.reply('cmd_sended', { success: err });
+  }
+
   return;
 });
 
@@ -247,7 +253,8 @@ ipcMain.on('scrcpy_start', async (event, arg) => {
     return;
   }
 
-  res = await tools.startSCRCPY();
+  const res = await tools.startSCRCPY();
+  console.log('startSCRCPY', res);
   event.reply('scrcpy_start', { success: !!res });
   return;
 });
@@ -260,8 +267,57 @@ ipcMain.on('reboot_device', async (event, arg) => {
     return;
   }
 
-  res = await tools.rebootDevice();
-  event.reply('reboot_device', { success: !!res });
+  try {
+    const res = await tools.rebootDevice();
+    event.reply('cmd_sended', { success: res });
+  }
+  catch (err) {
+    event.reply('cmd_sended', { success: err });
+  }
+
+  return;
+});
+
+ipcMain.on('reboot_bootloader', async (event, arg) => {
+  console.log('reboot_bootloader received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
+  }
+
+  try {
+    const res = await tools.rebootBootloader();
+    event.reply('cmd_sended', { success: res });
+  }
+  catch (err) {
+    event.reply('cmd_sended', { success: err });
+  }
+
+  return;
+});
+ipcMain.on('sideload_update', async (event, arg) => {
+  console.log('sideload_update received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
+  }
+
+  if (!arg) {
+    console.log('update.zip not defined');
+    event.reply('cmd_sended', { success: 'Update.zip path not defined' });
+    return;
+  }
+
+  try {
+    const res = await tools.sideloadFile(arg);
+    event.reply('cmd_sended', { success: res });
+  }
+  catch (err) {
+    event.reply('cmd_sended', { success: err });
+  }
+
   return;
 });
 
@@ -325,7 +381,7 @@ ipcMain.on('change_config', async (event, { key, val }) => {
 
 ipcMain.on('app_config_set', async (event, { package, key, val }) => {
   console.log('change_config received', { package, key, val });
-  res = await tools.changeAppConfig(package, key, val);
+  const res = await tools.changeAppConfig(package, key, val);
   event.reply('app_config_set', res);
   return;
 });

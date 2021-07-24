@@ -59,6 +59,8 @@ module.exports =
   enableMTP,
   startSCRCPY,
   rebootDevice,
+  rebootBootloader,
+  sideloadFile,
   getLaunchActiviy,
   getActivities,
   startActivity,
@@ -473,12 +475,22 @@ async function startSCRCPY() {
     console.log('scrcpy stdout:', stdout);
   });
 
-  return true;
+  return scrcpyCmd;
 }
 
 async function rebootDevice() {
   const res = await adbShell(`reboot`);
   console.log('rebootDevice', { res });
+  return res;
+}
+async function rebootBootloader() {
+  const res = await adbShell(`reboot bootloader`);
+  console.log('rebootBootloader', { res });
+  return res;
+}
+async function sideloadFile(path) {
+  const res = await execShellCommand(`${global.currentConfiguration.adbPath} sideload "${path}"`);
+  console.log('sideloadFile', { res });
   return res;
 }
 
@@ -539,6 +551,10 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
   catch (err) {
     console.error(`adbShell[${deviceId}]: err`, {cmd}, err);
     global.adbError = err;
+    if (err.toString() == `FailError: Failure: 'device offline'`) {
+      getDeviceSync();
+    }
+
     return false;
   }
 }
@@ -1159,18 +1175,22 @@ async function getDir(folder) {
       }
 
       if (!versionCode && (new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
-        versionCode = fileName.match(/.*v([0-9]+)\+[0-9].*/)[1]
+        versionCode = fileName.match(/.*v([0-9]+)\+[0-9].*/)[1];
       }
 
       if (!versionCode && (new RegExp('.*\ -versionCode-')).test(fileName)) {
-        versionCode = fileName.match(/-versionCode-([0-9]*)/)[1]
-        if (!simpleName) simpleName = simpleName.split(' -versionCode-')[0]
+        versionCode = fileName.match(/-versionCode-([0-9]*)/)[1];
       }
 
       if (!packageName && (new RegExp('.*\ -packageName-')).test(fileName)) {
-        packageName = fileName.match(/-packageName-([a-zA-Z.]*)/)[1];
-        if (!simpleName) simpleName = simpleName.split(' -packageName-')[0];
+        packageName = fileName.match(/-packageName-([a-zA-Z0-9.]*)/)[1];
       }
+
+      /*
+      // obbs path the same =(
+      if (!packageName && KMETAS[fileName]) {
+        packageName = fileName;
+      }*/
 
 
       if (packageName) {
@@ -1185,6 +1205,7 @@ async function getDir(folder) {
       if (kmeta) {
         steamId = !!(kmeta.steam && kmeta.steam.id);
         oculusId = !!(kmeta.oculus && kmeta.oculus.id);
+        simpleName = kmeta.simpleName || simpleName;
       }
       else {
         newItem = true;
@@ -1238,16 +1259,9 @@ async function getDir(folder) {
 }
 
 async function cleanUpFoldername(simpleName) {
-  simpleName = simpleName.replace(`${global.mountFolder}/`, '')
-  simpleName = simpleName.split('-QuestUnderground')[0]
-  simpleName = simpleName.split(/v[0-9]*\./)[0]
-  //simpleName = simpleName.split(/v[0-9][0-9]\./)[0]
-  //simpleName = simpleName.split(/v[0-9][0-9][0-9]\./)[0]
-  simpleName = simpleName.split(/\[[0-9]*\./)[0]
-  simpleName = simpleName.split(/\[[0-9]*\]/)[0]
-  simpleName = simpleName.split(/v[0-9]+[ \+]/)[0]
-  simpleName = simpleName.split(/v[0-9]+$/)[0]
-
+  // simpleName = simpleName.split('-packageName-')[0];
+  simpleName = simpleName.split('-versionCode-')[0];
+  simpleName = simpleName.split(/ v[0-9]/)[0];
   return simpleName;
 }
 
@@ -1273,11 +1287,18 @@ async function getDirListing(folder){
 async function backupApp({ location, package }) {
   console.log('backupApp()', package, location);
   let apk = await adbShell(`pm list packages -f ${package}`);
-  console.log({apk});
   apk = apk.replace('package:', '').replace(`=${package}\n`, '');
-  console.log({apk});
 
-  location = path.join(location, package);
+  folderName = package;
+  for (const app of global.installedApps) {
+    if (app['packageName'] != package) continue;
+    folderName = `${app['simpleName']} -versionCode-${app['versionCode']} -packageName-${package}`;
+    break;
+  }
+
+  location = path.join(location, folderName);
+  console.log({ location, apk });
+
   await fsp.mkdir(location, { recursive: true });
   await adbPull(apk, path.join(location, 'base.apk'));
   const obbsPath = `/sdcard/Android/obb/${package}`;

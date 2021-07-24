@@ -53,7 +53,7 @@
     console.log('check_deps msg came: ', arg); // prints "ping"
     const { adb, rclone, zip, scrcpy } = arg;
     if (adb) {
-      const el = $('#adbCheckIndicator');
+      const el = $id('adbCheckIndicator');
       if (adb.version) {
         el
           .removeClass('badge-warning')
@@ -71,7 +71,7 @@
     }
 
     if (rclone) {
-      const el = $('#rcloneCheckIndicator');
+      const el = $id('rcloneCheckIndicator');
       if (rclone.version) {
         el
           .removeClass('badge-warning')
@@ -91,7 +91,7 @@
     }
 
     if (zip) {
-      const el = $('#zipCheckIndicator');
+      const el = $id('zipCheckIndicator');
       if (zip.version) {
         el
           .removeClass('badge-warning')
@@ -110,7 +110,7 @@
     }
 
     if (scrcpy) {
-      const el = $('#scrcpyCheckIndicator');
+      const el = $id('scrcpyCheckIndicator');
       if (scrcpy.version) {
         el
           .removeClass('badge-warning')
