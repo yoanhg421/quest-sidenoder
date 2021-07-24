@@ -1265,15 +1265,6 @@ async function cleanUpFoldername(simpleName) {
   return simpleName;
 }
 
-async function getObbs(folder){
-  const files = await fsp.readdir(folder);
-  let fileNames = await Promise.all(files.map(async (file) => {
-    return path.join(folder, file).replace(/\\/g, '/');
-  }));
-
-  return fileNames;
-}
-
 async function getDirListing(folder){
   const files = await fsp.readdir(folder);
   let fileNames = await Promise.all(files.map(async (file) => {
@@ -1390,33 +1381,34 @@ async function sideloadFolder(arg) {
     fromremote = true;
   }
 
-  console.log('fromremote:' + fromremote);
+  console.log('fromremote:', fromremote);
 
   packageName = '';
+  let apktmp = '';
   try {
-    console.log('attempting to read package info', { fromremote });
-
-    if (fromremote) {
+    if (!fromremote) {
+      res.download = 'skip';
+    }
+    else {
       res.download = 'processing';
       win.webContents.send('sideload_process', res);
 
-      tempapk = global.tmpdir + '/' + path.basename(apkfile);
-      console.log('is remote, copying to '+ tempapk)
+      apktmp = path.join(global.tmpdir, path.basename(apkfile));
+      console.log('is remote, copying to '+ apktmp)
 
-      if (await fsp.exists(tempapk)) {
-        console.log('is remote, ' + tempapk + 'already exists, using');
+      if (await fsp.exists(apktmp)) {
+        console.log('is remote, ' + apktmp + 'already exists, using');
         res.download = 'skip';
       }
       else {
-        if (await fsp.exists(tempapk + '.part')) await fsp.unlink(tempapk + '.part');
-        await fsp.copyFile(apkfile, tempapk + '.part');
-        await fsp.rename(tempapk + '.part', tempapk);
+        const tmpname = `${apktmp}.part`;
+        if (await fsp.exists(tmpname)) await fsp.unlink(tmpname);
+        await fsp.copyFile(apkfile, tmpname);
+        await fsp.rename(tmpname, apktmp);
         res.download = 'done';
       }
-      apkfile = tempapk;
-    }
-    else {
-      res.download = 'skip';
+
+      apkfile = apktmp;
     }
 
     res.aapt = 'processing';
@@ -1424,9 +1416,7 @@ async function sideloadFolder(arg) {
     packageinfo = await getPackageInfo(apkfile);
 
     packageName = packageinfo.packageName;
-    console.log({ packageinfo, packageName });
-
-    console.log('package info read success (' + apkfile + ')')
+    console.log({ apkfile, packageinfo, packageName });
   }
   catch (e) {
     // returnError(e);
@@ -1438,7 +1428,7 @@ async function sideloadFolder(arg) {
   }
 
   if (!packageName) {
-    const e = 'Can`t parse packageName of ' + apkfile;
+    const e = `Can't parse packageName of ${apkfile}`;
     // returnError(new Error(e));
     console.error(e);
     res.aapt = 'fail';
@@ -1470,6 +1460,7 @@ async function sideloadFolder(arg) {
   // const backup_path = `${global.tmpdir}/sidenoder_restore_backup/`;
   const backup_path = '/sdcard/Download/backup/Android/data/';
 
+  // TODO: if adbExist
   if (installed) {
     console.log('doing adb pull appdata (ignore error)');
     try {
@@ -1515,12 +1506,6 @@ async function sideloadFolder(arg) {
 
   try {
     await adbInstall(apkfile);
-
-    if (fromremote) {
-      //TODO: check settings
-      await fsp.unlink(tempapk);
-    }
-
     res.apk = 'done';
   }
   catch (e) {
@@ -1535,16 +1520,13 @@ async function sideloadFolder(arg) {
   res.restore = 'processing';
   win.webContents.send('sideload_process', res);
 
-  if (installed || await adbFileExists(`${backup_path}${packageName}`)) {
+  if (/*installed || */await adbFileExists(`${backup_path}${packageName}`)) {
     console.log('doing adb push appdata (ignore error)');
     try {
       // await restoreAppData(packageName, backup_path);
       await adbShell(`mv "${backup_path}${packageName}" "/sdcard/Android/data/"`);
       await restoreAppPrefs(packageName);
       res.restore = 'done';
-
-      //TODO: check settings
-      // await fsp.rmdir(path.join(backup_path, packageName), { recursive: true });
     }
     catch (e) {
       console.error('restore', e);
@@ -1560,25 +1542,30 @@ async function sideloadFolder(arg) {
   res.remove_obb = 'processing';
   win.webContents.send('sideload_process', res);
 
+  const obbFolderOrig = path.join(location, packageName);
   try {
-    if (!(await fsp.exists(path.join(location, packageName)))) throw 'Can`t find obbs folder';
-    obbFolder = packageName;
-    console.log('DATAFOLDER to copy:' + obbFolder);
+    if (!(await fsp.exists(obbFolderOrig))) throw 'Can`t find obbs folder';
+    obbFolderDest = `/sdcard/Android/obb/${packageName}`;
+    console.log('DATAFOLDER to copy:' + obbFolderDest);
   }
   catch (error) {
     console.log(error);
-    obbFolder = false;
+    obbFolderDest = false;
     res.remove_obb = 'skip';
     res.download_obb = 'skip';
     res.push_obb = 'skip';
     win.webContents.send('sideload_process', res);
   }
 
-  obbFiles = [];
-  if ( obbFolder ) {
+  let obbFiles = [];
+  if (!obbFolderDest) {
+    res.download_obb = 'skip';
+    res.push_obb = 'skip';
+  }
+  else {
     console.log('doing obb rm');
     try {
-      await adbShell(`rm -r "/sdcard/Android/obb/${obbFolder}"`);
+      await adbShell(`rm -r "${obbFolderDest}"`);
       res.remove_obb = 'done';
     }
     catch (e) {
@@ -1589,56 +1576,73 @@ async function sideloadFolder(arg) {
     res.download_obb = 'processing';
     win.webContents.send('sideload_process', res);
 
-    obbFiles = await getObbs(path.join(location, obbFolder));
-    if (obbFiles.length > 0) {
+    try {
+      obbFiles = await fsp.readdir(obbFolderOrig);
       console.log('obbFiles: ', obbFiles.length);
 
       res.download_obb = (fromremote ? '0' : obbFiles.length) + '/' + obbFiles.length;
       res.push_obb = '0/' + obbFiles.length;
       win.webContents.send('sideload_process', res);
 
-      await fsp.mkdir(global.tmpdir + '/' + packageName, { recursive: true });
+      const tmpFolder = path.join(global.tmpdir, packageName);
+      if (fromremote) {
+        await fsp.mkdir(tmpFolder, { recursive: true });
+      }
 
-      //TODO, make name be packageName instead of foldername
-      for (const item of obbFiles) {
-        console.log('obb File: ' + item)
+      for (const obbName of obbFiles) {
+        const obb = path.join(obbFolderOrig, obbName);
+        console.log('obb File: ' + obbName);
         console.log('doing obb push');
-        let n = item.lastIndexOf('/');
-        let name = item.substring(n + 1);
+        const destFile = `${obbFolderDest}/${obbName}`;
 
         if (fromremote) {
-          tempobb = path.join(global.tmpdir, packageName, path.basename(item));
-          console.log('obb is remote, copying to ' + tempobb);
+          const obbtmp = path.join(tmpFolder, obbName);
+          console.log('obb is remote, copying to ' + obbtmp);
 
-          if (await fsp.exists(tempobb)) {
-            console.log('obb is remote, ' + tempobb + 'already exists, using');
+          if (await fsp.exists(obbtmp)) {
+            console.log(`obb is remote, ${obbtmp} already exists, using`);
           }
           else {
-            if (await fsp.exists(tempobb + '.part')) await fsp.unlink(tempobb + '.part');
-            await fsp.copyFile(item, tempobb + '.part');
-            await fsp.rename(tempobb + '.part', tempobb);
+            const tmpname = `${obbtmp}.part`;
+            if (await fsp.exists(tmpname)) await fsp.unlink(tmpname);
+            await fsp.copyFile(obb, tmpname);
+            await fsp.rename(tmpname, obbtmp);
           }
 
           res.download_obb = (+res.download_obb.split('/')[0] + 1) + '/' + obbFiles.length;
           win.webContents.send('sideload_process', res);
 
-
-          await adbPush(tempobb, `/sdcard/Android/obb/${obbFolder}/${name}`);
-          //TODO: check settings
-          await fsp.rmdir(tempobb, { recursive: true });
+          await adbPush(obbtmp, `${destFile}`);
         }
         else {
-          await adbPush(item, `/sdcard/Android/obb/${obbFolder}/${name}`);
+          await adbPush(obb, `${destFile}`);
         }
 
         res.push_obb = (+res.push_obb.split('/')[0] + 1) + '/' + obbFiles.length;
         win.webContents.send('sideload_process', res);
       }
+
+      if (fromremote) {
+        //TODO: check settings
+        await fsp.rmdir(tmpFolder, { recursive: true });
+      }
+    }
+    catch (e) {
+      console.error('obbs processing', e);
+      if (fromremote) {
+        res.download_obb = 'fail';
+      }
+
+      res.push_obb = 'fail';
+      res.done = 'fail';
+      res.error = e;
+      return win.webContents.send('sideload_process', res);
     }
   }
-  else {
-    res.download_obb = 'skip';
-    res.push_obb = 'skip';
+
+  if (fromremote) {
+    //TODO: check settings
+    await fsp.unlink(apktmp);
   }
 
   res.done = 'done';
