@@ -38,8 +38,7 @@
     },
     "win": {
       "target": [
-        "nsis",
-        "zip"
+        "nsis"
       ]
     },
     "linux": {
