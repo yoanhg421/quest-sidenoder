@@ -1021,7 +1021,8 @@ async function parseRcloneSections() {
   let sections = [];
   for (const line of lines) {
     if (line[0] != '[') continue;
-    sections.push(line.substr(1, line.length - 2));
+    const section = line.match(/\[(.*?)\]/)[1];
+    sections.push(section);
   }
 
   global.rcloneSections = sections;
