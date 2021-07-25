@@ -1,3 +1,10 @@
+[![Donate PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/1xyst)
+[![Donate YooMoney](https://img.shields.io/badge/Donate-YooMoney-white.svg)](https://yoomoney.ru/to/410011725792647)
+[![Donate bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy](https://img.shields.io/badge/Donate-BTC-green.svg)](donate.md)
+<!---[![Donate Other Crypto](https://img.shields.io/badge/Donate-Crypto-red.svg)](https://nowpayments.io/donation?api_key=MAKXTDS-MMK4BZQ-J5F0TBA-6QCGGFX)-->
+
+
+
 **SideNoder** - A **cross platform sideloader** for Quest(1&2) standalone vr headset.
 
 <details>
@@ -18,7 +25,6 @@ What makes sidenoder better than other sideloaders ?
 
 </details>
 
-
 ## Running the compiled version
 
 #### Run precompiled release on windows:
@@ -38,6 +44,9 @@ What makes sidenoder better than other sideloaders ?
 
 
 ---
+
+#### Planned:
+https://github.com/vKolerts/quest-sidenoder/projects/1
 
 #### Nightly versions at dev branch ;)
 https://github.com/vKolerts/quest-sidenoder/tree/dev
