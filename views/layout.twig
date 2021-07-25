@@ -156,6 +156,7 @@
 <footer class="footer text-center">
   <hr>
   <b>SideNoder v{{ version }}</b>
+  <a class="btn btn-sm btn-info" onclick="$id('donateModal').modal('show')"><i class="fa fa-usd"></i> Donate</a>
   <br>
   https://github.com/vKolerts/quest-sidenoder
 </footer>
@@ -168,19 +169,17 @@
 <div id="appstartmodaldiv"></div>
 <div id="apptoolsmodaldiv"></div>
 <div id="scrcpymodaldiv"></div>
+<div id="donatemodaldiv"></div>
 
 
-<!--
- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script>
-
   loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');
   loadInclude('modals/processing.twig', 'processingmodaldiv');
   loadInclude('modals/app_start.twig', 'appstartmodaldiv');
   loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
+  loadInclude('modals/donate.twig', 'donatemodaldiv');
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();
