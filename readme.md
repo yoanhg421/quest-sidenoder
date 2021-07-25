@@ -1,6 +1,6 @@
 [![Donate PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/1xyst)
 [![Donate YooMoney](https://img.shields.io/badge/Donate-YooMoney-white.svg)](https://yoomoney.ru/to/410011725792647)
-[![bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy](https://img.shields.io/badge/Donate-BTC-green.svg)](bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy)(17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy)
+[![bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy](https://img.shields.io/badge/Donate-BTC-green.svg)](17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy)
 <!---[![Donate Other Crypto](https://img.shields.io/badge/Donate-Crypto-red.svg)](https://nowpayments.io/donation?api_key=MAKXTDS-MMK4BZQ-J5F0TBA-6QCGGFX)-->
 
 
