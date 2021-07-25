@@ -21,9 +21,6 @@ What makes sidenoder better than other sideloaders ?
 
 </details>
 
-#### Planned:
-https://github.com/vKolerts/quest-sidenoder/projects/1
-
 ## Running the compiled version
 
 #### Run precompiled release on windows:
@@ -43,6 +40,9 @@ https://github.com/vKolerts/quest-sidenoder/projects/1
 
 
 ---
+
+#### Planned:
+https://github.com/vKolerts/quest-sidenoder/projects/1
 
 #### Nightly versions at dev branch ;)
 https://github.com/vKolerts/quest-sidenoder/tree/dev
