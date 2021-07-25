@@ -10,6 +10,9 @@
       <div class="modal-body text-center" id="donateModalBody">
         <a class="btn btn-outline-info" onclick="shell.openExternal('https://paypal.me/1xyst')"><i class="fa fa-paypal"></i> PayPal</a>
         <a class="btn btn-outline-light" onclick="shell.openExternal('https://yoomoney.ru/to/410011725792647')"><i class="fa fa-money"></i> YooMoney</a>
+        <hr/>
+        <img alt="bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy" src="./qrbtc.jpg" />
+        <br/><input readonly="readonly" value="bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy" onclick="copyInput(this)">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -17,3 +20,11 @@
     </div>
   </div>
 </div>
+
+<script>
+function copyInput(el) {
+  el.select();
+  document.execCommand('copy');
+  alert('Text copied to clipboard');
+}
+</script>
