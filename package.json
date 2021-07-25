@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "SideNoder - oculus quest tool for sideloading, device tweaks, application managing, etc",
   "main": "main.js",
   "dependencies": {
