@@ -1,4 +1,4 @@
-const { app, BrowserWindow, powerSaveBlocker, ipcMain } = require('electron');
+const { app, BrowserWindow, powerSaveBlocker, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 global.twig = require('electron-twig');
@@ -421,7 +421,7 @@ ipcMain.on('data_restore', async (event, arg) => {
 });
 
 
-
+global.close = false;
 function createWindow () {
   global.win = new BrowserWindow({
     width: 1000,
@@ -436,7 +436,7 @@ function createWindow () {
   })
   win.setMenu(null);
   win.maximize(true);
-  win.loadURL(`file://${__dirname}/views/index.twig`);
+
   global.twig.view = {
     tmpdir: global.tmpdir,
     platform: global.platform,
@@ -446,12 +446,31 @@ function createWindow () {
     version: global.version,
     currentConfiguration: global.currentConfiguration
   }
+  win.loadURL(`file://${__dirname}/views/index.twig`);
 
   if (process.argv[2] == '--dev') {
-    global.win.webContents.openDevTools();
+    win.webContents.openDevTools();
   }
 
   setTimeout(checkVersion, 2000);
+
+  // TODO: check sideload process
+  /*win.on('close', function(e) {
+    if (close) return ;
+    e.preventDefault();
+
+    dialog.showMessageBox(this, {
+      type: 'question',
+      buttons: ['Yes', 'No'],
+      title: 'Confirm',
+      message: 'Are you sure you want to quit?'
+    })
+    .then(({ response }) => {
+      if (response != 0) return;
+      close = true;
+      app.quit();
+    });
+  });*/
 }
 
 
@@ -463,15 +482,15 @@ tools.reloadConfig().catch(e => {
 
 // DEFAULT
 app.whenReady().then(createWindow)
-app.on('window-all-closed', () => {
+app.on('window-all-closed', (e) => {
   // powerSaveBlocker.stop(id)
-  console.log('close')
+  console.log('quit');
   if (global.platform !== 'mac') {
-    app.quit()
+    app.quit();
   }
 })
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
 })

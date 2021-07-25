@@ -1491,6 +1491,7 @@ async function sideloadFolder(arg) {
     try {
       await adb.getDevice(global.adbDevice).uninstall(packageName);
       res.uninstall = 'done';
+      console.log('uninstall done', packageName);
     }
     catch (e) {
       console.error('uninstall', e);
@@ -1508,6 +1509,7 @@ async function sideloadFolder(arg) {
 
   try {
     await adbInstall(apkfile);
+    console.log('apk done', packageName);
     res.apk = 'done';
   }
   catch (e) {
@@ -1529,6 +1531,7 @@ async function sideloadFolder(arg) {
       await adbShell(`mv "${backup_path}${packageName}" "/sdcard/Android/data/"`);
       await restoreAppPrefs(packageName);
       res.restore = 'done';
+      console.log('restore done', packageName);
     }
     catch (e) {
       console.error('restore', e);
@@ -1545,6 +1548,7 @@ async function sideloadFolder(arg) {
   win.webContents.send('sideload_process', res);
 
   const obbFolderOrig = path.join(location, packageName);
+  console.log({ obbFolderOrig });
   try {
     if (!(await fsp.exists(obbFolderOrig))) throw 'Can`t find obbs folder';
     obbFolderDest = `/sdcard/Android/obb/${packageName}`;
@@ -1569,6 +1573,7 @@ async function sideloadFolder(arg) {
     try {
       await adbShell(`rm -r "${obbFolderDest}"`);
       res.remove_obb = 'done';
+      console.log('remove_obb done', packageName);
     }
     catch (e) {
       res.remove_obb = 'skip';
