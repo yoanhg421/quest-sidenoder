@@ -125,7 +125,11 @@ function loadDir(path, list) {
     }
 
 
-    newribbon = item.newItem ? `<div class="ribbon-wrapper-green"><div class="ribbon-green">NEW!</div></div>` : '';
+    newribbon = item.newItem ? `<div class="ribbon-wrapper"><div class="ribbon ribbon-yellow">NEW!</div></div>` : '';
+    if (item.mp) {
+      let color = item.mp.mp == 'yes' ? 'green' : item.mp.mp == 'no' ? 'red' : 'yellow';
+      newribbon = `<div class="ribbon-wrapper"><div class="ribbon ribbon-${color}" title="${item.mp.note}">MP: ${item.mp.mp}</div></div>`;
+    }
 
     selectBtn = `<a onclick="getDir('${fullPath}')" class="btn btn-sm btn-primary"><i class="fa fa-folder-open"></i></a> `;
     selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-primary col-4">Install</a> `;

@@ -1206,6 +1206,7 @@ async function getDir(folder) {
         steamId = !!(kmeta.steam && kmeta.steam.id);
         oculusId = !!(kmeta.oculus && kmeta.oculus.id);
         simpleName = kmeta.simpleName || simpleName;
+        mp = kmeta.mp || !!kmeta.mp;
       }
       else {
         newItem = true;
