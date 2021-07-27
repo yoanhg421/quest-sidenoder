@@ -62,6 +62,10 @@ async function getDirSize(el, path) {
   el.outerText = formatBytes(size);
 }
 
+function sqInfo(package) {
+  $id('processingModal').modal('show');
+  ipcRenderer.send('app_info', { res: 'sq', package });
+}
 function oculusInfo(package) {
   $id('processingModal').modal('show');
   ipcRenderer.send('app_info', { res: 'oculus', package });
@@ -136,7 +140,12 @@ function loadDir(path, list) {
 
     if (item.oculusId) {
       selectBtn+= `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
-        <img src="oculus.png" width="14" style="margin-top: -1px;" /></a> `;
+        <img src="img/oculus.png" width="14" style="margin-top: -1px;" /></a> `;
+    }
+
+    if (item.sqId) {
+      selectBtn+= `<a onclick="sqInfo('${item.packageName}')" title="SideQuest information" class="btn btn-sm btn-light">
+        <img src="img/sq.png" width="14" style="margin-top: -1px;" /></a> `;
     }
 
     if (item.steamId) {

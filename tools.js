@@ -464,11 +464,13 @@ async function startSCRCPY() {
   exec(scrcpyCmd, (error, stdout, stderr) => {
     if (error) {
       console.error('scrcpy error:', error);
+      win.webContents.send('cmd_sended', { success: error });
       return;
     }
 
     if (stderr) {
-      console.error('rclone stderr:', stderr);
+      console.error('scrcpy stderr:', stderr);
+      // win.webContents.send('cmd_sended', { success: stderr });
       return;
     }
 
@@ -798,14 +800,17 @@ async function appInfo(args) {
 
       data.res = 'steam';
       data.id = steam.id;
-      const url = `https://store.steampowered.com/app/${steam.id}/`;
+      data.url = `https://store.steampowered.com/app/${data.id}/`;
 
-      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${steam.id}`, {
+      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${data.id}`, {
         headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
       });
       const json = await resp.json();
       // console.log({ json });
-      return json && json[steam.id];
+
+      Object.assign(data, json[data.id].data);
+
+      return { success: true, data };
     }
 
     if (res == 'oculus') {
@@ -815,13 +820,10 @@ async function appInfo(args) {
 
       data.res = 'oculus';
       data.id = oculus.id;
-      data.url = 'https://www.oculus.com/experiences/quest/' + data.id;
+      data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       data.genres = oculus.genres && oculus.genres.split(', ');
-      if (oculus.meta) {
-        data.name = oculus.meta.name;
-      }
 
-      const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
+      const url = `https://www.oculus.com/experiences/quest/${data.id}/`;
       const resp = await fetch(`${url}?locale=${global.locale}`);
       const meta = await WAE().parse(await resp.text());
       const jsonld = meta.jsonld.Product[0];
@@ -842,15 +844,81 @@ async function appInfo(args) {
         }
       }
 
-      return {success: true, data};
+      return { success: true, data };
+    }
+
+    if (res == 'sq') {
+      const sq = app && app.sq;
+      if (!sq || !sq.id) throw 'incorrect args';
+      // console.log({ sq });
+
+      data.res = 'sq';
+      data.id = sq.id;
+
+      const resp = await fetch(`https://api.sidequestvr.com/get-app`, {
+        method: 'POST',
+        body: JSON.stringify({ apps_id: data.id }),
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/json',
+          'Origin': 'https://sidequestvr.com',
+        },
+      });
+      const json = await resp.json();
+      const meta = json.data[0];
+      data.name = meta.name;
+      data.header_image = meta.image_url;
+      data.short_description = meta.summary;
+      data.detailed_description = meta.description.replace('\n', '<br/>');
+      if (meta.video_url)
+        data.youtube = [meta.video_url
+          .replace('youtu.be', 'www.youtube.com/embed')
+          .replace('youtube.com', 'www.youtube.com/embed')];
+
+      const resp_img = await fetch(`https://api.sidequestvr.com/get-app-screenshots`, {
+        method: 'POST',
+        body: JSON.stringify({ apps_id: data.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://sidequestvr.com',
+        },
+      });
+      const json_img = await resp_img.json();
+      for (const id in json_img.data) {
+        data.screenshots.push({
+          id,
+          path_thumbnail: json_img.data[id].image_url,
+        });
+      }
+
+      /*const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
+      const resp = await fetch(`${url}?locale=${global.locale}`);
+      const meta = await WAE().parse(await resp.text());
+      const jsonld = meta.jsonld.Product[0];
+
+      data.name = jsonld.name;
+      data.header_image = meta.metatags['og:image'][0];
+      data.url = meta.metatags['al:web:url'][0];
+      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+      if (jsonld.image) {
+        for (const id in jsonld.image) {
+          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+          data.screenshots.push({
+            id,
+            path_thumbnail: jsonld.image[id],
+          });
+        }
+      }*/
+
+      return { success: true, data };
     }
   }
   catch (err) {
-    console.error('appInfo', {args, data}, err);
-    return { data };
+    console.error('appInfo', { args, data }, err);
   }
 
-  return { data };
+  return { success: true, data };
 }
 
 async function checkMount(attempt = 0) {
@@ -1149,6 +1217,7 @@ async function getDir(folder) {
 
       const info = await fsp.lstat(path.join(folder, fileName));
       let steamId = false,
+        sqId = false,
         oculusId = false,
         imagePath = false,
         versionCode = '',
@@ -1206,6 +1275,7 @@ async function getDir(folder) {
       if (kmeta) {
         steamId = !!(kmeta.steam && kmeta.steam.id);
         oculusId = !!(kmeta.oculus && kmeta.oculus.id);
+        sqId = !!(kmeta.sq && kmeta.sq.id);
         simpleName = kmeta.simpleName || simpleName;
         mp = kmeta.mp || !!kmeta.mp;
       }
@@ -1223,6 +1293,7 @@ async function getDir(folder) {
         isFile,
         isLink: info.isSymbolicLink(),
         steamId,
+        sqId,
         oculusId,
         imagePath,
         versionCode,
