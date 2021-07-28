@@ -854,6 +854,7 @@ async function appInfo(args) {
 
       data.res = 'sq';
       data.id = sq.id;
+      data.url = `https://sidequestvr.com/app/${data.id}/`;
 
       const resp = await fetch(`https://api.sidequestvr.com/get-app`, {
         method: 'POST',
@@ -872,8 +873,11 @@ async function appInfo(args) {
       data.detailed_description = meta.description.replace('\n', '<br/>');
       if (meta.video_url)
         data.youtube = [meta.video_url
-          .replace('youtu.be', 'www.youtube.com/embed')
-          .replace('youtube.com', 'www.youtube.com/embed')];
+          .replace('youtube.com', 'youtube.com/embed')
+          .replace('youtu.be', 'youtube.com/embed')
+          .replace('/embed/embed', '/embed')
+          .replace('/watch?v=', '/')
+        ];
 
       const resp_img = await fetch(`https://api.sidequestvr.com/get-app-screenshots`, {
         method: 'POST',
@@ -987,7 +991,7 @@ async function checkDeps(arg){
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "Version"`);
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "7-Zip"`);
       console.log(res[arg].version);
     }
 
@@ -1167,7 +1171,7 @@ async function mount() {
 
 function resetCache(folder) {
   console.log('resetCache', folder);
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).replace(/\\/g, '/');
 
   if (folder == oculusGamesDir) {
     cacheOculusGames = false;
@@ -1179,7 +1183,7 @@ function resetCache(folder) {
 
 
 async function getDir(folder) {
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).replace(/\\/g, '/');
   //console.log(folder, oculusGamesDir);
   if (
     folder == oculusGamesDir

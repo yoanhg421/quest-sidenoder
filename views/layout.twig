@@ -173,6 +173,10 @@
 
 
 <script>
+  if (!remote.getGlobal('currentConfiguration').donShown) {
+    setTimeout(()=>$id('donateModal').modal('show'), 2000 * 60);
+  }
+
   loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');

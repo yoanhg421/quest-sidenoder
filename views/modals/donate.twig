@@ -8,6 +8,9 @@
         </button>
       </div>
       <div class="modal-body text-center" id="donateModalBody">
+        Your donation will motivate me to work on lot of new features.
+        <br/>Thanks and please don't forget add your nickname at description
+        <hr/>
         <a class="btn btn-outline-info" onclick="shell.openExternal('https://paypal.me/1xyst')"><i class="fa fa-paypal"></i> PayPal</a>
         <a class="btn btn-outline-light" onclick="shell.openExternal('https://yoomoney.ru/to/410011725792647')"><i class="fa fa-money"></i> YooMoney</a>
         <hr/>
@@ -20,3 +23,7 @@
     </div>
   </div>
 </div>
+
+<script>
+  ipcRenderer.send('change_config', { key: 'donShown', val: true });
+</script>

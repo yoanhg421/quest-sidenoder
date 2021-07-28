@@ -16,10 +16,10 @@ const {
 global.endOfLine = EOL;
 global.platform = platform(); // process.platform
 global.arch = arch();
-global.homedir = homedir();
+global.homedir = homedir().replace(/\\/g, '/');
 global.tmpdir = tmpdir().replace(/\\/g, '/');
-global.mountFolder = global.tmpdir + '/mnt';
-global.sidenoderHome = path.join(global.homedir, 'sidenoder');
+global.mountFolder = path.join(global.tmpdir, 'mnt').replace(/\\/g, '/');
+global.sidenoderHome = path.join(global.homedir, 'sidenoder').replace(/\\/g, '/');
 
 global.adbDevice = false;
 global.mounted = false;
