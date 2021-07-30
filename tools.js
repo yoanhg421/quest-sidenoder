@@ -54,6 +54,8 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  wifiGetStat,
+  wifiEnable,
   connectWireless,
   disconnectWireless,
   enableMTP,
@@ -64,6 +66,7 @@ module.exports =
   getLaunchActiviy,
   getActivities,
   startActivity,
+  devOpenUrl,
   checkAppTools,
   changeAppConfig,
   backupApp,
@@ -88,12 +91,19 @@ module.exports =
 }
 
 async function getDeviceInfo() {
+  if (!global.adbDevice) {
+    return {
+      success: false,
+    };
+  }
   // console.log('getDeviceInfo()');
 
   const storage = await getStorageInfo();
   const user = await getUserInfo();
   const fw = await getFwInfo();
   const battery = await getBatteryInfo();
+  const ip = await getDeviceIp();
+  const wifi = await wifiGetStat();
 
   const res = {
     success: !!storage,
@@ -101,6 +111,8 @@ async function getDeviceInfo() {
     user,
     fw,
     battery,
+    ip,
+    wifi,
   };
 
   // console.log('getDeviceInfo', res);
@@ -113,18 +125,16 @@ async function getFwInfo() {
   if (!res) return false;
 
   return {
-    version: res.replace('releases-oculus-', '').replace('\n', ''),
+    version: res.replace('releases-oculus-', ''),
   }
 }
 
 async function getBatteryInfo() {
   console.log('getBatteryInfo()');
-  const res = await adbShell('dumpsys battery | grep level');
+  const res = await adbShell('dumpsys battery');
   if (!res) return false;
 
-  return {
-    level: res.slice(9).replace('\n', ''),
-  }
+  return parceOutOptions(res);
 }
 
 async function getUserInfo() {
@@ -154,17 +164,17 @@ async function deviceTweaksGet(arg) {
     // gSSO: '1440x1584',
   };
 
-  if (arg.key == 'mp_name') res.mp_name = (await adbShell('settings get global username')).replace('\n', '');
-  if (arg.key == 'guardian_pause') res.guardian_pause = (await adbShell('getprop debug.oculus.guardian_pause')).replace('\n', '');
-  if (arg.key == 'frc') res.frc = (await adbShell('getprop debug.oculus.fullRateCapture')).replace('\n', '');
-  if (arg.key == 'gRR') res.gRR = (await adbShell('getprop debug.oculus.refreshRate')).replace('\n', '');
-  if (arg.key == 'gCA') res.gCA = (await adbShell('getprop debug.oculus.forceChroma')).replace('\n', '');
-  if (arg.key == 'gFFR') res.gFFR = (await adbShell('getprop debug.oculus.foveation.level')).replace('\n', '');
-  if (arg.key == 'CPU') res.CPU = (await adbShell('getprop debug.oculus.cpuLevel')).replace('\n', '');
-  if (arg.key == 'GPU') res.GPU = (await adbShell('getprop debug.oculus.gpuLevel')).replace('\n', '');
-  if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution')).replace('\n', '');
-  if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.capture.height')).replace('\n', '');
-  if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.textureHeight')).replace('\n', '');
+  if (arg.key == 'mp_name') res.mp_name = (await adbShell('settings get global username'));
+  if (arg.key == 'guardian_pause') res.guardian_pause = (await adbShell('getprop debug.oculus.guardian_pause'));
+  if (arg.key == 'frc') res.frc = (await adbShell('getprop debug.oculus.fullRateCapture'));
+  if (arg.key == 'gRR') res.gRR = (await adbShell('getprop debug.oculus.refreshRate'));
+  if (arg.key == 'gCA') res.gCA = (await adbShell('getprop debug.oculus.forceChroma'));
+  if (arg.key == 'gFFR') res.gFFR = (await adbShell('getprop debug.oculus.foveation.level'));
+  if (arg.key == 'CPU') res.CPU = (await adbShell('getprop debug.oculus.cpuLevel'));
+  if (arg.key == 'GPU') res.GPU = (await adbShell('getprop debug.oculus.gpuLevel'));
+  if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution'));
+  if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')) + 'x' + (await adbShell('getprop debug.oculus.capture.height'));
+  if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')) + 'x' + (await adbShell('getprop debug.oculus.textureHeight'));
 
   return res;
 }
@@ -253,7 +263,7 @@ async function getStorageInfo() {
 async function getLaunchActiviy(package) {
   console.log('startApp()', package);
   const activity = await adbShell(`dumpsys package ${package} | grep -A 1 'filter' | head -n 1 | cut -d ' ' -f 10`);
-  return startActivity(activity.replace('\n', ''));
+  return startActivity(activity);
 }
 
 async function getActivities(package, activity = false) {
@@ -263,7 +273,7 @@ async function getActivities(package, activity = false) {
   if (!activities) return false;
 
   activities = activities.split('\n');
-  activities.pop();
+  // activities.pop();
   console.log({ package, activities });
   // TODO: check manifest.application.launcherActivities
 
@@ -276,6 +286,15 @@ async function startActivity(activity) {
   const result = await adbShell(`am start ${activity}`); // TODO activity selection
 
   console.log('startActivity', activity, result);
+  return result;
+}
+
+async function devOpenUrl(url) {
+  console.log('devOpenUrl', url);
+  wakeUp();
+  const result = await adbShell(`am start -a android.intent.action.VIEW -d "${url}"`); // TODO activity selection
+
+  console.log('devOpenUrl', url, result);
   return result;
 }
 
@@ -352,16 +371,32 @@ async function getDeviceIp() {
   }
 
   let ip = await adbShell(`ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
-  console.log(ip);
-  if (ip) return ip.replace('\n', '');
+  console.log({ip});
+  if (ip) return ip;
 
   ip = await adbShell(`ip addr show wlan0  | grep 'inet ' | cut -d ' ' -f 6 | cut -d / -f 1`);
-  console.log(ip);
-  if (ip) return ip.replace('\n', '');
+  console.log({ip});
+  if (ip) return ip;
   return false;
 }
 
+async function wifiGetStat() {
+  const on = await adbShell('settings get global wifi_on');
+  return on && +on;
+}
+
+async function wifiEnable(enable) {
+  return adbShell(`svc wifi ${enable ? 'enable' : 'disable'}`);
+}
+
 async function connectWireless() {
+  const on = await adbShell('settings get global wifi_on');
+  if (!(await wifiGetStat())) {
+    console.error('connectWireless', 'wifi disabled');
+    await wifiEnable(true);
+    return false;
+  }
+
   // await adbShell(`setprop service.adb.tcp.port 5555`);
   // TODO: save ip & try use it
   const ip = await getDeviceIp();
@@ -464,11 +499,13 @@ async function startSCRCPY() {
   exec(scrcpyCmd, (error, stdout, stderr) => {
     if (error) {
       console.error('scrcpy error:', error);
+      win.webContents.send('cmd_sended', { success: error });
       return;
     }
 
     if (stderr) {
-      console.error('rclone stderr:', stderr);
+      console.error('scrcpy stderr:', stderr);
+      // win.webContents.send('cmd_sended', { success: stderr });
       return;
     }
 
@@ -503,7 +540,7 @@ async function getDeviceSync(attempt = 0) {
       if (['authorizing', 'offline'].includes(device.type)) continue;
       if (
         !global.currentConfiguration.allowOtherDevices
-        && await adbShell('getprop ro.product.brand', device.id) != 'oculus\n'
+        && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
       ) continue;
 
       global.adbDevice = device.id;
@@ -545,7 +582,11 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
 
     let output = await adbkit.util.readAll(r);
     output = await output.toString();
+    // output = output.split('\n');
+    // const end = output.pop();
+    // if (end != '') output.push();
     console.log(`adbShell[${deviceId}]`, { cmd, output });
+    if (output.substr(-1) == '\n') return output.slice(0, -1);
     return output;
   }
   catch (err) {
@@ -557,6 +598,22 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
 
     return false;
   }
+}
+
+function parceOutOptions(line) {
+  let opts = {};
+  for (let l of line.split('\n')) {
+    l = l.split(' ').join('');
+    let [k, v] = l.split(':');
+
+    if (v == 'true') v = true;
+    if (v == 'false') v = false;
+    if (!isNaN(+v)) v = +v;
+
+    opts[k] = v;
+  }
+
+  return opts;
 }
 
 // on empty dirrectory return false
@@ -604,8 +661,8 @@ async function adbPull(orig, dest, sync = false) {
 
 async function adbPullFolder(orig, dest, sync = false) {
   console.log('pullFolder', orig, dest);
-  let need_close = false;
-  /*if (!sync) {
+  /*let need_close = false;
+  if (!sync) {
     need_close = true;
     sync = await adb.getDevice(global.adbDevice).syncService();
   }*/
@@ -617,7 +674,7 @@ async function adbPullFolder(orig, dest, sync = false) {
     : await adb.getDevice(global.adbDevice).readdir(orig);
 
   for (const file of files) {
-    const new_orig = path.join(orig, file.name);
+    const new_orig = `${orig}/${file.name}`;
     const new_dest = path.join(dest, file.name);
     if (file.isFile()) {
       actions.push(adbPull(new_orig, new_dest, sync)); // file.size
@@ -691,7 +748,7 @@ async function adbPushFolder(orig, dest, sync = false) {
   const files = await fsp.readdir(orig, { withFileTypes: true });
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
-    const new_dest = path.join(dest, file.name);
+    const new_dest = `${dest}/${file.name}`;
     if (file.isFile()) {
       actions.push(adbPush(new_orig, new_dest, sync));
       continue;
@@ -798,14 +855,17 @@ async function appInfo(args) {
 
       data.res = 'steam';
       data.id = steam.id;
-      const url = `https://store.steampowered.com/app/${steam.id}/`;
+      data.url = `https://store.steampowered.com/app/${data.id}/`;
 
-      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${steam.id}`, {
+      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${data.id}`, {
         headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
       });
       const json = await resp.json();
       // console.log({ json });
-      return json && json[steam.id];
+
+      Object.assign(data, json[data.id].data);
+
+      return { success: true, data };
     }
 
     if (res == 'oculus') {
@@ -815,13 +875,10 @@ async function appInfo(args) {
 
       data.res = 'oculus';
       data.id = oculus.id;
-      data.url = 'https://www.oculus.com/experiences/quest/' + data.id;
+      data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       data.genres = oculus.genres && oculus.genres.split(', ');
-      if (oculus.meta) {
-        data.name = oculus.meta.name;
-      }
 
-      const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
+      const url = `https://www.oculus.com/experiences/quest/${data.id}/`;
       const resp = await fetch(`${url}?locale=${global.locale}`);
       const meta = await WAE().parse(await resp.text());
       const jsonld = meta.jsonld.Product[0];
@@ -842,15 +899,85 @@ async function appInfo(args) {
         }
       }
 
-      return {success: true, data};
+      return { success: true, data };
+    }
+
+    if (res == 'sq') {
+      const sq = app && app.sq;
+      if (!sq || !sq.id) throw 'incorrect args';
+      // console.log({ sq });
+
+      data.res = 'sq';
+      data.id = sq.id;
+      data.url = `https://sidequestvr.com/app/${data.id}/`;
+
+      const resp = await fetch(`https://api.sidequestvr.com/get-app`, {
+        method: 'POST',
+        body: JSON.stringify({ apps_id: data.id }),
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/json',
+          'Origin': 'https://sidequestvr.com',
+        },
+      });
+      const json = await resp.json();
+      const meta = json.data[0];
+      data.name = meta.name;
+      data.header_image = meta.image_url;
+      data.short_description = meta.summary;
+      data.detailed_description = meta.description.replace('\n', '<br/>');
+      if (meta.video_url)
+        data.youtube = [meta.video_url
+          .replace('youtube.com', 'youtube.com/embed')
+          .replace('youtu.be', 'youtube.com/embed')
+          .replace('/embed/embed', '/embed')
+          .replace('/watch?v=', '/')
+        ];
+
+      const resp_img = await fetch(`https://api.sidequestvr.com/get-app-screenshots`, {
+        method: 'POST',
+        body: JSON.stringify({ apps_id: data.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://sidequestvr.com',
+        },
+      });
+      const json_img = await resp_img.json();
+      for (const id in json_img.data) {
+        data.screenshots.push({
+          id,
+          path_thumbnail: json_img.data[id].image_url,
+        });
+      }
+
+      /*const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
+      const resp = await fetch(`${url}?locale=${global.locale}`);
+      const meta = await WAE().parse(await resp.text());
+      const jsonld = meta.jsonld.Product[0];
+
+      data.name = jsonld.name;
+      data.header_image = meta.metatags['og:image'][0];
+      data.url = meta.metatags['al:web:url'][0];
+      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+      if (jsonld.image) {
+        for (const id in jsonld.image) {
+          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+          data.screenshots.push({
+            id,
+            path_thumbnail: jsonld.image[id],
+          });
+        }
+      }*/
+
+      return { success: true, data };
     }
   }
   catch (err) {
-    console.error('appInfo', {args, data}, err);
-    return { data };
+    console.error('appInfo', { args, data }, err);
   }
 
-  return { data };
+  return { success: true, data };
 }
 
 async function checkMount(attempt = 0) {
@@ -919,7 +1046,7 @@ async function checkDeps(arg){
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "Version"`);
+      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "7-Zip"`);
       console.log(res[arg].version);
     }
 
@@ -1037,13 +1164,14 @@ async function parseRcloneSections() {
 async function umount() {
   if (platform == 'win') {
     if (!(await fsp.exists(global.mountFolder))) return;
-    await fsp.rmdir(dir, { recursive: true });
+
+    await fsp.rmdir(global.mountFolder, { recursive: true });
+    return;
   }
-  else {
-    await execShellCommand(`umount ${global.mountFolder}`, true);
-    await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
-    await fsp.mkdir(global.mountFolder, { recursive: true });
-  }
+
+  await execShellCommand(`umount ${global.mountFolder}`, true);
+  await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
+  await fsp.mkdir(global.mountFolder, { recursive: true });
 }
 
 async function mount() {
@@ -1099,7 +1227,7 @@ async function mount() {
 
 function resetCache(folder) {
   console.log('resetCache', folder);
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).replace(/\\/g, '/');
 
   if (folder == oculusGamesDir) {
     cacheOculusGames = false;
@@ -1111,7 +1239,7 @@ function resetCache(folder) {
 
 
 async function getDir(folder) {
-  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).split('\\').join('/');
+  const oculusGamesDir = path.join(global.mountFolder, global.currentConfiguration.mntGamePath).replace(/\\/g, '/');
   //console.log(folder, oculusGamesDir);
   if (
     folder == oculusGamesDir
@@ -1149,6 +1277,7 @@ async function getDir(folder) {
 
       const info = await fsp.lstat(path.join(folder, fileName));
       let steamId = false,
+        sqId = false,
         oculusId = false,
         imagePath = false,
         versionCode = '',
@@ -1206,6 +1335,7 @@ async function getDir(folder) {
       if (kmeta) {
         steamId = !!(kmeta.steam && kmeta.steam.id);
         oculusId = !!(kmeta.oculus && kmeta.oculus.id);
+        sqId = !!(kmeta.sq && kmeta.sq.id);
         simpleName = kmeta.simpleName || simpleName;
         mp = kmeta.mp || !!kmeta.mp;
       }
@@ -1223,6 +1353,7 @@ async function getDir(folder) {
         isFile,
         isLink: info.isSymbolicLink(),
         steamId,
+        sqId,
         oculusId,
         imagePath,
         versionCode,
@@ -1280,7 +1411,7 @@ async function getDirListing(folder){
 async function backupApp({ location, package }) {
   console.log('backupApp()', package, location);
   let apk = await adbShell(`pm list packages -f ${package}`);
-  apk = apk.replace('package:', '').replace(`=${package}\n`, '');
+  apk = apk.replace('package:', '').replace(`=${package}`, '');
 
   folderName = package;
   for (const app of global.installedApps) {
@@ -1677,7 +1808,7 @@ async function getPackageInfo(apkPath) {
 async function getInstalledApps() {
   let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
-  apps.pop();
+  // apps.pop();
   appinfo = [];
 
   for (const appLine of apps) {

@@ -23,10 +23,14 @@
         <div id="appinfoShortDesc"></div>
         <br/>
         <div><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
+        <div class="text-center">
+          <a id="appinfoUrl" class="btn btn-primary" style="display: none">Open info on resource</a>
+          <a id="appinfoUrlDev" class="adbdev btn btn-info" style="display: none">Open info on device</a>
+        </div>
         <hr/>
         <b>Description:</b>
         <br/>
-        <div id="appinfoText" class="text-center"></div>
+        <div id="appinfoText"></div>
         <div id="appinfoAbout" class="text-center"></div>
       </div>
       <div class="modal-footer">
@@ -50,6 +54,10 @@
     id('appinfoText').innerHTML = '';
     id('appinfoAbout').innerHTML = '';
     appinfoSlider[0].innerHTML = '';
+    $id('appinfoUrl').hide();
+    $id('appinfoUrlDev').hide();
+    $id('appinfoText').removeClass('text-center');
+    $id('supportedLanguages').parent().hide();
   })
 
   ipcRenderer.removeAllListeners('app_info');
@@ -61,12 +69,29 @@
     const data = arg.data;
     if (!data)  return;
 
+    if (data.res == 'steam') {
+      $id('appinfoText').addClass('text-center');
+    }
 
-    if (data.name) $id('appinfoModalLabel').text(data.name);
-    if (data.short_description) $id('appinfoShortDesc').html(data.short_description);
-    if (data.detailed_description) $id('appinfoText').html(data.detailed_description);
-    if (data.about_the_game) $id('appinfoAbout').html(data.about_the_game);
-    if (data.supported_languages) $id('supportedLanguages').html(data.supported_languages.replace('русский', '<b>русский</b>'));
+    $id('appinfoModalLabel').text(data.name || '');
+    $id('appinfoShortDesc').html(data.short_description || '');
+    $id('appinfoText').html(data.detailed_description || '');
+    $id('appinfoAbout').html(data.about_the_game || '');
+    if (data.supported_languages) {
+      $id('supportedLanguages')
+      .html(data.supported_languages.replace('русский', '<b>русский</b>'))
+      .parent().show();
+    }
+
+    if (data.url) {
+      id('appinfoUrl').onclick = () => shell.openExternal(data.url);
+      $id('appinfoUrl').show();
+      if (data.res != 'steam') {
+        id('appinfoUrlDev').onclick = () => ipcRenderer.send('dev_open_url', data.url);
+        $id('appinfoUrlDev').show();
+      }
+    }
+
     if (data.genres) {
       for (const genre of data.genres) {
         const genre_text = genre.description || genre;
@@ -83,7 +108,13 @@
     if (data.movies) {
       for (const movie of data.movies) {
         if (!movie.mp4) continue;
-        slides+= `<li><video width="600" style="max-height: 360px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`;
+        slides+= `<li><video width="800" style="max-height: 405px;" controls><source src="${movie.mp4['480']}" type="video/mp4"></video></li>`;
+      }
+    }
+
+    if (data.youtube) {
+      for (const link of data.youtube) {
+        slides+= `<li><iframe width="800" height="405" src="${link}" frameborder="0" allowfullscreen></iframe></li>`;
       }
     }
 

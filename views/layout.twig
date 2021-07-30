@@ -90,7 +90,7 @@
 
 <nav class="navbar navbar-expand-md" style="padding: 10px">
 
-  <img src="quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
+  <img src="img/quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -147,7 +147,7 @@
 </nav>
 
 
-<div style="padding: 5px 20px">
+<div style="padding: 2px 20px">
   <div id="device_infoDiv"></div>
 
   {% block body %}{% endblock %}
@@ -173,6 +173,10 @@
 
 
 <script>
+  if (!remote.getGlobal('currentConfiguration').donShown) {
+    setTimeout(()=>$id('donateModal').modal('show'), 2000 * 60);
+  }
+
   loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');

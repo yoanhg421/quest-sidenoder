@@ -16,10 +16,10 @@ const {
 global.endOfLine = EOL;
 global.platform = platform(); // process.platform
 global.arch = arch();
-global.homedir = homedir();
+global.homedir = homedir().replace(/\\/g, '/');
 global.tmpdir = tmpdir().replace(/\\/g, '/');
-global.mountFolder = global.tmpdir + '/mnt';
-global.sidenoderHome = path.join(global.homedir, 'sidenoder');
+global.mountFolder = path.join(global.tmpdir, 'mnt').replace(/\\/g, '/');
+global.sidenoderHome = path.join(global.homedir, 'sidenoder').replace(/\\/g, '/');
 
 global.adbDevice = false;
 global.mounted = false;
@@ -368,6 +368,12 @@ ipcMain.on('start_app', async (event, arg) => {
   const activity = await tools.getLaunchActiviy(arg);
   const resp = await tools.startActivity(activity);
   event.reply('start_app', { success: !!resp });
+  return;
+});
+ipcMain.on('dev_open_url', async (event, arg) => {
+  console.log('dev_open_url received', arg);
+  const resp = await tools.devOpenUrl(arg);
+  event.reply('dev_open_url', { success: !!resp });
   return;
 });
 
