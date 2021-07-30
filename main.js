@@ -400,6 +400,14 @@ ipcMain.on('app_info', async (event, arg) => {
   return;
 });
 
+ipcMain.on('app_events_info', async (event, arg) => {
+  console.log('app_events_info received', arg);
+  const res = await tools.appInfoEvents(arg);
+  // console.log({ res });
+  event.reply('app_events_info', res);
+  return;
+});
+
 ipcMain.on('app_tools', async (event, arg) => {
   console.log('app_tools received', arg);
   const resp = await tools.checkAppTools(arg);

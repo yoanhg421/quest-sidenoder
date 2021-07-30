@@ -84,6 +84,7 @@ module.exports =
   deviceTweaksGet,
   deviceTweaksSet,
   appInfo,
+  appInfoEvents,
   isIdle,
   wakeUp,
   detectInstallTxt,
@@ -835,8 +836,9 @@ async function appInfo(args) {
   const { res, package } = args;
   const app = KMETAS[package];
   let data = {
+    res,
+    package,
     id: 0,
-    res: '',
     name: app.simpleName,
     short_description: '',
     detailed_description: '',
@@ -853,7 +855,6 @@ async function appInfo(args) {
       const steam = app && app.steam;
       if (!steam || !steam.id) throw 'incorrect args';
 
-      data.res = 'steam';
       data.id = steam.id;
       data.url = `https://store.steampowered.com/app/${data.id}/`;
 
@@ -864,8 +865,6 @@ async function appInfo(args) {
       // console.log({ json });
 
       Object.assign(data, json[data.id].data);
-
-      return { success: true, data };
     }
 
     if (res == 'oculus') {
@@ -873,7 +872,6 @@ async function appInfo(args) {
       if (!oculus || !oculus.id) throw 'incorrect args';
       // console.log({ oculus });
 
-      data.res = 'oculus';
       data.id = oculus.id;
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       data.genres = oculus.genres && oculus.genres.split(', ');
@@ -898,8 +896,6 @@ async function appInfo(args) {
           });
         }
       }
-
-      return { success: true, data };
     }
 
     if (res == 'sq') {
@@ -907,7 +903,6 @@ async function appInfo(args) {
       if (!sq || !sq.id) throw 'incorrect args';
       // console.log({ sq });
 
-      data.res = 'sq';
       data.id = sq.id;
       data.url = `https://sidequestvr.com/app/${data.id}/`;
 
@@ -925,7 +920,7 @@ async function appInfo(args) {
       data.name = meta.name;
       data.header_image = meta.image_url;
       data.short_description = meta.summary;
-      data.detailed_description = meta.description.replace('\n', '<br/>');
+      data.detailed_description = meta.description.split('\n').join('<br/>');
       if (meta.video_url)
         data.youtube = [meta.video_url
           .replace('youtube.com', 'youtube.com/embed')
@@ -949,32 +944,72 @@ async function appInfo(args) {
           path_thumbnail: json_img.data[id].image_url,
         });
       }
-
-      /*const url = `https://www.oculus.com/experiences/quest/${oculus.id}/`;
-      const resp = await fetch(`${url}?locale=${global.locale}`);
-      const meta = await WAE().parse(await resp.text());
-      const jsonld = meta.jsonld.Product[0];
-
-      data.name = jsonld.name;
-      data.header_image = meta.metatags['og:image'][0];
-      data.url = meta.metatags['al:web:url'][0];
-      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
-      if (jsonld.image) {
-        for (const id in jsonld.image) {
-          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
-
-          data.screenshots.push({
-            id,
-            path_thumbnail: jsonld.image[id],
-          });
-        }
-      }*/
-
-      return { success: true, data };
     }
   }
   catch (err) {
     console.error('appInfo', { args, data }, err);
+  }
+
+  return { success: true, data };
+}
+
+async function appInfoEvents(args) {
+  const { res, package } = args;
+  const app = KMETAS[package];
+  let data = {
+    res,
+    package,
+    events: [],
+  };
+
+  try {
+    if (res == 'steam') {
+      const steam = app && app.steam;
+      if (!steam || !steam.id) throw 'incorrect args';
+
+      data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
+
+      const resp = await fetch(`http://api.steampowered.com/ISteamNews/GetNewsForApp/v0002?appid=${steam.id}`, {
+        headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
+      });
+      const json = await resp.json();
+      // console.log({ json });
+
+      const events = json.appnews.newsitems;
+      for (const e of events) {
+        const event = {
+          title: e.title,
+          url: e.url,
+          date: (new Date(e.date * 1000)).toLocaleString(),
+          // author: e.author,
+        }
+
+        event.contents = e.contents
+          .split('\n').join('<br/>')
+          .split('[img]').join('<center><img src="')
+          .split('[/img]').join('" /></center>')
+          .split('{STEAM_CLAN_IMAGE}').join('https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/clans')
+          .split('[list]').join('<ul>')
+          .split('[/list]').join('</ul>')
+          .split('[*]').join('</li><li>')
+          // .split('[b]').join('<b>')
+          // .split('[/b]').join('</b>')
+          // .split('[i]').join('<i>')
+          // .split('[/i]').join('</i>')
+          .split('[').join('<')
+          .split(']').join('>')
+        data.events.push(event);
+      }
+    }
+
+    if (res == 'oculus') {
+    }
+
+    if (res == 'sq') {
+    }
+  }
+  catch (err) {
+    console.error('appInfoEvents', { args, data }, err);
   }
 
   return { success: true, data };
