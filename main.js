@@ -370,6 +370,12 @@ ipcMain.on('start_app', async (event, arg) => {
   event.reply('start_app', { success: !!resp });
   return;
 });
+ipcMain.on('dev_open_url', async (event, arg) => {
+  console.log('dev_open_url received', arg);
+  const resp = await tools.devOpenUrl(arg);
+  event.reply('dev_open_url', { success: !!resp });
+  return;
+});
 
 
 ipcMain.on('change_config', async (event, { key, val }) => {

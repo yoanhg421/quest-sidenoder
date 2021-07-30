@@ -25,6 +25,7 @@
         <div><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
         <div class="text-center">
           <a id="appinfoUrl" class="btn btn-primary" style="display: none">Open info on resource</a>
+          <a id="appinfoUrlDev" class="adbdev btn btn-info" style="display: none">Open info on device</a>
         </div>
         <hr/>
         <b>Description:</b>
@@ -54,6 +55,7 @@
     id('appinfoAbout').innerHTML = '';
     appinfoSlider[0].innerHTML = '';
     $id('appinfoUrl').hide();
+    $id('appinfoUrlDev').hide();
     $id('appinfoText').removeClass('text-center');
     $id('supportedLanguages').parent().hide();
   })
@@ -84,6 +86,10 @@
     if (data.url) {
       id('appinfoUrl').onclick = () => shell.openExternal(data.url);
       $id('appinfoUrl').show();
+      if (data.res != 'steam') {
+        id('appinfoUrlDev').onclick = () => ipcRenderer.send('dev_open_url', data.url);
+        $id('appinfoUrlDev').show();
+      }
     }
 
     if (data.genres) {

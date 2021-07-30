@@ -64,6 +64,7 @@ module.exports =
   getLaunchActiviy,
   getActivities,
   startActivity,
+  devOpenUrl,
   checkAppTools,
   changeAppConfig,
   backupApp,
@@ -88,6 +89,11 @@ module.exports =
 }
 
 async function getDeviceInfo() {
+  if (!global.adbDevice) {
+    return {
+      success: false,
+    };
+  }
   // console.log('getDeviceInfo()');
 
   const storage = await getStorageInfo();
@@ -276,6 +282,15 @@ async function startActivity(activity) {
   const result = await adbShell(`am start ${activity}`); // TODO activity selection
 
   console.log('startActivity', activity, result);
+  return result;
+}
+
+async function devOpenUrl(url) {
+  console.log('devOpenUrl', url);
+  wakeUp();
+  const result = await adbShell(`am start -a android.intent.action.VIEW -d "${url}"`); // TODO activity selection
+
+  console.log('devOpenUrl', url, result);
   return result;
 }
 
@@ -606,8 +621,8 @@ async function adbPull(orig, dest, sync = false) {
 
 async function adbPullFolder(orig, dest, sync = false) {
   console.log('pullFolder', orig, dest);
-  let need_close = false;
-  /*if (!sync) {
+  /*let need_close = false;
+  if (!sync) {
     need_close = true;
     sync = await adb.getDevice(global.adbDevice).syncService();
   }*/
@@ -619,7 +634,7 @@ async function adbPullFolder(orig, dest, sync = false) {
     : await adb.getDevice(global.adbDevice).readdir(orig);
 
   for (const file of files) {
-    const new_orig = path.join(orig, file.name);
+    const new_orig = `${orig}/${file.name}`;
     const new_dest = path.join(dest, file.name);
     if (file.isFile()) {
       actions.push(adbPull(new_orig, new_dest, sync)); // file.size
@@ -693,7 +708,7 @@ async function adbPushFolder(orig, dest, sync = false) {
   const files = await fsp.readdir(orig, { withFileTypes: true });
   for (const file of files) {
     const new_orig = path.join(orig, file.name);
-    const new_dest = path.join(dest, file.name);
+    const new_dest = `${dest}/${file.name}`;
     if (file.isFile()) {
       actions.push(adbPush(new_orig, new_dest, sync));
       continue;
@@ -1109,13 +1124,14 @@ async function parseRcloneSections() {
 async function umount() {
   if (platform == 'win') {
     if (!(await fsp.exists(global.mountFolder))) return;
-    await fsp.rmdir(dir, { recursive: true });
+
+    await fsp.rmdir(global.mountFolder, { recursive: true });
+    return;
   }
-  else {
-    await execShellCommand(`umount ${global.mountFolder}`, true);
-    await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
-    await fsp.mkdir(global.mountFolder, { recursive: true });
-  }
+
+  await execShellCommand(`umount ${global.mountFolder}`, true);
+  await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
+  await fsp.mkdir(global.mountFolder, { recursive: true });
 }
 
 async function mount() {
