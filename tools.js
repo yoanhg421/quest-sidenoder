@@ -54,6 +54,8 @@ module.exports =
   uninstall,
   getDirListing,
   getPackageInfo,
+  wifiGetStat,
+  wifiEnable,
   connectWireless,
   disconnectWireless,
   enableMTP,
@@ -100,6 +102,8 @@ async function getDeviceInfo() {
   const user = await getUserInfo();
   const fw = await getFwInfo();
   const battery = await getBatteryInfo();
+  const ip = await getDeviceIp();
+  const wifi = await wifiGetStat();
 
   const res = {
     success: !!storage,
@@ -107,6 +111,8 @@ async function getDeviceInfo() {
     user,
     fw,
     battery,
+    ip,
+    wifi,
   };
 
   // console.log('getDeviceInfo', res);
@@ -119,18 +125,16 @@ async function getFwInfo() {
   if (!res) return false;
 
   return {
-    version: res.replace('releases-oculus-', '').replace('\n', ''),
+    version: res.replace('releases-oculus-', ''),
   }
 }
 
 async function getBatteryInfo() {
   console.log('getBatteryInfo()');
-  const res = await adbShell('dumpsys battery | grep level');
+  const res = await adbShell('dumpsys battery');
   if (!res) return false;
 
-  return {
-    level: res.slice(9).replace('\n', ''),
-  }
+  return parceOutOptions(res);
 }
 
 async function getUserInfo() {
@@ -160,17 +164,17 @@ async function deviceTweaksGet(arg) {
     // gSSO: '1440x1584',
   };
 
-  if (arg.key == 'mp_name') res.mp_name = (await adbShell('settings get global username')).replace('\n', '');
-  if (arg.key == 'guardian_pause') res.guardian_pause = (await adbShell('getprop debug.oculus.guardian_pause')).replace('\n', '');
-  if (arg.key == 'frc') res.frc = (await adbShell('getprop debug.oculus.fullRateCapture')).replace('\n', '');
-  if (arg.key == 'gRR') res.gRR = (await adbShell('getprop debug.oculus.refreshRate')).replace('\n', '');
-  if (arg.key == 'gCA') res.gCA = (await adbShell('getprop debug.oculus.forceChroma')).replace('\n', '');
-  if (arg.key == 'gFFR') res.gFFR = (await adbShell('getprop debug.oculus.foveation.level')).replace('\n', '');
-  if (arg.key == 'CPU') res.CPU = (await adbShell('getprop debug.oculus.cpuLevel')).replace('\n', '');
-  if (arg.key == 'GPU') res.GPU = (await adbShell('getprop debug.oculus.gpuLevel')).replace('\n', '');
-  if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution')).replace('\n', '');
-  if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.capture.height')).replace('\n', '');
-  if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')).replace('\n', '') + 'x' + (await adbShell('getprop debug.oculus.textureHeight')).replace('\n', '');
+  if (arg.key == 'mp_name') res.mp_name = (await adbShell('settings get global username'));
+  if (arg.key == 'guardian_pause') res.guardian_pause = (await adbShell('getprop debug.oculus.guardian_pause'));
+  if (arg.key == 'frc') res.frc = (await adbShell('getprop debug.oculus.fullRateCapture'));
+  if (arg.key == 'gRR') res.gRR = (await adbShell('getprop debug.oculus.refreshRate'));
+  if (arg.key == 'gCA') res.gCA = (await adbShell('getprop debug.oculus.forceChroma'));
+  if (arg.key == 'gFFR') res.gFFR = (await adbShell('getprop debug.oculus.foveation.level'));
+  if (arg.key == 'CPU') res.CPU = (await adbShell('getprop debug.oculus.cpuLevel'));
+  if (arg.key == 'GPU') res.GPU = (await adbShell('getprop debug.oculus.gpuLevel'));
+  if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution'));
+  if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')) + 'x' + (await adbShell('getprop debug.oculus.capture.height'));
+  if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')) + 'x' + (await adbShell('getprop debug.oculus.textureHeight'));
 
   return res;
 }
@@ -259,7 +263,7 @@ async function getStorageInfo() {
 async function getLaunchActiviy(package) {
   console.log('startApp()', package);
   const activity = await adbShell(`dumpsys package ${package} | grep -A 1 'filter' | head -n 1 | cut -d ' ' -f 10`);
-  return startActivity(activity.replace('\n', ''));
+  return startActivity(activity);
 }
 
 async function getActivities(package, activity = false) {
@@ -269,7 +273,7 @@ async function getActivities(package, activity = false) {
   if (!activities) return false;
 
   activities = activities.split('\n');
-  activities.pop();
+  // activities.pop();
   console.log({ package, activities });
   // TODO: check manifest.application.launcherActivities
 
@@ -367,16 +371,32 @@ async function getDeviceIp() {
   }
 
   let ip = await adbShell(`ip -o route get to 8.8.8.8 | sed -n 's/.*src \\([0-9.]\\+\\).*/\\1/p'`);
-  console.log(ip);
-  if (ip) return ip.replace('\n', '');
+  console.log({ip});
+  if (ip) return ip;
 
   ip = await adbShell(`ip addr show wlan0  | grep 'inet ' | cut -d ' ' -f 6 | cut -d / -f 1`);
-  console.log(ip);
-  if (ip) return ip.replace('\n', '');
+  console.log({ip});
+  if (ip) return ip;
   return false;
 }
 
+async function wifiGetStat() {
+  const on = await adbShell('settings get global wifi_on');
+  return on && +on;
+}
+
+async function wifiEnable(enable) {
+  return adbShell(`svc wifi ${enable ? 'enable' : 'disable'}`);
+}
+
 async function connectWireless() {
+  const on = await adbShell('settings get global wifi_on');
+  if (!(await wifiGetStat())) {
+    console.error('connectWireless', 'wifi disabled');
+    await wifiEnable(true);
+    return false;
+  }
+
   // await adbShell(`setprop service.adb.tcp.port 5555`);
   // TODO: save ip & try use it
   const ip = await getDeviceIp();
@@ -520,7 +540,7 @@ async function getDeviceSync(attempt = 0) {
       if (['authorizing', 'offline'].includes(device.type)) continue;
       if (
         !global.currentConfiguration.allowOtherDevices
-        && await adbShell('getprop ro.product.brand', device.id) != 'oculus\n'
+        && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
       ) continue;
 
       global.adbDevice = device.id;
@@ -562,7 +582,11 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
 
     let output = await adbkit.util.readAll(r);
     output = await output.toString();
+    // output = output.split('\n');
+    // const end = output.pop();
+    // if (end != '') output.push();
     console.log(`adbShell[${deviceId}]`, { cmd, output });
+    if (output.substr(-1) == '\n') return output.slice(0, -1);
     return output;
   }
   catch (err) {
@@ -574,6 +598,22 @@ async function adbShell(cmd, deviceId = global.adbDevice, skipRead = false) {
 
     return false;
   }
+}
+
+function parceOutOptions(line) {
+  let opts = {};
+  for (let l of line.split('\n')) {
+    l = l.split(' ').join('');
+    let [k, v] = l.split(':');
+
+    if (v == 'true') v = true;
+    if (v == 'false') v = false;
+    if (!isNaN(+v)) v = +v;
+
+    opts[k] = v;
+  }
+
+  return opts;
 }
 
 // on empty dirrectory return false
@@ -1371,7 +1411,7 @@ async function getDirListing(folder){
 async function backupApp({ location, package }) {
   console.log('backupApp()', package, location);
   let apk = await adbShell(`pm list packages -f ${package}`);
-  apk = apk.replace('package:', '').replace(`=${package}\n`, '');
+  apk = apk.replace('package:', '').replace(`=${package}`, '');
 
   folderName = package;
   for (const app of global.installedApps) {
@@ -1768,7 +1808,7 @@ async function getPackageInfo(apkPath) {
 async function getInstalledApps() {
   let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
-  apps.pop();
+  // apps.pop();
   appinfo = [];
 
   for (const appLine of apps) {
