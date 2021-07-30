@@ -26,6 +26,7 @@
         <div class="text-center">
           <a id="appinfoUrl" class="btn btn-primary" style="display: none">Open info on resource</a>
           <a id="appinfoUrlDev" class="adbdev btn btn-info" style="display: none">Open info on device</a>
+          <a id="appinfoEventsBtn" class="btn btn-success" style="display: none">Show last events</a>
         </div>
         <hr/>
         <b>Description:</b>
@@ -56,9 +57,10 @@
     appinfoSlider[0].innerHTML = '';
     $id('appinfoUrl').hide();
     $id('appinfoUrlDev').hide();
+    $id('appinfoEventsBtn').hide();
     $id('appinfoText').removeClass('text-center');
     $id('supportedLanguages').parent().hide();
-  })
+  });
 
   ipcRenderer.removeAllListeners('app_info');
   ipcRenderer.on('app_info', (event, arg) => {
@@ -71,6 +73,15 @@
 
     if (data.res == 'steam') {
       $id('appinfoText').addClass('text-center');
+    }
+
+    if (['steam'].includes(data.res)) {
+      id('appinfoEventsBtn').onclick = () => {
+        $id('processingModal').modal('show');
+        ipcRenderer.send('app_events_info', {res: data.res, package: data.package});
+      }
+
+      $id('appinfoEventsBtn').show();
     }
 
     $id('appinfoModalLabel').text(data.name || '');
