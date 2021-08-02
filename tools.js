@@ -874,26 +874,71 @@ async function appInfo(args) {
 
       data.id = oculus.id;
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
-      data.genres = oculus.genres && oculus.genres.split(', ');
+      // data.genres = oculus.genres && oculus.genres.split(', ');
 
-      const url = `https://www.oculus.com/experiences/quest/${data.id}/`;
-      const resp = await fetch(`${url}?locale=${global.locale}`);
-      const meta = await WAE().parse(await resp.text());
-      const jsonld = meta.jsonld.Product[0];
+      let resp = await fetch('https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql', {
+        method: 'POST',
+        body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Origin': 'https://computerelite.github.io',
+        },
+      });
+      let json = await resp.json();
+      // console.log({ json });
+      if (!json.error) {
+        const meta = json.data.node;
+        data.name = meta.appName;
+        data.detailed_description = meta.display_long_description && meta.display_long_description.split('\n').join('<br/>');
+        data.genres = meta.genre_names;
 
-      data.name = jsonld.name;
-      data.header_image = meta.metatags['og:image'][0];
-      data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
-      data.url = meta.metatags['al:web:url'][0];
-      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
-      if (jsonld.image) {
-        for (const id in jsonld.image) {
-          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+        if (meta.supported_in_app_languages) {
+          data.supported_languages = meta.supported_in_app_languages.map(({name}) => name).join(', ');
+        }
+        //meta.internet_connection_name,
+        //meta.quality_rating_aggregate,
+        //meta.release_date,
 
-          data.screenshots.push({
-            id,
-            path_thumbnail: jsonld.image[id],
-          });
+        if (meta.website_page_meta) {
+          data.header_image = meta.website_page_meta.image_url;
+          data.short_description = meta.website_page_meta.description && meta.website_page_meta.description.split('\n').join('<br/>');
+          data.url = meta.website_page_meta.page_url;
+        }
+
+        if (meta.screenshots) {
+          for (const { uri } of meta.screenshots) {
+            data.screenshots.push({
+              // id,
+              path_thumbnail: uri,
+            });
+          }
+        }
+
+        if (meta.trailer && meta.trailer.uri) {
+          data.movies = [{ mp4: { '480': meta.trailer.uri } }];
+        }
+      }
+      else {
+        resp = await fetch(`${data.url}?locale=${global.locale}`);
+        const meta = await WAE().parse(await resp.text());
+        const jsonld = meta.jsonld.Product[0];
+
+        data.name = jsonld.name;
+
+        data.header_image = meta.metatags['og:image'][0];
+        data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
+        data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+        data.url = meta.metatags['al:web:url'][0];
+        if (jsonld.image) {
+          for (const id in jsonld.image) {
+            if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+            data.screenshots.push({
+              id,
+              path_thumbnail: jsonld.image[id],
+            });
+          }
         }
       }
     }
@@ -1003,6 +1048,69 @@ async function appInfoEvents(args) {
     }
 
     if (res == 'oculus') {
+      const oculus = app && app.oculus;
+      if (!oculus || !oculus.id) throw 'incorrect args';
+
+      // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
+
+      let resp = await fetch('https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql', {
+        method: 'POST',
+        body: `access_token=OC|752908224809889|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Origin': 'https://computerelite.github.io',
+        },
+      });
+      let json = await resp.json();
+      // console.log({ json });
+      if (!json.error) {
+        const events = json.data.node.supportedBinaries.edges;
+        for (const { node } of events) {
+          const e = node;
+          const event = {
+            id: e.id,
+            title: `${e.version} (versionCode: ${e.versionCode})`,
+            contents: e.changeLog && e.changeLog.split('\n').join('<br/>'),
+            // richChangeLog: e.richChangeLog,
+            // url: '',
+            // date: '',
+            // author: '',
+          };
+
+          if (e.richChangeLog) console.log('RICHCHANGELOG', e.richChangeLog);
+
+          data.events.push(event);
+        }
+      }
+
+      resp = await fetch(`https://computerelite.github.io/tools/Oculus/OlderAppVersions/${oculus.id}.json`);
+      json = await resp.json();
+      // console.log({ json });
+      const events = json.data.node.binaries.edges;
+      for (const { node } of events) {
+        const e = node;
+        let found = false;
+        for (const i in data.events) {
+          if (data.events[i].id != e.id) continue;
+
+          data.events[i].date = (new Date(e.created_date * 1000)).toLocaleString();
+          found = true;
+          break;
+        }
+        if (found) continue;
+
+        const event = {
+          id: e.id,
+          title: `${e.version} (versionCode: ${e.version_code})`,
+          date: (new Date(e.created_date * 1000)).toLocaleString(),
+          contents: e.change_log.split('\n').join('<br/>'),
+          // url: '',
+          // author: '',
+        };
+
+        data.events.push(event);
+      }
     }
 
     if (res == 'sq') {

@@ -18,11 +18,9 @@
             <ul></ul>
           </div>
         </div>
-        <div id="appinfoGenres" class="text-center"></div>
-        <br/>
-        <div id="appinfoShortDesc"></div>
-        <br/>
-        <div><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
+        <div id="appinfoGenres" class="text-center mb-2"></div>
+        <div class="mb-2" id="appinfoShortDesc"></div>
+        <div class="mb-2"><b>Supported laguages:</b> <span id="supportedLanguages">Unknown</span></div>
         <div class="text-center">
           <a id="appinfoUrl" class="btn btn-primary" style="display: none">Open info on resource</a>
           <a id="appinfoUrlDev" class="adbdev btn btn-info" style="display: none">Open info on device</a>
@@ -75,7 +73,7 @@
       $id('appinfoText').addClass('text-center');
     }
 
-    if (['steam'].includes(data.res)) {
+    if (['steam', 'oculus'].includes(data.res)) {
       id('appinfoEventsBtn').onclick = () => {
         $id('processingModal').modal('show');
         ipcRenderer.send('app_events_info', {res: data.res, package: data.package});
@@ -90,7 +88,10 @@
     $id('appinfoAbout').html(data.about_the_game || '');
     if (data.supported_languages) {
       $id('supportedLanguages')
-      .html(data.supported_languages.replace('русский', '<b>русский</b>'))
+      .html(data.supported_languages
+        .replace('русский', '<b>русский</b>')
+        .replace('Русский', '<b>Русский</b>')
+      )
       .parent().show();
     }
 
@@ -131,7 +132,7 @@
 
     if (data.screenshots) {
       for (const screenshot of data.screenshots) {
-        slides+= `<li><img src="${screenshot.path_thumbnail}" width="800" style="max-height: 405px;" alt="${screenshot.id}" /></li>`;
+        slides+= `<li><img src="${screenshot.path_thumbnail}" width="800" style="max-height: 405px;" alt="screenshot_${screenshot.id}" /></li>`;
       }
     }
 

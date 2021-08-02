@@ -59,10 +59,9 @@
     for (const e of data.events) {
       let event = '';
       if (e.date) event+= `<small class="pull-right">${e.date}</small>`;
-      if (e.title) event+= `<h4>${e.title}</h4><br/>`;
+      event+= `<h4>${e.title || ''}</h4>`;
       if (e.contents) event+= `<div>${e.contents}</div>`;
-      if (e.date) event+= `<hr/>`;
-      events+= event;
+      events+= `${event}<hr/>`;
     }
 
     id('appinfoEventsBody').innerHTML = events;
