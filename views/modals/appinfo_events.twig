@@ -45,7 +45,7 @@
   ipcRenderer.on('app_events_info', (event, arg) => {
     $id('processingModal').modal('hide');
     console.log('app_events_info received');
-    // console.log('app_info received', arg);
+    // console.log(arg);
     if (!arg || !arg.success)  return console.log(arg);
     const data = arg.data;
     if (!data)  return;

@@ -73,14 +73,14 @@
       $id('appinfoText').addClass('text-center');
     }
 
-    if (['steam', 'oculus'].includes(data.res)) {
+    // if (['steam', 'oculus'].includes(data.res)) {
       id('appinfoEventsBtn').onclick = () => {
         $id('processingModal').modal('show');
         ipcRenderer.send('app_events_info', {res: data.res, package: data.package});
       }
 
       $id('appinfoEventsBtn').show();
-    }
+    // }
 
     $id('appinfoModalLabel').text(data.name || '');
     $id('appinfoShortDesc').html(data.short_description || '');

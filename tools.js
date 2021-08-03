@@ -1084,6 +1084,9 @@ async function appInfoEvents(args) {
           data.events.push(event);
         }
       }
+      else {
+        console.error(res, 'fetch error', json.error);
+      }
 
       resp = await fetch(`https://computerelite.github.io/tools/Oculus/OlderAppVersions/${oculus.id}.json`);
       json = await resp.json();
@@ -1115,6 +1118,44 @@ async function appInfoEvents(args) {
     }
 
     if (res == 'sq') {
+      const sq = app && app.sq;
+      if (!sq || !sq.id) throw 'incorrect args';
+      // console.log({ sq });
+
+      for (const is_news of [true, false]) {
+        const resp = await fetch(`https://api.sidequestvr.com/events-list`, {
+          method: 'POST',
+          body: JSON.stringify({ apps_id: sq.id, is_news }),
+          headers: {
+            'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Content-Type': 'application/json',
+            'Origin': 'https://sidequestvr.com',
+          },
+        });
+        const json = await resp.json();
+        // console.log({ json });
+        for (const e of json.data) {
+          const event = {
+            id: e.events_id,
+            title: e.event_name,
+            url: e.event_url,
+            date: (new Date(e.start_time * 1000)).toLocaleString(),
+            contents: '',
+            // author: '',
+          };
+
+          if (e.event_image) {
+            event.contents += `<center><img src="${e.event_image[0] == '/' ? 'https://sidequestvr.com':''}${e.event_image}" /></center>`;
+          }
+
+          if (e.event_description) {
+            event.contents += e.event_description.split('\n').join('<br/>');
+          }
+
+          data.events.push(event);
+        }
+      }
+
     }
   }
   catch (err) {
