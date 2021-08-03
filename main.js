@@ -439,13 +439,16 @@ global.close = false;
 function createWindow () {
   global.win = new BrowserWindow({
     width: 1000,
+    minWidth: 800,
     height: 800,
+    minHeight: 500,
     title: 'Quest-Sidenoder',
     //frame:false,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule:true,
       contextIsolation: false,
+      webView: true,
     }
   })
   win.setMenu(null);
@@ -458,7 +461,7 @@ function createWindow () {
     mountFolder: global.mountFolder,
     sidenoderHome: global.sidenoderHome,
     version: global.version,
-    currentConfiguration: global.currentConfiguration
+    currentConfiguration: global.currentConfiguration,
   }
   win.loadURL(`file://${__dirname}/views/index.twig`);
 

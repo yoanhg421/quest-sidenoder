@@ -1508,7 +1508,7 @@ async function getDir(folder) {
         info,
         mp,
         createdAt: new Date(info.mtimeMs),
-        filePath: folder + '/' + fileName.replace(/\\/g, '/'),
+        filePath: path.join(folder, fileName).replace(/\\/g, '/'),
       };
     }));
     // console.log({ fileNames });
