@@ -10,7 +10,7 @@ document.addEventListener('keydown', (e) => {
   // if (e.shiftKey) search.findNext();
 });
 
-window.onscroll = () => {
+window.addEventListener('scroll', () => {
   if (!search) return;
 
   const scrollTop = document.documentElement.scrollTop;
@@ -28,7 +28,7 @@ window.onscroll = () => {
   if (scrollTop > 150) {
     $('.find-box')[0].style.top = '20px';
   }
-};
+});
 
 function openSearch() {
   const parentElement = id('listTable');
