@@ -135,6 +135,8 @@
   ipcRenderer.on('sideload_process', (event, arg) => {
     console.log('sideload_process', arg);
 
+    remote.getGlobal('win').setProgressBar(1 - ($('.badge-warning').length / $('.badge').length));
+
     if (arg.device) {
       badgeState($id('deviceBadge'), arg.device);
     }
