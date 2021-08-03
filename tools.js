@@ -88,6 +88,7 @@ module.exports =
   isIdle,
   wakeUp,
   detectInstallTxt,
+  detectNoteTxt,
   // ...
 }
 
@@ -2026,6 +2027,25 @@ async function getInstalledAppsWithUpdates() {
 }
 
 
+async function detectNoteTxt(files, folder) {
+  // TODO: check .meta/notes
+
+  if (typeof files == 'string') {
+    folder = files;
+    files = false;
+  }
+
+  if (!files) {
+    files = await fsp.readdir(folder);
+  }
+
+  if (files.includes('notes.txt')) {
+    return fsp.readFile(path.join(folder, 'notes.txt'), 'utf8');
+  }
+
+  return false;
+}
+
 async function detectInstallTxt(files, folder) {
   if (typeof files == 'string') {
     folder = files;
@@ -2039,13 +2059,11 @@ async function detectInstallTxt(files, folder) {
   const installTxNames = [
     'install.txt',
     'Install.txt',
-    // 'notes.txt',
-    // 'Notes.txt',
   ];
 
   for (const name of installTxNames) {
     if (files.includes(name)) {
-      return await fsp.readFile(path.join(folder, name), 'utf8');
+      return fsp.readFile(path.join(folder, name), 'utf8');
     }
   }
 
@@ -2061,6 +2079,7 @@ async function getApkFromFolder(folder){
 
   const files = await fsp.readdir(folder);
   res.install_desc = await detectInstallTxt(files, folder);
+  res.notes = await detectNoteTxt(files, folder);
   console.log({ files });
 
   for (file of files) {

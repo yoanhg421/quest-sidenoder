@@ -182,12 +182,12 @@ ipcMain.on('get_dir', async (event, arg) => {
   if ((typeof arg === 'string') && arg.endsWith('.apk')) {
     const install = {
       path: arg,
-      install_desc: false,
     }
     const lastslashindex = install.path.lastIndexOf('/');
     const folder = install.path.substring(0, lastslashindex);
 
     install.install_desc = await tools.detectInstallTxt(folder);
+    install.notes = await tools.detectNoteTxt(folder);
 
     event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
     return;
