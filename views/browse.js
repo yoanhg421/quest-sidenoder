@@ -141,11 +141,13 @@ function loadDir(list) {
       let rowItem = '';
       if (item.name.endsWith('.apk')) {
         rowItem = `<td class="browse-file" onclick="getDir('${fullPath}')"><b><i class="fa fa-android"></i> &nbsp; ${name}</b></td>`;
-        rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
+        rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td><td>${size} Mb</td>`;
+        rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
       }
       else {
         rowItem = `<td><i class="fa fa-file-o"></i> &nbsp; ${name}</td>`;
-        rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
+        rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td><td>${size} Mb</td>`;
+        rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
       }
 
       rows+= rowItem;
@@ -154,6 +156,7 @@ function loadDir(list) {
 
     if (!item.imagePath) {
       rowItem = `<td class='browse-folder' onclick="getDir('${fullPath}')"><i class="fa fa-folder-o"></i> &nbsp; ${name}</td>`;
+      rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td>`;
       rowItem += `<td><a onclick="getDirSize(this, '${fullPath}')"><i class="fa fa-calculator" ></i> get size</a></td>`;
 
       rows+= `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
@@ -167,8 +170,15 @@ function loadDir(list) {
       newribbon = `<div class="ribbon-wrapper"><div class="ribbon ribbon-${color}" title="${item.mp.note}">MP: ${item.mp.mp}</div></div>`;
     }
 
+    let installColor = 'primary';
+    let installText = 'Install';
+    if (item.installed) {
+      installColor = item.installed > 1 ? 'warning' : 'success';
+      installText = item.installed > 1 ? 'Update' : 'Reinstall';
+    }
+
     selectBtn = `<a onclick="getDir('${fullPath}')" class="btn btn-sm btn-primary"><i class="fa fa-folder-open"></i></a> `;
-    selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-primary col-4">Install</a> `;
+    selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-${installColor} col-4">${installText}</a> `;
 
     if (item.oculusId) {
       selectBtn+= `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">

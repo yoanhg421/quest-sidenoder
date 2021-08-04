@@ -877,7 +877,7 @@ async function appInfo(args) {
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       // data.genres = oculus.genres && oculus.genres.split(', ');
 
-      let resp = await fetch('https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql', {
+      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
         headers: {
@@ -1054,9 +1054,9 @@ async function appInfoEvents(args) {
 
       // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
 
-      let resp = await fetch('https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql', {
+      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
-        body: `access_token=OC|752908224809889|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
+        body: `access_token=OC|1317831034909742|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
         headers: {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -1438,6 +1438,7 @@ async function getDir(folder) {
   try {
     const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
+    let installedApps = {}
     try {
       if (files.includes('GameList.txt')) {
         const list = (await fsp.readFile(path.join(folder, 'GameList.txt'), 'utf8')).split('\n');
@@ -1458,6 +1459,15 @@ async function getDir(folder) {
       console.error('GameList.txt failed', err);
     }
 
+    try {
+      if (global.adbDevice) {
+        installedApps = await getInstalledApps(true);
+      }
+    }
+    catch (err) {
+      console.error('Can`t get installed apps', err);
+    }
+
     let fileNames = await Promise.all(files.map(async (fileName) => {
 
       const info = await fsp.lstat(path.join(folder, fileName));
@@ -1472,6 +1482,7 @@ async function getDir(folder) {
         note = '',
         kmeta = false,
         mp = false,
+        installed = 0,
         newItem = false;
 
       const gameMeta = gameList[fileName];
@@ -1515,6 +1526,13 @@ async function getDir(folder) {
           imagePath = 'unknown.png';
 
         kmeta = KMETAS[packageName];
+        installedApp = installedApps[packageName];
+        if (installedApp) {
+          installed = 1;
+          if (versionCode && versionCode > installedApp.versionCode) {
+            installed++;
+          }
+        }
       }
 
       if (kmeta) {
@@ -1548,6 +1566,7 @@ async function getDir(folder) {
         newItem,
         info,
         mp,
+        installed,
         createdAt: new Date(info.mtimeMs),
         filePath: path.join(folder, fileName).replace(/\\/g, '/'),
       };
@@ -1990,11 +2009,11 @@ async function getPackageInfo(apkPath) {
   return info;
 }
 
-async function getInstalledApps() {
+async function getInstalledApps(obj = false) {
   let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   // apps.pop();
-  appinfo = [];
+  appinfo = {};
 
   for (const appLine of apps) {
     const [packageName, versionCode] = appLine.slice(8).split(' versionCode:');
@@ -2007,13 +2026,13 @@ async function getInstalledApps() {
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
       : 'unknown.png';
 
-    appinfo.push(info);
+    appinfo[packageName] = info;
   }
 
 
-  global.installedApps = appinfo;
+  global.installedApps = Object.values(appinfo);
 
-  return appinfo;
+  return obj ? appinfo : global.installedApps;
 }
 
 async function getInstalledAppsWithUpdates() {
@@ -2037,7 +2056,7 @@ async function getInstalledAppsWithUpdates() {
 
   const remoteKeys = Object.keys(remotePackages);
 
-  const apps = global.installedApps || await getInstalledApps(false);
+  const apps = global.installedApps || await getInstalledApps();
   let updates = [];
   for (const app of apps) {
     const packageName = app['packageName'];
