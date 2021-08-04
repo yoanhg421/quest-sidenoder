@@ -23,7 +23,12 @@
     "start": "electron ./ --dev",
     "pack": "electron-builder --dir",
     "dist": "electron-builder -mwl",
-    "postinstall": "electron-builder install-app-deps"
+    "dist-win": "electron-builder -w",
+    "dist-mac": "electron-builder -m",
+    "postdist": "npm run pack-win && npm run pack-mac",
+    "postinstall": "electron-builder install-app-deps",
+    "pack-win": "cd out/win-unpacked && cp ../windows-install.bat ./ && 7za a sidenoder-$npm_package_version-win.zip  ./* && mv sidenoder-$npm_package_version-win.zip ../",
+    "pack-mac": "cd out/mac && tar -czf sidenoder-$npm_package_version-mac.tar.gz  ./* && mv sidenoder-$npm_package_version-mac.tar.gz ../"
   },
   "build": {
     "appId": "com.sidenoder.app",
