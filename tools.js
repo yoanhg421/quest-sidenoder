@@ -633,7 +633,7 @@ async function adbPull(orig, dest, sync = false) {
     let c = 0;
     transfer.on('progress', (stats) => {
       c++;
-      if (c % 20 != 1) return; // skip 20 events
+      if (c % 40 != 1) return; // skip 20 events
 
       // console.log(orig + ' pulled', stats);
       const res = {
@@ -705,7 +705,7 @@ async function adbPush(orig, dest, sync = false) {
     let c = 0
     transfer.on('progress', (stats) => {
       c++;
-      if (c % 20 != 1) return; // skip 20 events
+      if (c % 40 != 1) return; // skip 20 events
 
       // console.log(orig + ' pushed', stats);
       const res = {
