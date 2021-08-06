@@ -16,17 +16,17 @@ window.addEventListener('scroll', () => {
   const scrollTop = document.documentElement.scrollTop;
   if (
     scrollTop > 0
-    && scrollTop < 150
+    && scrollTop < 52
   ) {
-    $('.find-box')[0].style.top = (170 - scrollTop) + 'px';
+    $('.find-box')[0].style.top = (162 - scrollTop) + 'px';
   }
 
   if (scrollTop == 0) {
-    $('.find-box')[0].style.top = '170px';
+    $('.find-box')[0].style.top = '162px';
   }
 
-  if (scrollTop > 150) {
-    $('.find-box')[0].style.top = '20px';
+  if (scrollTop > 52) {
+    $('.find-box')[0].style.top = '110px';
   }
 });
 
@@ -43,7 +43,7 @@ function openSearch() {
   search = new FindInPage(remote.getCurrentWebContents(), {
     // parentElement,
     duration: 1,
-    offsetTop: 170,
+    offsetTop: 162,
     offsetRight: 20,
     boxBgColor: '#272b30',
     boxShadowColor: '#000',
