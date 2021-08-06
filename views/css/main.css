@@ -153,7 +153,15 @@ pre {
   top: 0;
   left: 0;
   z-index: 1010;
+}
+
+#topbar {
   background: #272b30;
+}
+
+#device_infoDiv {
+  background: #272b30;
+  padding: 2px 20px;
 }
 
 #mainbody {

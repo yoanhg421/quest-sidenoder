@@ -19,12 +19,12 @@ window.addEventListener('scroll', () => {
     return;
   }
 
-  $('.find-box')[0].style.top = calcSearchTop() + 'px';
+  // $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
 
-function calcSearchTop() {
+/*function calcSearchTop() {
   const scrollTop = document.documentElement.scrollTop;
-  const headerHeight = $id('navbarSupportedContent').parent().parent().height();
+  const headerHeight = $id('topbar').height();
 
   if (scrollTop == 0) {
     return headerHeight + 52;
@@ -40,7 +40,7 @@ function calcSearchTop() {
   ) {
     return (headerHeight + 52 - scrollTop);
   }
-}
+}*/
 
 function openSearch() {
   if (search) {
@@ -59,7 +59,7 @@ function openSearch() {
   search = new FindInPage(remote.getCurrentWebContents(), {
     parentElement,
     duration: 1,
-    offsetTop: calcSearchTop(),
+    offsetTop: 162,
     offsetRight: 20,
     boxBgColor: '#272b30',
     boxShadowColor: '#000',

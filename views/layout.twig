@@ -89,13 +89,12 @@
 <body>
 
 <div class="content_container">
-  <div class="sticky">
+  <div class="sticky" id="topbar">
     <nav class="navbar navbar-expand" style="padding: 5px">
 
       <img src="img/quest-sidenoder-light.svg" width="60" height="50" class="mr-2">
-
       {% block navbar %}
-      <div class="navbar-collapse" id="navbarSupportedContent">
+      <div class="navbar-collapse">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
             <a class="btn btn-primary mr-1"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', ''));">
@@ -142,7 +141,7 @@
       {% endblock %}
     </nav>
 
-    <div style="padding: 2px 20px">
+    <div>
       <div id="device_infoDiv"></div>
     </div>
   </div>
