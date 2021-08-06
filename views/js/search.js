@@ -10,34 +10,27 @@ document.addEventListener('keydown', (e) => {
   if (e.shiftKey) return search.findNext();
 });
 
-window.addEventListener('scroll', () => {
-  if (!search) return;
+window.addEventListener('resize', () => {
+  const navPanel = id('nav-panel');
+  if (!navPanel) {
+    if (!search) return;
+    search.destroy();
+    search = null;
+    return;
+  }
 
+  navPanel.style.top = $id('topbar').height() + 'px'; // fix navbar position
+
+  if (!search) return;
   $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
 
 function calcSearchTop() {
-  const scrollTop = document.documentElement.scrollTop;
-
-  if (scrollTop == 0) {
-    return 162;
-  }
-
-  if (scrollTop > 142) {
-    return 20;
-  }
-
-  if (
-    scrollTop > 0
-    && scrollTop < 142
-  ) {
-    return (162 - scrollTop);
-  }
+  return $id('topbar').height() + 52;
 }
 
 function openSearch() {
   if (search) {
-    // search.options.offsetTop = calcSearchTop();
     // search.update();
     // search.openFindWindow();
     // return;

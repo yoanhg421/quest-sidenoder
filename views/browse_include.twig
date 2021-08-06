@@ -1,5 +1,5 @@
 <div class="card text-light bg-primary">
-  <div class="card-header">
+  <div class="card-header sticky" id="nav-panel">
     <h4 class="pull-left mb-0">
       <a class="btn btn-md btn-primary" onclick="upDir()" title="Up dir ../ (hotkey:backspace)"> <i class="fa fa-level-up"></i> </a>
       <a class="btn btn-md btn-primary" onclick="shell.openPath($id('path').text())" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
@@ -44,4 +44,5 @@
 
 <script>
   $id('processingModal').modal('show');
+  id('nav-panel').style.top = $id('topbar').height() + 'px'; // fix navbar position
 </script>
