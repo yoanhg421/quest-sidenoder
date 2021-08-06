@@ -132,16 +132,16 @@ pre {
   padding: 0;
 }*/
 
-.fixed_bar {
+/*.fixed_bar {
   width: 100%;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
   background: #272b30;
-}
+}*/
 
 #mainbody {
-  margin-top: 110px;
+  /*margin-top: 110px;*/
   padding: 0 20px;
 }

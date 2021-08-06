@@ -4,46 +4,55 @@ let search = false;
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.code == 'KeyF') openSearch();
 
-  // if (!search) return;
-  // if (!e.code == 'F3') return;
-  // if (!e.shiftKey) search.findNext(true);
-  // if (e.shiftKey) search.findNext();
+  if (!search) return;
+  if (e.code != 'F3') return;
+  if (!e.shiftKey) return search.findNext(true);
+  if (e.shiftKey) return search.findNext();
 });
 
 window.addEventListener('scroll', () => {
   if (!search) return;
 
-  const scrollTop = document.documentElement.scrollTop;
-  if (
-    scrollTop > 0
-    && scrollTop < 52
-  ) {
-    $('.find-box')[0].style.top = (162 - scrollTop) + 'px';
-  }
-
-  if (scrollTop == 0) {
-    $('.find-box')[0].style.top = '162px';
-  }
-
-  if (scrollTop > 52) {
-    $('.find-box')[0].style.top = '110px';
-  }
+  $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
 
+function calcSearchTop() {
+  const scrollTop = document.documentElement.scrollTop;
+
+  if (scrollTop == 0) {
+    return 162;
+  }
+
+  if (scrollTop > 142) {
+    return 20;
+  }
+
+  if (
+    scrollTop > 0
+    && scrollTop < 142
+  ) {
+    return (162 - scrollTop);
+  }
+}
+
 function openSearch() {
+  if (search) {
+    // search.options.offsetTop = calcSearchTop();
+    // search.update();
+    // search.openFindWindow();
+    // return;
+    search.destroy();
+    search = null;
+  }
+
   const parentElement = id('listTable');
   if (!parentElement) return;
 
-  if (search) {
-    search.update();
-    search.openFindWindow();
-    return;
-  }
 
   search = new FindInPage(remote.getCurrentWebContents(), {
-    // parentElement,
+    parentElement,
     duration: 1,
-    offsetTop: 162,
+    offsetTop: calcSearchTop(),
     offsetRight: 20,
     boxBgColor: '#272b30',
     boxShadowColor: '#000',

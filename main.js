@@ -469,7 +469,7 @@ function createWindow () {
     win.webContents.openDevTools();
   }
 
-  setTimeout(checkVersion, 2000);
+  setTimeout(checkVersion, 3000);
 
   // TODO: check sideload process
   /*win.on('close', function(e) {
