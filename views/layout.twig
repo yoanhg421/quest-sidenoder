@@ -88,68 +88,73 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-md" style="padding: 10px">
+<div class="fixed_bar">
+  <nav class="navbar navbar-expand-md" style="padding: 10px">
 
-  <img src="img/quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
+    <img src="img/quest-sidenoder-light.svg" width="60" height="50" alt="" style="margin-right: 20px">
 
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-  {% block navbar %}
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item">
-        <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', ''));">
-          <i class="fa fa-folder-open-o"></i>
-            Browse
-        </a>
-      </li>
-      <li class="nav-item">
-        <a id="remotebtn" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
-          <i class="fa fa-folder-open-o"></i>
-            Remote
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="adbdev btn btn-primary disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
-          <i class="fa fa-list"></i>
-           Installed
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="adbdev btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Device tweaks">
-          <i class="fa fa-bug"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('settings_include.twig')" title="Settings">
-          <i class="fa fa-cog"></i>
-        </a>
-      </li>
-    </ul>
+    {% block navbar %}
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', ''));">
+            <i class="fa fa-folder-open-o"></i>
+              Browse
+          </a>
+        </li>
+        <li class="nav-item">
+          <a id="remotebtn" class="disabled btn btn-info" style="margin-right: 5px"  onclick="loadInclude('browse_include.twig', null, () => ipcRenderer.send('get_dir', remote.getGlobal('mountFolder')));">
+            <i class="fa fa-folder-open-o"></i>
+              Remote
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="adbdev btn btn-primary disabled" style="margin-right: 5px" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+            <i class="fa fa-list"></i>
+            Installed
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="adbdev btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('tweaks_include.twig')" title="Device tweaks">
+            <i class="fa fa-bug"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-primary" style="margin-right: 5px"  onclick="loadInclude('settings_include.twig')" title="Settings">
+            <i class="fa fa-cog"></i>
+          </a>
+        </li>
+      </ul>
 
-    <div class="form-inline my-2 my-lg-0">
-      <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled>
-        <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED
-      </span>
-      &nbsp;
-      <span type="button" id="devicebtn" class="btn btn-sm btn-danger"  disabled>
-        <i class="fa fa-spin fa-refresh"></i> | DEVICE:</br>DISCONNECTED
-      </span>
-      &nbsp;
-      <span type="button" id="wirelessbtn" onclick="connectWireless()" class="btn btn-sm btn-danger"  disabled>
-        <i id="wirelessrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED
-      </span>
+      <div class="form-inline my-2 my-lg-0">
+        <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled>
+          <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECTED
+        </span>
+        &nbsp;
+        <span type="button" id="devicebtn" class="btn btn-sm btn-danger"  disabled>
+          <i class="fa fa-spin fa-refresh"></i> | DEVICE:</br>DISCONNECTED
+        </span>
+        &nbsp;
+        <span type="button" id="wirelessbtn" onclick="connectWireless()" class="btn btn-sm btn-danger"  disabled>
+          <i id="wirelessrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECTED
+        </span>
+      </div>
     </div>
+    {% endblock %}
+  </nav>
+
+  <div style="padding: 2px 20px">
+    <div id="device_infoDiv"></div>
   </div>
-  {% endblock %}
-</nav>
+</div>
+
 
 
 <div style="padding: 2px 20px">
-  <div id="device_infoDiv"></div>
-
   {% block body %}{% endblock %}
 </div>
 
