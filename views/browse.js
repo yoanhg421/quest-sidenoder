@@ -3,16 +3,47 @@ const fs = require('fs').promises,
 
 console.log('ONLOAD BROWSE');
 
+
 ipcRenderer.on('get_dir', (event, arg) => {
-  console.log('get_dir msg came: ', arg.path);
+  console.log('get_dir msg came: ', arg.path, arg.list.length);
   if (arg.success) {
-    $id('path').html(arg.path);
-    loadDir(arg.path, arg.list);
+    setLocation(arg.path);
+    loadDir(arg.list);
     fixIcons();
   }
-
   $id('processingModal').modal('hide');
+  search && search.update();
 });
+
+let upDir = () => getDir();
+document.addEventListener('keydown', (e) => {
+  console.log(e);
+  if (!id('path')) return;
+
+  if (e.code == 'Backspace' && !$('.find-input').is(':focus')) upDir();
+  if (e.ctrlKey && e.code == 'KeyR') refreshDir();
+  if (e.ctrlKey && e.altKey && e.code == 'KeyD') remote.getGlobal('win').webContents.openDevTools();
+});
+
+function setLocation(loc) {
+  upDir = () => getDir(path.dirname(loc));
+  id('path').title = loc;
+  resizeLoc();
+}
+
+window.addEventListener('resize', resizeLoc);
+function resizeLoc() {
+  const dir_path = id('path');
+  if (!dir_path) return;
+
+  const width = window.innerWidth / 10 - 50;
+  if (dir_path.title.length > width) {
+    dir_path.innerText = dir_path.title.substr(0, 8) + '...' + dir_path.title.slice(-(width - 11));
+  }
+  else {
+    dir_path.innerText = dir_path.title;
+  }
+}
 
 
 function fixIcons() {
@@ -28,17 +59,21 @@ function fixIcons() {
   );
 }
 
+function refreshDir() {
+  getDir($id('path').text(), true);
+}
+
 // call get_dir when selection is made
-function getDir(newpath = '', resetCache = false) {
-  if (!newpath.endsWith('.apk')) {
+function getDir(loc = '', resetCache = false) {
+  if (!loc.endsWith('.apk')) {
     $id('processingModal').modal('show');
   }
 
   if (resetCache) {
-    ipcRenderer.send('reset_cache', newpath);
+    ipcRenderer.send('reset_cache', loc);
   }
 
-  ipcRenderer.send('get_dir', newpath);
+  ipcRenderer.send('get_dir', loc);
 }
 
 async function readSizeRecursive(item) {
@@ -55,10 +90,10 @@ async function readSizeRecursive(item) {
   return total;
 }
 
-async function getDirSize(el, path) {
+async function getDirSize(el, loc) {
   el.onclick = () => false;
   el.innerHTML = `<i class="fa fa-refresh fa-spin"></i> proccess`;
-  const size = await readSizeRecursive(path);
+  const size = await readSizeRecursive(loc);
   el.outerText = formatBytes(size);
 }
 
@@ -76,14 +111,12 @@ function steamInfo(package) {
 }
 
 
-function install(path) {
+function install(loc) {
   $id('processingModal').modal('show');
-  ipcRenderer.send('folder_install', { path, update: false });
+  ipcRenderer.send('folder_install', { path: loc, update: false });
 }
 
-function loadDir(path, list) {
-  const upDir = path.substr(0, path.lastIndexOf('/'));
-  const upDirTr = `<tr onclick="getDir('${upDir}')"><td class="browse-folder"><i class="fa fa-folder-o"></i> &nbsp;../ (up one directory)<td></tr>`;
+function loadDir(list) {
   let rows = '';
   let cards = '';
   let cards_first = [];
@@ -103,17 +136,18 @@ function loadDir(path, list) {
     const symblink = item.isLink ? `<small style="font-family: FontAwesome" class="text-secondary fa-link"></small> ` : '';
     const name = symblink + item.name;
 
-
     if (item.isFile) {
       const size = (item.info.size / 1024 / 1024).toFixed(2);
       let rowItem = '';
       if (item.name.endsWith('.apk')) {
         rowItem = `<td class="browse-file" onclick="getDir('${fullPath}')"><b><i class="fa fa-android"></i> &nbsp; ${name}</b></td>`;
-        rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
+        rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td><td>${size} Mb</td>`;
+        rowItem = `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
       }
       else {
         rowItem = `<td><i class="fa fa-file-o"></i> &nbsp; ${name}</td>`;
-        rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}<td>${size} Mb</td></tr>`;
+        rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td><td>${size} Mb</td>`;
+        rowItem = `<tr class="listitem text-secondary" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
       }
 
       rows+= rowItem;
@@ -122,6 +156,7 @@ function loadDir(path, list) {
 
     if (!item.imagePath) {
       rowItem = `<td class='browse-folder' onclick="getDir('${fullPath}')"><i class="fa fa-folder-o"></i> &nbsp; ${name}</td>`;
+      rowItem += `<td>Updated: ${item.createdAt.toLocaleString()}</td>`;
       rowItem += `<td><a onclick="getDirSize(this, '${fullPath}')"><i class="fa fa-calculator" ></i> get size</a></td>`;
 
       rows+= `<tr class="listitem" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">${rowItem}</tr>`;
@@ -135,8 +170,15 @@ function loadDir(path, list) {
       newribbon = `<div class="ribbon-wrapper"><div class="ribbon ribbon-${color}" title="${item.mp.note}">MP: ${item.mp.mp}</div></div>`;
     }
 
+    let installColor = 'primary';
+    let installText = 'Install';
+    if (item.installed) {
+      installColor = item.installed > 1 ? 'warning' : 'success';
+      installText = item.installed > 1 ? 'Update' : 'Reinstall';
+    }
+
     selectBtn = `<a onclick="getDir('${fullPath}')" class="btn btn-sm btn-primary"><i class="fa fa-folder-open"></i></a> `;
-    selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-primary col-4">Install</a> `;
+    selectBtn += `<a onclick="install('${fullPath}')" class="btn btn-sm btn-${installColor} col-4">${installText}</a> `;
 
     if (item.oculusId) {
       selectBtn+= `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
@@ -187,7 +229,6 @@ function loadDir(path, list) {
     cards += card;
   }
 
-  id('listTableStart').innerHTML = id('listTableEnd').innerHTML = upDirTr;
   id('browseCardBody').innerHTML = cards_first.join('\n');
   id('listTable').innerHTML = rows;
 

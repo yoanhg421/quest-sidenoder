@@ -1,6 +1,6 @@
 {
   "name": "sidenoder",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "SideNoder - oculus quest tool for sideloading, device tweaks, application managing, etc",
   "main": "main.js",
   "dependencies": {
@@ -8,6 +8,7 @@
     "adbkit-apkreader": "^3.2.0",
     "command-exists": "^1.2.9",
     "compare-versions": "^3.6.0",
+    "electron-find": "^1.0.7",
     "electron-twig": "^1.1.1",
     "fix-path": "^3.0.0",
     "jquery": "^3.6.0",
@@ -22,7 +23,12 @@
     "start": "electron ./ --dev",
     "pack": "electron-builder --dir",
     "dist": "electron-builder -mwl",
-    "postinstall": "electron-builder install-app-deps"
+    "dist-win": "electron-builder -w",
+    "dist-mac": "electron-builder -m",
+    "postdist": "npm run pack-win && npm run pack-mac",
+    "postinstall": "electron-builder install-app-deps",
+    "pack-win": "cd out/win-unpacked && cp ../windows-install.bat ./ && 7za a sidenoder-$npm_package_version-win.zip  ./* && mv sidenoder-$npm_package_version-win.zip ../",
+    "pack-mac": "cd out/mac && tar -czf sidenoder-$npm_package_version-mac.tar.gz  ./* && mv sidenoder-$npm_package_version-mac.tar.gz ../"
   },
   "build": {
     "appId": "com.sidenoder.app",

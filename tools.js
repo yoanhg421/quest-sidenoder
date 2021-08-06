@@ -88,6 +88,7 @@ module.exports =
   isIdle,
   wakeUp,
   detectInstallTxt,
+  detectNoteTxt,
   // ...
 }
 
@@ -632,7 +633,7 @@ async function adbPull(orig, dest, sync = false) {
     let c = 0;
     transfer.on('progress', (stats) => {
       c++;
-      if (c % 20 != 1) return; // skip 20 events
+      if (c % 40 != 1) return; // skip 20 events
 
       // console.log(orig + ' pulled', stats);
       const res = {
@@ -704,7 +705,7 @@ async function adbPush(orig, dest, sync = false) {
     let c = 0
     transfer.on('progress', (stats) => {
       c++;
-      if (c % 20 != 1) return; // skip 20 events
+      if (c % 40 != 1) return; // skip 20 events
 
       // console.log(orig + ' pushed', stats);
       const res = {
@@ -874,26 +875,71 @@ async function appInfo(args) {
 
       data.id = oculus.id;
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
-      data.genres = oculus.genres && oculus.genres.split(', ');
+      // data.genres = oculus.genres && oculus.genres.split(', ');
 
-      const url = `https://www.oculus.com/experiences/quest/${data.id}/`;
-      const resp = await fetch(`${url}?locale=${global.locale}`);
-      const meta = await WAE().parse(await resp.text());
-      const jsonld = meta.jsonld.Product[0];
+      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+        method: 'POST',
+        body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Origin': 'https://computerelite.github.io',
+        },
+      });
+      let json = await resp.json();
+      // console.log({ json });
+      if (!json.error) {
+        const meta = json.data.node;
+        data.name = meta.appName;
+        data.detailed_description = meta.display_long_description && meta.display_long_description.split('\n').join('<br/>');
+        data.genres = meta.genre_names;
 
-      data.name = jsonld.name;
-      data.header_image = meta.metatags['og:image'][0];
-      data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
-      data.url = meta.metatags['al:web:url'][0];
-      data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
-      if (jsonld.image) {
-        for (const id in jsonld.image) {
-          if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+        if (meta.supported_in_app_languages) {
+          data.supported_languages = meta.supported_in_app_languages.map(({name}) => name).join(', ');
+        }
+        //meta.internet_connection_name,
+        //meta.quality_rating_aggregate,
+        //meta.release_date,
 
-          data.screenshots.push({
-            id,
-            path_thumbnail: jsonld.image[id],
-          });
+        if (meta.website_page_meta) {
+          data.header_image = meta.website_page_meta.image_url;
+          data.short_description = meta.website_page_meta.description && meta.website_page_meta.description.split('\n').join('<br/>');
+          data.url = meta.website_page_meta.page_url;
+        }
+
+        if (meta.screenshots) {
+          for (const { uri } of meta.screenshots) {
+            data.screenshots.push({
+              // id,
+              path_thumbnail: uri,
+            });
+          }
+        }
+
+        if (meta.trailer && meta.trailer.uri) {
+          data.movies = [{ mp4: { '480': meta.trailer.uri } }];
+        }
+      }
+      else {
+        resp = await fetch(`${data.url}?locale=${global.locale}`);
+        const meta = await WAE().parse(await resp.text());
+        const jsonld = meta.jsonld.Product[0];
+
+        data.name = jsonld.name;
+
+        data.header_image = meta.metatags['og:image'][0];
+        data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
+        data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+        data.url = meta.metatags['al:web:url'][0];
+        if (jsonld.image) {
+          for (const id in jsonld.image) {
+            if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+            data.screenshots.push({
+              id,
+              path_thumbnail: jsonld.image[id],
+            });
+          }
         }
       }
     }
@@ -1003,9 +1049,113 @@ async function appInfoEvents(args) {
     }
 
     if (res == 'oculus') {
+      const oculus = app && app.oculus;
+      if (!oculus || !oculus.id) throw 'incorrect args';
+
+      // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
+
+      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+        method: 'POST',
+        body: `access_token=OC|1317831034909742|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
+        headers: {
+          'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Origin': 'https://computerelite.github.io',
+        },
+      });
+      let json = await resp.json();
+      // console.log({ json });
+      if (!json.error) {
+        const events = json.data.node.supportedBinaries.edges;
+        for (const { node } of events) {
+          const e = node;
+          const event = {
+            id: e.id,
+            title: `${e.version} (versionCode: ${e.versionCode})`,
+            contents: e.changeLog && e.changeLog.split('\n').join('<br/>'),
+            // richChangeLog: e.richChangeLog,
+            // url: '',
+            // date: '',
+            // author: '',
+          };
+
+          if (e.richChangeLog) console.log('RICHCHANGELOG', e.richChangeLog);
+
+          data.events.push(event);
+        }
+      }
+      else {
+        console.error(res, 'fetch error', json.error);
+      }
+
+      resp = await fetch(`https://computerelite.github.io/tools/Oculus/OlderAppVersions/${oculus.id}.json`);
+      json = await resp.json();
+      // console.log({ json });
+      const events = json.data.node.binaries.edges;
+      for (const { node } of events) {
+        const e = node;
+        let found = false;
+        for (const i in data.events) {
+          if (data.events[i].id != e.id) continue;
+
+          data.events[i].date = (new Date(e.created_date * 1000)).toLocaleString();
+          found = true;
+          break;
+        }
+        if (found) continue;
+
+        const event = {
+          id: e.id,
+          title: `${e.version} (versionCode: ${e.version_code})`,
+          date: (new Date(e.created_date * 1000)).toLocaleString(),
+          contents: e.change_log.split('\n').join('<br/>'),
+          // url: '',
+          // author: '',
+        };
+
+        data.events.push(event);
+      }
     }
 
     if (res == 'sq') {
+      const sq = app && app.sq;
+      if (!sq || !sq.id) throw 'incorrect args';
+      // console.log({ sq });
+
+      for (const is_news of [true, false]) {
+        const resp = await fetch(`https://api.sidequestvr.com/events-list`, {
+          method: 'POST',
+          body: JSON.stringify({ apps_id: sq.id, is_news }),
+          headers: {
+            'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Content-Type': 'application/json',
+            'Origin': 'https://sidequestvr.com',
+          },
+        });
+        const json = await resp.json();
+        // console.log({ json });
+        for (const e of json.data) {
+          const event = {
+            id: e.events_id,
+            title: e.event_name,
+            url: e.event_url,
+            date: (new Date(e.start_time * 1000)).toLocaleString(),
+            contents: '',
+            // author: '',
+          };
+
+          if (e.event_image) {
+            event.contents += `<center><img src="${e.event_image[0] == '/' ? 'https://sidequestvr.com':''}${e.event_image}" /></center>`;
+          }
+
+          if (e.event_description) {
+            event.contents += e.event_description.split('\n').join('<br/>');
+          }
+
+          data.events.push(event);
+        }
+      }
+
     }
   }
   catch (err) {
@@ -1288,6 +1438,7 @@ async function getDir(folder) {
   try {
     const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
+    let installedApps = {}
     try {
       if (files.includes('GameList.txt')) {
         const list = (await fsp.readFile(path.join(folder, 'GameList.txt'), 'utf8')).split('\n');
@@ -1308,6 +1459,15 @@ async function getDir(folder) {
       console.error('GameList.txt failed', err);
     }
 
+    try {
+      if (global.adbDevice) {
+        installedApps = await getInstalledApps(true);
+      }
+    }
+    catch (err) {
+      console.error('Can`t get installed apps', err);
+    }
+
     let fileNames = await Promise.all(files.map(async (fileName) => {
 
       const info = await fsp.lstat(path.join(folder, fileName));
@@ -1322,6 +1482,7 @@ async function getDir(folder) {
         note = '',
         kmeta = false,
         mp = false,
+        installed = 0,
         newItem = false;
 
       const gameMeta = gameList[fileName];
@@ -1365,6 +1526,13 @@ async function getDir(folder) {
           imagePath = 'unknown.png';
 
         kmeta = KMETAS[packageName];
+        installedApp = installedApps[packageName];
+        if (installedApp) {
+          installed = 1;
+          if (versionCode && versionCode > installedApp.versionCode) {
+            installed++;
+          }
+        }
       }
 
       if (kmeta) {
@@ -1398,8 +1566,9 @@ async function getDir(folder) {
         newItem,
         info,
         mp,
+        installed,
         createdAt: new Date(info.mtimeMs),
-        filePath: folder + '/' + fileName.replace(/\\/g, '/'),
+        filePath: path.join(folder, fileName).replace(/\\/g, '/'),
       };
     }));
     // console.log({ fileNames });
@@ -1840,11 +2009,11 @@ async function getPackageInfo(apkPath) {
   return info;
 }
 
-async function getInstalledApps() {
+async function getInstalledApps(obj = false) {
   let apps = await adbShell(`pm list packages -3 --show-versioncode`);
   apps = apps.split('\n');
   // apps.pop();
-  appinfo = [];
+  appinfo = {};
 
   for (const appLine of apps) {
     const [packageName, versionCode] = appLine.slice(8).split(' versionCode:');
@@ -1857,13 +2026,13 @@ async function getInstalledApps() {
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
       : 'unknown.png';
 
-    appinfo.push(info);
+    appinfo[packageName] = info;
   }
 
 
-  global.installedApps = appinfo;
+  global.installedApps = Object.values(appinfo);
 
-  return appinfo;
+  return obj ? appinfo : global.installedApps;
 }
 
 async function getInstalledAppsWithUpdates() {
@@ -1887,7 +2056,7 @@ async function getInstalledAppsWithUpdates() {
 
   const remoteKeys = Object.keys(remotePackages);
 
-  const apps = global.installedApps || await getInstalledApps(false);
+  const apps = global.installedApps || await getInstalledApps();
   let updates = [];
   for (const app of apps) {
     const packageName = app['packageName'];
@@ -1918,6 +2087,25 @@ async function getInstalledAppsWithUpdates() {
 }
 
 
+async function detectNoteTxt(files, folder) {
+  // TODO: check .meta/notes
+
+  if (typeof files == 'string') {
+    folder = files;
+    files = false;
+  }
+
+  if (!files) {
+    files = await fsp.readdir(folder);
+  }
+
+  if (files.includes('notes.txt')) {
+    return fsp.readFile(path.join(folder, 'notes.txt'), 'utf8');
+  }
+
+  return false;
+}
+
 async function detectInstallTxt(files, folder) {
   if (typeof files == 'string') {
     folder = files;
@@ -1931,13 +2119,11 @@ async function detectInstallTxt(files, folder) {
   const installTxNames = [
     'install.txt',
     'Install.txt',
-    // 'notes.txt',
-    // 'Notes.txt',
   ];
 
   for (const name of installTxNames) {
     if (files.includes(name)) {
-      return await fsp.readFile(path.join(folder, name), 'utf8');
+      return fsp.readFile(path.join(folder, name), 'utf8');
     }
   }
 
@@ -1953,6 +2139,7 @@ async function getApkFromFolder(folder){
 
   const files = await fsp.readdir(folder);
   res.install_desc = await detectInstallTxt(files, folder);
+  res.notes = await detectNoteTxt(files, folder);
   console.log({ files });
 
   for (file of files) {

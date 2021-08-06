@@ -5,9 +5,16 @@ a { cursor: pointer; }
 .card-header {
   padding: .4rem 0.75rem;
 }
+.btn-floating, [class*="btn-outline-"].btn-floating {
+  border-radius: 50%;
+  position: relative;
+}
 .btn {
   text-shadow: none;
   font-weight: bold;
+}
+.btn-md {
+  padding: .4rem .75rem;
 }
 .btn-success {
   background: #7C4;
@@ -59,6 +66,8 @@ pre {
   padding: 0;
 }
 
+.modal { overflow: auto !important; }
+
 .modal-content {
   box-shadow: 0px 0px 20pt black;
 }
@@ -105,3 +114,20 @@ pre {
 .ribbon-red {
   background-color: #b44;
 }
+
+#backToTop {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  bottom: 20px;
+  left: 30px;
+  padding-top: 10px;
+  display: none;
+}
+
+/*html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}*/

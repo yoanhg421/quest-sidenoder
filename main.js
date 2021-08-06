@@ -182,12 +182,12 @@ ipcMain.on('get_dir', async (event, arg) => {
   if ((typeof arg === 'string') && arg.endsWith('.apk')) {
     const install = {
       path: arg,
-      install_desc: false,
     }
     const lastslashindex = install.path.lastIndexOf('/');
     const folder = install.path.substring(0, lastslashindex);
 
     install.install_desc = await tools.detectInstallTxt(folder);
+    install.notes = await tools.detectNoteTxt(folder);
 
     event.reply('ask_sideload', { success: true, install }); // TODO: install_desc
     return;
@@ -439,13 +439,16 @@ global.close = false;
 function createWindow () {
   global.win = new BrowserWindow({
     width: 1000,
+    minWidth: 800,
     height: 800,
+    minHeight: 500,
     title: 'Quest-Sidenoder',
     //frame:false,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule:true,
       contextIsolation: false,
+      webView: true,
     }
   })
   win.setMenu(null);
@@ -458,7 +461,7 @@ function createWindow () {
     mountFolder: global.mountFolder,
     sidenoderHome: global.sidenoderHome,
     version: global.version,
-    currentConfiguration: global.currentConfiguration
+    currentConfiguration: global.currentConfiguration,
   }
   win.loadURL(`file://${__dirname}/views/index.twig`);
 

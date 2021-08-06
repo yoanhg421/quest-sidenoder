@@ -45,7 +45,7 @@
   ipcRenderer.on('app_events_info', (event, arg) => {
     $id('processingModal').modal('hide');
     console.log('app_events_info received');
-    // console.log('app_info received', arg);
+    // console.log(arg);
     if (!arg || !arg.success)  return console.log(arg);
     const data = arg.data;
     if (!data)  return;
@@ -59,10 +59,9 @@
     for (const e of data.events) {
       let event = '';
       if (e.date) event+= `<small class="pull-right">${e.date}</small>`;
-      if (e.title) event+= `<h4>${e.title}</h4><br/>`;
+      event+= `<h4>${e.title || ''}</h4>`;
       if (e.contents) event+= `<div>${e.contents}</div>`;
-      if (e.date) event+= `<hr/>`;
-      events+= event;
+      events+= `${event}<hr/>`;
     }
 
     id('appinfoEventsBody').innerHTML = events;

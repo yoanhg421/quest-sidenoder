@@ -63,12 +63,12 @@ function drawInstalledApps(apps) {
       <br/><small>${app.packageName}<br/>VersionCode: ${app.versionCode}</small></td><td style="vertical-align:middle;">`;
 
     if (!app.update) {
-      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-info"> <i class="fa fa-play"></i> Launch</a> `;
-      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-danger"> <i class="fa fa-trash-o"></i> Uninstall</a> `;
-      row += `<a onclick="appTools('${app.packageName}')" class="adbdev btn btn-primary"> <i class="fa fa-cog"></i> Tools</a> `;
+      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-md btn-info"> <i class="fa fa-play"></i> Launch</a> `;
+      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-md btn-danger"> <i class="fa fa-trash-o"></i> Uninstall</a> `;
+      row += `<a onclick="appTools('${app.packageName}')" class="adbdev btn btn-md btn-primary"> <i class="fa fa-cog"></i> Tools</a> `;
     }
     else {
-      row += `<a data-path="${app.update.path}" onclick='update(this)' class="btn btn-info btn-sm">
+      row += `<a data-path="${app.update.path}" onclick='update(this)' class="btn btn-sm btn-info">
         <i class="fa fa-upload"></i> Update to
         <br/> v.${app.update.versionCode}</a>`;
     }

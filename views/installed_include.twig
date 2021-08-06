@@ -1,13 +1,13 @@
 <div class="card text-light bg-primary">
   <div class="card-header">
-    <h2 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h2>
-    <h2 class="mb-0 pull-right">
+    <h4 class="mb-0 mt-1 pull-left"><i class="fa fa-list"></i> Installed APP's</h4>
+    <h4 class="mb-0 pull-right">
+      <a class="btn btn-md btn-primary" onclick="openSearch()"> <i class="fa fa-search"></i> Search</a>
       <a onclick="getUpdates()" id="updateBadge" class="adbdev btn btn-info btn-md disabled"><i class="fa fa-search"></i> Check mount for updates</span></a>
-    </h2>
+    </h4>
   </div>
   <div class="card-body">
     <div class="card-text container">
-      <div id="searchformdiv"></div>
       <br>
       <table class="table table-striped table-condensed text-white">
         <tbody id="listTable">
@@ -21,8 +21,6 @@
   console.log('ONLOAD installed');
   $id('processingModal').modal('show');
   ipcRenderer.send('get_installed', '');
-
-  loadInclude('searchform.twig', 'searchformdiv');
 
   if (remote.getGlobal('adbDevice') && remote.getGlobal('mounted')) {
     $id('updateBadge').removeClass('disabled');
