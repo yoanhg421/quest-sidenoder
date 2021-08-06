@@ -12,26 +12,33 @@ document.addEventListener('keydown', (e) => {
 
 window.addEventListener('scroll', () => {
   if (!search) return;
+  const parentElement = id('listTable');
+  if (!parentElement) {
+    search.destroy();
+    search = null;
+    return;
+  }
 
   $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
 
 function calcSearchTop() {
   const scrollTop = document.documentElement.scrollTop;
+  const headerHeight = $id('navbarSupportedContent').parent().parent().height();
 
   if (scrollTop == 0) {
-    return 162;
+    return headerHeight + 52;
   }
 
   if (scrollTop > 40) {
-    return 120;
+    return headerHeight + 10;
   }
 
   if (
     scrollTop > 0
     && scrollTop < 40
   ) {
-    return (162 - scrollTop);
+    return (headerHeight + 52 - scrollTop);
   }
 }
 
