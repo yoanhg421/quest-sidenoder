@@ -23,13 +23,13 @@ function calcSearchTop() {
     return 162;
   }
 
-  if (scrollTop > 142) {
-    return 20;
+  if (scrollTop > 40) {
+    return 120;
   }
 
   if (
     scrollTop > 0
-    && scrollTop < 142
+    && scrollTop < 40
   ) {
     return (162 - scrollTop);
   }
