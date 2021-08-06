@@ -10,41 +10,27 @@ document.addEventListener('keydown', (e) => {
   if (e.shiftKey) return search.findNext();
 });
 
-window.addEventListener('scroll', () => {
-  if (!search) return;
-  const parentElement = id('listTable');
-  if (!parentElement) {
+window.addEventListener('resize', () => {
+  const navPanel = id('nav-panel');
+  if (!navPanel) {
+    if (!search) return;
     search.destroy();
     search = null;
     return;
   }
 
-  // $('.find-box')[0].style.top = calcSearchTop() + 'px';
+  navPanel.style.top = $id('topbar').height() + 'px'; // fix navbar position
+
+  if (!search) return;
+  $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
 
-/*function calcSearchTop() {
-  const scrollTop = document.documentElement.scrollTop;
-  const headerHeight = $id('topbar').height();
-
-  if (scrollTop == 0) {
-    return headerHeight + 52;
-  }
-
-  if (scrollTop > 40) {
-    return headerHeight + 10;
-  }
-
-  if (
-    scrollTop > 0
-    && scrollTop < 40
-  ) {
-    return (headerHeight + 52 - scrollTop);
-  }
-}*/
+function calcSearchTop() {
+  return $id('topbar').height() + 52;
+}
 
 function openSearch() {
   if (search) {
-    // search.options.offsetTop = calcSearchTop();
     // search.update();
     // search.openFindWindow();
     // return;
@@ -59,7 +45,7 @@ function openSearch() {
   search = new FindInPage(remote.getCurrentWebContents(), {
     parentElement,
     duration: 1,
-    offsetTop: 162,
+    offsetTop: calcSearchTop(),
     offsetRight: 20,
     boxBgColor: '#272b30',
     boxShadowColor: '#000',
