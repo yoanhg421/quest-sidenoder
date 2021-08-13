@@ -115,7 +115,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="adbdev btn btn-primary mr-1" onclick="loadInclude('tweaks_include.twig')" title="Device tweaks">
+            <a class="adbdev btn btn-primary mr-1" onclick="loadInclude('modals/tweaks.twig', 'tweaksmodaldiv')" title="Device tweaks">
               <i class="fa fa-bug"></i>
             </a>
           </li>
@@ -159,6 +159,7 @@
 
 <!-- modals -->
 <div id="sideloadmodaldiv"></div>
+<div id="tweaksmodaldiv"></div>
 <div id="appinfomodaldiv"></div>
 <div id="appinfoeventsmodaldiv"></div>
 <div id="confirmmodaldiv"></div>
@@ -352,6 +353,18 @@
         .addClass('btn-danger')
         .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECT`);
     }
+  });
+
+  let last_alert_msg;
+  ipcRenderer.on('alert', (event, arg) => {
+    if (arg == last_alert_msg) return;
+    last_alert_msg = arg;
+    setTimeout(()=> last_alert_msg = false, 500);
+    alert(arg);
+  });
+
+  ipcRenderer.on('cmd_sended', (event, arg) => {
+    alert(`Command sended: \n ${arg.success}`);
   });
 
   ipcRenderer.on('ask_device', (event, arg) => {

@@ -4,10 +4,10 @@ let search = false;
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.code == 'KeyF') openSearch();
 
-  if (!search) return;
+/*  if (!search) return;
   if (e.code != 'F3') return;
   if (!e.shiftKey) return search.findNext(true);
-  if (e.shiftKey) return search.findNext();
+  if (e.shiftKey) return search.findNext();*/
 });
 
 window.addEventListener('resize', () => {
@@ -43,7 +43,7 @@ function openSearch() {
 
 
   search = new FindInPage(remote.getCurrentWebContents(), {
-    parentElement,
+    // parentElement,
     duration: 1,
     offsetTop: calcSearchTop(),
     offsetRight: 20,
