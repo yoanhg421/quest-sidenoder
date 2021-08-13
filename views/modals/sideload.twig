@@ -135,8 +135,6 @@
   ipcRenderer.on('sideload_process', (event, arg) => {
     console.log('sideload_process', arg);
 
-    remote.getGlobal('win').setProgressBar(1 - ($('.badge-warning').length / $('.badge').length));
-
     if (arg.device) {
       badgeState($id('deviceBadge'), arg.device);
     }
@@ -180,6 +178,8 @@
     if (arg.push_obb) {
       badgeState($id('copyObbDoneBadge'), arg.push_obb);
     }
+
+    remote.getGlobal('win').setProgressBar(1 - ($('.badge-warning').length / $('.badge').length));
 
     if (arg.done) {
       badgeState($id('sideloadDoneBadge'), arg.done);
@@ -225,7 +225,8 @@
   }
 
   $id('sideloadDoneBtn').on('click', function(){
+    remote.getGlobal('win').setProgressBar(0);
     $id('sideloadModal').modal('hide');
-    $('.modal-backdrop').remove();
+    // $('.modal-backdrop').remove();
   });
 </script>
