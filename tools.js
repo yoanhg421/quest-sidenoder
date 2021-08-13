@@ -27,6 +27,7 @@ let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
 
+let adbCmd = 'adb';
 let grep_cmd = '| grep ';
 if (platform == 'win') {
   grep_cmd = '| findstr ';
@@ -450,7 +451,13 @@ async function isWireless() {
     const devices = await adb.listDevices();
     for (const device of devices) {
       if (!device.id.includes(':5555')) continue;
-      if (['authorizing', 'offline'].includes(device.type)) continue;
+      if (['offline', 'authorizing', 'unauthorized'].includes(device.type)) continue;
+      if (['unauthorized'].includes(device.type)) {
+        win.webContents.send('alert', 'Please authorize adb access on your device');
+        continue;
+      }
+
+      console.log('device.id', device.type);
       return device.id;
     }
 
@@ -528,7 +535,7 @@ async function rebootBootloader() {
   return res;
 }
 async function sideloadFile(path) {
-  const res = await execShellCommand(`${global.currentConfiguration.adbPath} sideload "${path}"`);
+  const res = await execShellCommand(`${adbCmd} sideload "${path}"`);
   console.log('sideloadFile', { res });
   return res;
 }
@@ -539,7 +546,11 @@ async function getDeviceSync(attempt = 0) {
     console.log({ devices });
     global.adbDevice = false;
     for (const device of devices) {
-      if (['authorizing', 'offline'].includes(device.type)) continue;
+      if (['offline', 'authorizing'].includes(device.type)) continue;
+      if (['unauthorized'].includes(device.type)) {
+        win.webContents.send('alert', 'Please authorize adb access on your device');
+        continue;
+      }
       if (
         !global.currentConfiguration.allowOtherDevices
         && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
@@ -1208,7 +1219,7 @@ async function checkDeps(arg){
         globalAdb = await commandExists('adb');
       } catch (e) {}
 
-      res[arg].cmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
+      res[arg].cmd = adbCmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
       try {
         await execShellCommand(`${res[arg].cmd} start-server`);
       }
