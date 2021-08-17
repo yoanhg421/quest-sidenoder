@@ -490,24 +490,30 @@ function createWindow () {
   });*/
 }
 
-
-tools.reloadConfig().catch(e => {
-  console.error('reloadConfig', e);
-  // tools.returnError('Could not (re)load config file.');
-});
-
-
-// DEFAULT
-app.whenReady().then(createWindow)
-app.on('window-all-closed', (e) => {
-  // powerSaveBlocker.stop(id)
-  console.log('quit');
-  if (global.platform !== 'mac') {
-    app.quit();
+async function startApp() {
+  try {
+    await tools.reloadConfig();
   }
-})
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  catch(e) {
+    console.error('reloadConfig', e);
+    // tools.returnError('Could not (re)load config file.');
+  }
+
+  // DEFAULT
+  await app.whenReady();
+
+  createWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length != 0) return;
     createWindow();
-  }
-})
+  });
+  app.on('window-all-closed', (e) => {
+    // powerSaveBlocker.stop(id)
+    console.log('quit');
+    if (global.platform !== 'mac') {
+      app.quit();
+    }
+  });
+}
+
+startApp();
