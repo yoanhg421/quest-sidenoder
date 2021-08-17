@@ -1709,13 +1709,14 @@ async function sideloadFolder(arg) {
     done: false,
     update: false,
     error: '',
+    location,
   }
 
   win.webContents.send('sideload_process', res);
 
   if (location.endsWith('.apk')) {
     apkfile = location;
-    location=path.dirname(location);
+    location = path.dirname(location);
   }
   else {
     returnError('not an apk file');
@@ -2284,6 +2285,10 @@ async function initLogs() {
 
 
 
+async function saveConfig(config = global.currentConfiguration) {
+  await fsp.writeFile(configLocation, JSON.stringify(config), null, ' ');
+}
+
 async function reloadConfig() {
   const defaultConfig = {
     allowOtherDevices: false,
@@ -2311,8 +2316,12 @@ async function reloadConfig() {
   }
   else {
     console.log('Config doesnt exist, creating ') + configLocation;
-    await fsp.writeFile(configLocation, JSON.stringify(defaultConfig))
+    await saveConfig(defaultConfig);
     global.currentConfiguration = defaultConfig;
+  }
+
+  if (global.currentConfiguration.tmpdir) {
+    global.tmpdir = global.currentConfiguration.tmpdir;
   }
 
   await parseRcloneSections();
@@ -2322,9 +2331,10 @@ async function changeConfig(key, value) {
   console.log('cfg.update', key, value);
 
   global.currentConfiguration[key] = value;
-  await fsp.writeFile(configLocation, JSON.stringify(global.currentConfiguration));
+  await saveConfig();
 
   if (key == 'rcloneConf') await parseRcloneSections();
+  if (key == 'tmpdir') global.tmpdir = value || require('os').tmpdir().replace(/\\/g, '/');
 
   return value;
 }
