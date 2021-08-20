@@ -1,4 +1,4 @@
-const { app, BrowserWindow, powerSaveBlocker, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Notification, powerSaveBlocker, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 global.twig = require('electron-twig');
@@ -488,6 +488,16 @@ function createWindow () {
       app.quit();
     });
   });*/
+}
+
+global.notify = function (title, body, urgency = 'normal') {
+  const not = new Notification({
+    title,
+    body,
+    // icon: 'build/icon.png',
+    urgency, // 'normal' | 'critical' | 'low'
+  });
+  not.show();
 }
 
 async function startApp() {
