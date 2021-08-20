@@ -54,7 +54,7 @@
       }
     }
 
-    id('deviceUserName').innerText = user && user.name || 'Unknown';
+    id('deviceUserName').innerHTML = user && user.name || '<i>Unknown</i>';
     id('deviceFwVersion').innerText = fw && fw.version || 'v.XX';
     id('deviceBatteryLevel').innerText = bat_level;
     id('deviceBatteryLevel').parentNode.title = bat_note;
