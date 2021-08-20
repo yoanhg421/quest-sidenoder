@@ -141,6 +141,10 @@ async function getBatteryInfo() {
 }
 
 async function getUserInfo() {
+  if (global.currentConfiguration.userHide) return {
+    name: '<i>hidden</i>'
+  };
+
   console.log('getUserInfo()');
   const res = await adbShell('dumpsys user | grep UserInfo');
   if (!res) return false;
@@ -2286,7 +2290,7 @@ async function initLogs() {
 
 
 async function saveConfig(config = global.currentConfiguration) {
-  await fsp.writeFile(configLocation, JSON.stringify(config), null, ' ');
+  await fsp.writeFile(configLocation, JSON.stringify(config, null, ' '));
 }
 
 async function reloadConfig() {
@@ -2303,6 +2307,7 @@ async function reloadConfig() {
     scrcpyBitrate: '5',
     scrcpyCrop: '1600:900:2017:510',
     lastIp: '',
+    userHide: false,
   };
 
   if (await fsp.exists(configLocationOld)) {
