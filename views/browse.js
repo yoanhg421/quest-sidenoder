@@ -220,6 +220,12 @@ function loadDir(list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
+    const size = item.size
+    ? `${item.size} Gb`
+    : `<a onclick="getDirSize(this, '${fullPath}')">
+      <i class="fa fa-calculator" title="Calculate folder size"></i> get size
+    </a>`;
+
     const card = `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
@@ -230,13 +236,11 @@ function loadDir(list) {
           ${selectBtn}
       </div>
       <div style="color:#ccc;" class="card-footer pb-1 pt-1"><small>
-        versionCode: ${item.versionCode || 'Unknown'} ${item.versionName && `(v.${item.versionName})`}
+        versionCode: ${item.versionCode || 'Unknown'} ${item.versionName && `(v.${item.versionName})` || ''}
         <br/>
         ${item.packageName}<br/>
         Updated: ${item.createdAt.toLocaleString()} &nbsp;
-        <a onclick="getDirSize(this, '${fullPath}')">
-          <i class="fa fa-calculator" title="Calculate folder size"></i> get size
-        </a>
+        ${size}
       </small></div>
 
       </div>

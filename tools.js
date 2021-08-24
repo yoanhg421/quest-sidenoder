@@ -23,6 +23,11 @@ const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
 
+const GAME_LIST_NAMES = [
+  'GameList.txt',
+  'VRP-GameList.txt',
+  'Dynamic.txt',
+];
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
@@ -1455,24 +1460,52 @@ async function getDir(folder) {
     let gameList = {};
     let installedApps = {}
     try {
-      if (files.includes('GameList.txt')) {
-        const list = (await fsp.readFile(path.join(folder, 'GameList.txt'), 'utf8')).split('\n');
+      let gameListName = false;
+      for (const name of GAME_LIST_NAMES) {
+        if (!files.includes(name)) continue;
+        gameListName = name;
+        break;
+      }
+
+      if (gameListName) {
+        const list = (await fsp.readFile(path.join(folder, gameListName), 'utf8')).split('\n');
+        let listVer;
         for (const line of list) {
           const meta = line.split(';');
-          gameList[meta[1]] = {
-            simpleName: meta[0],
-            releaseName: meta[1],
-            packageName: meta[3],
-            versionCode: meta[4],
-            versionName: meta[5],
-            imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[3]}.jpg`,
+          if (!listVer) {
+            listVer = meta[2] == 'Release APK Path' ? 1 : 2;
+            console.log({ gameListName, listVer });
+            continue;
+          }
+
+          if (listVer == 1) {
+            gameList[meta[1]] = {
+              simpleName: meta[0],
+              releaseName: meta[1],
+              packageName: meta[3],
+              versionCode: meta[4],
+              versionName: meta[5],
+              imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[3]}.jpg`,
+            }
+          }
+          else if (listVer == 2) {
+            gameList[meta[1]] = {
+              simpleName: meta[0],
+              releaseName: meta[1],
+              packageName: meta[2],
+              versionCode: meta[3],
+              imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[2]}.jpg`,
+              size: meta[5],
+            }
           }
         }
       }
     }
     catch (err) {
-      console.error('GameList.txt failed', err);
+      console.error(`${gameListName} failed`, err);
     }
+
+    // console.log(gameList);
 
     try {
       if (global.adbDevice) {
@@ -1484,6 +1517,7 @@ async function getDir(folder) {
     }
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
+      // console.log(fileName);
 
       const info = await fsp.lstat(path.join(folder, fileName));
       let steamId = false,
@@ -1498,6 +1532,7 @@ async function getDir(folder) {
         kmeta = false,
         mp = false,
         installed = 0,
+        size = false,
         newItem = false;
 
       const gameMeta = gameList[fileName];
@@ -1507,6 +1542,7 @@ async function getDir(folder) {
         versionCode = gameMeta.versionCode;
         versionName = gameMeta.versionName;
         simpleName = gameMeta.simpleName;
+        size = gameMeta.size;
         // imagePath = gameMeta.imagePath;
 
         if (gameMeta.releaseName.includes('(')) {
@@ -1577,6 +1613,7 @@ async function getDir(folder) {
         versionCode,
         versionName,
         packageName,
+        size,
         note,
         newItem,
         info,
