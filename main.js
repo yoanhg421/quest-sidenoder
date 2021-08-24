@@ -1,4 +1,4 @@
-const { app, BrowserWindow, powerSaveBlocker, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Notification, powerSaveBlocker, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 global.twig = require('electron-twig');
@@ -469,7 +469,7 @@ function createWindow () {
     win.webContents.openDevTools();
   }
 
-  setTimeout(checkVersion, 2000);
+  setTimeout(checkVersion, 3000);
 
   // TODO: check sideload process
   /*win.on('close', function(e) {
@@ -490,24 +490,40 @@ function createWindow () {
   });*/
 }
 
+global.notify = function (title, body, urgency = 'normal') {
+  const not = new Notification({
+    title,
+    body,
+    // icon: 'build/icon.png',
+    urgency, // 'normal' | 'critical' | 'low'
+  });
+  not.show();
+}
 
-tools.reloadConfig().catch(e => {
-  console.error('reloadConfig', e);
-  // tools.returnError('Could not (re)load config file.');
-});
-
-
-// DEFAULT
-app.whenReady().then(createWindow)
-app.on('window-all-closed', (e) => {
-  // powerSaveBlocker.stop(id)
-  console.log('quit');
-  if (global.platform !== 'mac') {
-    app.quit();
+async function startApp() {
+  try {
+    await tools.reloadConfig();
   }
-})
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  catch(e) {
+    console.error('reloadConfig', e);
+    // tools.returnError('Could not (re)load config file.');
+  }
+
+  // DEFAULT
+  await app.whenReady();
+
+  createWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length != 0) return;
     createWindow();
-  }
-})
+  });
+  app.on('window-all-closed', (e) => {
+    // powerSaveBlocker.stop(id)
+    console.log('quit');
+    if (global.platform !== 'mac') {
+      app.quit();
+    }
+  });
+}
+
+startApp();

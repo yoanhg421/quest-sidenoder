@@ -5,12 +5,14 @@ global.version = pkg.version;
 
 async function checkVersion() {
   try {
-    const res = await fetch('https://api.github.com/repos/vKolerts/quest-sidenoder/releases/latest');
+    const res = await fetch('https://api.github.com/repos/vKolerts/sidenoder/releases/latest');
     const content = JSON.parse(await res.text())
     const remoteversion = content.name;
 
     console.log('Current version: ' + pkg.version);
     console.log('Github version: ' + remoteversion);
+    if (!remoteversion) return;
+
     if (compareVersions.compare(remoteversion, pkg.version, '<=')) {
       console.log('Using latest version');
     }

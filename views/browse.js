@@ -3,6 +3,9 @@ const fs = require('fs').promises,
 
 console.log('ONLOAD BROWSE');
 
+let BROWSE_HISTORY = {};
+let upDir = () => getDir();
+
 
 ipcRenderer.on('get_dir', (event, arg) => {
   console.log('get_dir msg came: ', arg.path, arg.list.length);
@@ -15,7 +18,13 @@ ipcRenderer.on('get_dir', (event, arg) => {
   search && search.update();
 });
 
-let upDir = () => getDir();
+function setLocation(loc) {
+  upDir = () => getDir(path.dirname(loc));
+  id('path').title = loc;
+
+  resizeLoc();
+}
+
 document.addEventListener('keydown', (e) => {
   console.log(e);
   if (!id('path')) return;
@@ -25,13 +34,9 @@ document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.altKey && e.code == 'KeyD') remote.getGlobal('win').webContents.openDevTools();
 });
 
-function setLocation(loc) {
-  upDir = () => getDir(path.dirname(loc));
-  id('path').title = loc;
-  resizeLoc();
-}
-
 window.addEventListener('resize', resizeLoc);
+window.addEventListener('scroll', scrollDir);
+
 function resizeLoc() {
   const dir_path = id('path');
   if (!dir_path) return;
@@ -43,6 +48,22 @@ function resizeLoc() {
   else {
     dir_path.innerText = dir_path.title;
   }
+}
+function scrollDir() {
+  if (!id('path')) return;
+
+  const scroll = document.documentElement.scrollTop;
+  const loc = id('path').title;
+
+  if (!BROWSE_HISTORY[loc]) BROWSE_HISTORY[loc] = {};
+  BROWSE_HISTORY[loc].scroll = scroll;
+}
+
+function scrollByHistory() {
+  const history = BROWSE_HISTORY[id('path').title];
+  if (!history || !history.scroll) return;
+
+  document.documentElement.scrollTop = history.scroll;
 }
 
 
@@ -199,6 +220,12 @@ function loadDir(list) {
     selectBtn += `<a onclick="shell.openExternal('${youtubeUrl}')" title="Search at Youtube" class="btn btn-sm btn-danger">
       <i class="fa fa-youtube-play"></i></a> `;
 
+    const size = item.size
+    ? `${item.size} Gb`
+    : `<a onclick="getDirSize(this, '${fullPath}')">
+      <i class="fa fa-calculator" title="Calculate folder size"></i> get size
+    </a>`;
+
     const card = `<div class="col mb-3 listitem" style="min-width: 250px;padding-right:5px;max-width: 450px;" data-name="${item.name.toUpperCase()}" data-createdat="${createdAt}">
       <div class="card bg-primary text-center bg-dark">
 
@@ -209,13 +236,11 @@ function loadDir(list) {
           ${selectBtn}
       </div>
       <div style="color:#ccc;" class="card-footer pb-1 pt-1"><small>
-        versionCode: ${item.versionCode || 'Unknown'} ${item.versionName && `(v.${item.versionName})`}
+        versionCode: ${item.versionCode || 'Unknown'} ${item.versionName && `(v.${item.versionName})` || ''}
         <br/>
         ${item.packageName}<br/>
         Updated: ${item.createdAt.toLocaleString()} &nbsp;
-        <a onclick="getDirSize(this, '${fullPath}')">
-          <i class="fa fa-calculator" title="Calculate folder size"></i> get size
-        </a>
+        ${size}
       </small></div>
 
       </div>
@@ -231,8 +256,10 @@ function loadDir(list) {
 
   id('browseCardBody').innerHTML = cards_first.join('\n');
   id('listTable').innerHTML = rows;
+  // scrollByHistory();
 
   if (cards) setTimeout(() => {
     id('browseCardBody').innerHTML += cards;
+    scrollByHistory();
   }, 100);
 }

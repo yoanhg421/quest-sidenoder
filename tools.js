@@ -23,10 +23,16 @@ const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
 
+const GAME_LIST_NAMES = [
+  'GameList.txt',
+  'VRP-GameList.txt',
+  'Dynamic.txt',
+];
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
 
+let adbCmd = 'adb';
 let grep_cmd = '| grep ';
 if (platform == 'win') {
   grep_cmd = '| findstr ';
@@ -140,6 +146,10 @@ async function getBatteryInfo() {
 }
 
 async function getUserInfo() {
+  if (global.currentConfiguration.userHide) return {
+    name: '<i>hidden</i>'
+  };
+
   console.log('getUserInfo()');
   const res = await adbShell('dumpsys user | grep UserInfo');
   if (!res) return false;
@@ -450,7 +460,13 @@ async function isWireless() {
     const devices = await adb.listDevices();
     for (const device of devices) {
       if (!device.id.includes(':5555')) continue;
-      if (['authorizing', 'offline'].includes(device.type)) continue;
+      if (['offline', 'authorizing', 'unauthorized'].includes(device.type)) continue;
+      if (['unauthorized'].includes(device.type)) {
+        win.webContents.send('alert', 'Please authorize adb access on your device');
+        continue;
+      }
+
+      console.log('device.id', device.type);
       return device.id;
     }
 
@@ -528,7 +544,7 @@ async function rebootBootloader() {
   return res;
 }
 async function sideloadFile(path) {
-  const res = await execShellCommand(`${global.currentConfiguration.adbPath} sideload "${path}"`);
+  const res = await execShellCommand(`${adbCmd} sideload "${path}"`);
   console.log('sideloadFile', { res });
   return res;
 }
@@ -539,7 +555,11 @@ async function getDeviceSync(attempt = 0) {
     console.log({ devices });
     global.adbDevice = false;
     for (const device of devices) {
-      if (['authorizing', 'offline'].includes(device.type)) continue;
+      if (['offline', 'authorizing'].includes(device.type)) continue;
+      if (['unauthorized'].includes(device.type)) {
+        win.webContents.send('alert', 'Please authorize adb access on your device');
+        continue;
+      }
       if (
         !global.currentConfiguration.allowOtherDevices
         && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
@@ -1208,7 +1228,7 @@ async function checkDeps(arg){
         globalAdb = await commandExists('adb');
       } catch (e) {}
 
-      res[arg].cmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
+      res[arg].cmd = adbCmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
       try {
         await execShellCommand(`${res[arg].cmd} start-server`);
       }
@@ -1440,24 +1460,52 @@ async function getDir(folder) {
     let gameList = {};
     let installedApps = {}
     try {
-      if (files.includes('GameList.txt')) {
-        const list = (await fsp.readFile(path.join(folder, 'GameList.txt'), 'utf8')).split('\n');
+      let gameListName = false;
+      for (const name of GAME_LIST_NAMES) {
+        if (!files.includes(name)) continue;
+        gameListName = name;
+        break;
+      }
+
+      if (gameListName) {
+        const list = (await fsp.readFile(path.join(folder, gameListName), 'utf8')).split('\n');
+        let listVer;
         for (const line of list) {
           const meta = line.split(';');
-          gameList[meta[1]] = {
-            simpleName: meta[0],
-            releaseName: meta[1],
-            packageName: meta[3],
-            versionCode: meta[4],
-            versionName: meta[5],
-            imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[3]}.jpg`,
+          if (!listVer) {
+            listVer = meta[2] == 'Release APK Path' ? 1 : 2;
+            console.log({ gameListName, listVer });
+            continue;
+          }
+
+          if (listVer == 1) {
+            gameList[meta[1]] = {
+              simpleName: meta[0],
+              releaseName: meta[1],
+              packageName: meta[3],
+              versionCode: meta[4],
+              versionName: meta[5],
+              imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[3]}.jpg`,
+            }
+          }
+          else if (listVer == 2) {
+            gameList[meta[1]] = {
+              simpleName: meta[0],
+              releaseName: meta[1],
+              packageName: meta[2],
+              versionCode: meta[3],
+              imagePath: `file://${global.tmpdir}/mnt/${global.currentConfiguration.mntGamePath}/.meta/thumbnails/${meta[2]}.jpg`,
+              size: meta[5],
+            }
           }
         }
       }
     }
     catch (err) {
-      console.error('GameList.txt failed', err);
+      console.error(`${gameListName} failed`, err);
     }
+
+    // console.log(gameList);
 
     try {
       if (global.adbDevice) {
@@ -1469,6 +1517,7 @@ async function getDir(folder) {
     }
 
     let fileNames = await Promise.all(files.map(async (fileName) => {
+      // console.log(fileName);
 
       const info = await fsp.lstat(path.join(folder, fileName));
       let steamId = false,
@@ -1483,6 +1532,7 @@ async function getDir(folder) {
         kmeta = false,
         mp = false,
         installed = 0,
+        size = false,
         newItem = false;
 
       const gameMeta = gameList[fileName];
@@ -1492,6 +1542,7 @@ async function getDir(folder) {
         versionCode = gameMeta.versionCode;
         versionName = gameMeta.versionName;
         simpleName = gameMeta.simpleName;
+        size = gameMeta.size;
         // imagePath = gameMeta.imagePath;
 
         if (gameMeta.releaseName.includes('(')) {
@@ -1562,6 +1613,7 @@ async function getDir(folder) {
         versionCode,
         versionName,
         packageName,
+        size,
         note,
         newItem,
         info,
@@ -1698,13 +1750,14 @@ async function sideloadFolder(arg) {
     done: false,
     update: false,
     error: '',
+    location,
   }
 
   win.webContents.send('sideload_process', res);
 
   if (location.endsWith('.apk')) {
     apkfile = location;
-    location=path.dirname(location);
+    location = path.dirname(location);
   }
   else {
     returnError('not an apk file');
@@ -2273,6 +2326,10 @@ async function initLogs() {
 
 
 
+async function saveConfig(config = global.currentConfiguration) {
+  await fsp.writeFile(configLocation, JSON.stringify(config, null, ' '));
+}
+
 async function reloadConfig() {
   const defaultConfig = {
     allowOtherDevices: false,
@@ -2287,6 +2344,7 @@ async function reloadConfig() {
     scrcpyBitrate: '5',
     scrcpyCrop: '1600:900:2017:510',
     lastIp: '',
+    userHide: false,
   };
 
   if (await fsp.exists(configLocationOld)) {
@@ -2300,8 +2358,12 @@ async function reloadConfig() {
   }
   else {
     console.log('Config doesnt exist, creating ') + configLocation;
-    await fsp.writeFile(configLocation, JSON.stringify(defaultConfig))
+    await saveConfig(defaultConfig);
     global.currentConfiguration = defaultConfig;
+  }
+
+  if (global.currentConfiguration.tmpdir) {
+    global.tmpdir = global.currentConfiguration.tmpdir;
   }
 
   await parseRcloneSections();
@@ -2311,9 +2373,10 @@ async function changeConfig(key, value) {
   console.log('cfg.update', key, value);
 
   global.currentConfiguration[key] = value;
-  await fsp.writeFile(configLocation, JSON.stringify(global.currentConfiguration));
+  await saveConfig();
 
   if (key == 'rcloneConf') await parseRcloneSections();
+  if (key == 'tmpdir') global.tmpdir = value || require('os').tmpdir().replace(/\\/g, '/');
 
   return value;
 }

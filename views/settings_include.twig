@@ -4,7 +4,7 @@
   </div>
   <div class="card-body">
     <div class="card-text container">
-      <div class="card bg-primary mb-1">
+      <div class="card bg-primary mb-2">
         <div class="card-header">Rclone configs(needed for mount remoute disck`s):</div>
         <div class="card-body">
           <div class="form-group mb-3">
@@ -21,6 +21,7 @@
               <a class="btn btn-info" onclick="shell.openExternal('https://downloads.rclone.org/')">Download</a>
             </div>
           </div>
+
           <div class="form-group mb-4">
             <label for="rcloneConf">Path config:</label>
             <div class="input-group">
@@ -29,7 +30,7 @@
             </div>
           </div>
 
-          <div class="form-check mb-3">
+          <div class="form-check mb-0">
             <label for="autoMount" class="form-check-label">
               <input class="form-check-input" type="checkbox" id="autoMount">
               Automatically mount drive on startup (if not already mounted)
@@ -39,7 +40,7 @@
       </div>
 
 
-      <div class="card bg-primary mb-1">
+      <div class="card bg-primary mb-2">
         <div class="card-header">Main:</div>
         <div class="card-body">
           <div class="form-group mb-4">
@@ -50,16 +51,33 @@
                   <a class="btn btn-info" onclick="shell.openExternal('https://github.com/Genymobile/scrcpy/releases/latest')">Download</a>
             </div>
           </div>
+
+          <div class="form-group mb-4">
+            <label for="tmpdir">Custom temp dirrectory:</label>
+            <div class="input-group">
+              <input id="tmpdir" class="form-control" value="" />
+              <a class="btn btn-primary" id="tmpdirBtn">Browse</a>
+            </div>
+          </div>
+
           <div class="form-check mb-3">
             <label for="allowOtherDevices" class="form-check-label">
               <input class="form-check-input" type="checkbox" id="allowOtherDevices">
               Allow to connect not oculus devices
             </label>
           </div>
+
           <div class="form-check mb-3">
             <label for="cacheOculusGames" class="form-check-label">
               <input class="form-check-input" type="checkbox" id="cacheOculusGames">
               Cache Oculus Games on first opening(for faster reopening)
+            </label>
+          </div>
+
+          <div class="form-check mb-0">
+            <label for="userHide" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="userHide">
+              Hide user name
             </label>
           </div>
 
@@ -82,11 +100,13 @@
     'rclonePath',
     'rcloneConf',
     'scrcpyPath',
+    'tmpdir',
   ];
   const CHKBOXES = [
     'autoMount',
     'allowOtherDevices',
     'cacheOculusGames',
+    'userHide',
   ];
 
   let options = '';
@@ -120,13 +140,14 @@
     remote.getGlobal('win').webContents.openDevTools();
   });
 
-  $id('adbPathBtn').on('click', (e) => setCustomPath('adbPath', 'Android Debug Bridge custom path', 'Browse to adb binary'));
-  $id('rclonePathBtn').on('click', (e) => setCustomPath('rclonePath', 'RClone custom path', 'Browse to rclone binary'));
-  $id('scrcpyPathBtn').on('click', (e) => setCustomPath('scrcpyPath', 'SCRCPY custom path', 'Browse to scrcpy binary'));
-  $id('rcloneConfBtn').on('click', (e) => setCustomPath('rcloneConf', 'RClone config location', 'Browse to rclone config', [{
+  $id('adbPathBtn').on('click', (e) => setCustomPath('adbPath', 'Android Debug Bridge custom path', 'Browse to adb binary location'));
+  $id('rclonePathBtn').on('click', (e) => setCustomPath('rclonePath', 'RClone custom path', 'Browse to rclone binary location'));
+  $id('scrcpyPathBtn').on('click', (e) => setCustomPath('scrcpyPath', 'SCRCPY custom path', 'Browse to scrcpy binary location'));
+  $id('rcloneConfBtn').on('click', (e) => setCustomPath('rcloneConf', 'RClone config location', 'Browse to rclone config location', [{
     name: 'Config', extensions: ['conf', 'cfg', 'ini'],
     name: 'All', extensions: ['*'],
   }]));
+  $id('tmpdirBtn').on('click', (e) => setCustomPath('tmpdir', 'Temp dirrectory custom path', 'Browse to new temp dirrectory location', undefined, 'openDirectory'));
 
   ipcRenderer.removeAllListeners('device_tweaks');
   ipcRenderer.on('change_config', (event, { key, val }) => {
@@ -135,13 +156,13 @@
     $(`#${key}`).val(val).addClass('is-valid');
   });
 
-  async function setCustomPath(key, title, message, filters) {
+  async function setCustomPath(key, title, message, filters, type = 'openFile') {
     filters = filters || [{
       name: 'Exe', extensions: ['exe'],
       name: 'All', extensions: ['*'],
     }];
     const file = await dialog.showOpenDialog(null, {
-      properties: ['openFile'],
+      properties: [type],
       title,
       message,
       filters,

@@ -4,46 +4,48 @@ let search = false;
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.code == 'KeyF') openSearch();
 
-  // if (!search) return;
-  // if (!e.code == 'F3') return;
-  // if (!e.shiftKey) search.findNext(true);
-  // if (e.shiftKey) search.findNext();
+/*  if (!search) return;
+  if (e.code != 'F3') return;
+  if (!e.shiftKey) return search.findNext(true);
+  if (e.shiftKey) return search.findNext();*/
 });
 
-window.addEventListener('scroll', () => {
+window.addEventListener('resize', () => {
+  const navPanel = id('nav-panel');
+  if (!navPanel) {
+    if (!search) return;
+    search.destroy();
+    search = null;
+    return;
+  }
+
+  navPanel.style.top = $id('topbar').height() + 'px'; // fix navbar position
+
   if (!search) return;
-
-  const scrollTop = document.documentElement.scrollTop;
-  if (
-    scrollTop > 0
-    && scrollTop < 150
-  ) {
-    $('.find-box')[0].style.top = (170 - scrollTop) + 'px';
-  }
-
-  if (scrollTop == 0) {
-    $('.find-box')[0].style.top = '170px';
-  }
-
-  if (scrollTop > 150) {
-    $('.find-box')[0].style.top = '20px';
-  }
+  $('.find-box')[0].style.top = calcSearchTop() + 'px';
 });
+
+function calcSearchTop() {
+  return $id('topbar').height() + 52;
+}
 
 function openSearch() {
+  if (search) {
+    // search.update();
+    // search.openFindWindow();
+    // return;
+    search.destroy();
+    search = null;
+  }
+
   const parentElement = id('listTable');
   if (!parentElement) return;
 
-  if (search) {
-    search.update();
-    search.openFindWindow();
-    return;
-  }
 
   search = new FindInPage(remote.getCurrentWebContents(), {
     // parentElement,
     duration: 1,
-    offsetTop: 170,
+    offsetTop: calcSearchTop(),
     offsetRight: 20,
     boxBgColor: '#272b30',
     boxShadowColor: '#000',

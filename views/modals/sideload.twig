@@ -135,8 +135,6 @@
   ipcRenderer.on('sideload_process', (event, arg) => {
     console.log('sideload_process', arg);
 
-    remote.getGlobal('win').setProgressBar(1 - ($('.badge-warning').length / $('.badge').length));
-
     if (arg.device) {
       badgeState($id('deviceBadge'), arg.device);
     }
@@ -181,6 +179,8 @@
       badgeState($id('copyObbDoneBadge'), arg.push_obb);
     }
 
+    remote.getGlobal('win').setProgressBar($('.badge-warning').length / $('.badge').length);
+
     if (arg.done) {
       badgeState($id('sideloadDoneBadge'), arg.done);
 
@@ -193,6 +193,8 @@
         .removeClass('fa-refresh')
         .removeClass('fa-spin')
         .addClass('fa-check-circle-o');
+
+      remote.getGlobal('notify')(arg.location, 'Sucesfully installed', 'low');
     }
 
     if (arg.update) {
@@ -203,6 +205,7 @@
     if (arg.error) {
       $id('sideloadError').text(arg.error);
       $id('sideloadErrorArea').show();
+      remote.getGlobal('notify')(arg.location, 'Failed');
     }
   });
 
@@ -225,7 +228,8 @@
   }
 
   $id('sideloadDoneBtn').on('click', function(){
+    remote.getGlobal('win').setProgressBar(0);
     $id('sideloadModal').modal('hide');
-    $('.modal-backdrop').remove();
+    // $('.modal-backdrop').remove();
   });
 </script>

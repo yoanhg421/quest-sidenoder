@@ -12,19 +12,20 @@ function copyInput(el) {
   alert('Text copied to clipboard');
 }
 
-window.onscroll = () => {
+window.addEventListener('scroll', () => {
+  // console.log(document.body.scrollTop, document.documentElement.scrollTop);
+  const scroll = document.documentElement.scrollTop;
   if (
-    document.body.scrollTop > 100 ||
-    document.documentElement.scrollTop > 100
+    scroll > 100
   ) {
     $id('backToTop').fadeIn();
   }
   else {
     $id('backToTop').fadeOut();
   }
-};
+});
 
 function backToTop() {
-  document.body.scrollTop = 0;
+  // document.body.scrollTop = 0;
   document.documentElement.scrollTop = 0;
 }
