@@ -11,6 +11,8 @@ async function checkVersion() {
 
     console.log('Current version: ' + pkg.version);
     console.log('Github version: ' + remoteversion);
+    if (!remoteversion) return;
+
     if (compareVersions.compare(remoteversion, pkg.version, '<=')) {
       console.log('Using latest version');
     }
