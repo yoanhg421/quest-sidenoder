@@ -906,9 +906,11 @@ async function appInfo(args) {
           'Origin': 'https://computerelite.github.io',
         },
       });
-      let json = await resp.json();
-      // console.log({ json });
-      if (!json.error) {
+      try {
+        let json = await resp.json();
+        // console.log({ json });
+        if (json.error) throw json.error;
+
         const meta = json.data.node;
         data.name = meta.appName;
         data.detailed_description = meta.display_long_description && meta.display_long_description.split('\n').join('<br/>');
@@ -940,7 +942,9 @@ async function appInfo(args) {
           data.movies = [{ mp4: { '480': meta.trailer.uri } }];
         }
       }
-      else {
+      catch(err) {
+        console.error(res, 'fetch error', err);
+
         resp = await fetch(`${data.url}?locale=${global.locale}`);
         const meta = await WAE().parse(await resp.text());
         const jsonld = meta.jsonld.Product[0];
@@ -1083,9 +1087,11 @@ async function appInfoEvents(args) {
           'Origin': 'https://computerelite.github.io',
         },
       });
-      let json = await resp.json();
-      // console.log({ json });
-      if (!json.error) {
+      try {
+        let json = await resp.json();
+        if (json.error) throw json.error;
+
+        // console.log({ json });
         const events = json.data.node.supportedBinaries.edges;
         for (const { node } of events) {
           const e = node;
@@ -1104,8 +1110,8 @@ async function appInfoEvents(args) {
           data.events.push(event);
         }
       }
-      else {
-        console.error(res, 'fetch error', json.error);
+      catch (err) {
+        console.error(res, 'fetch error', err);
       }
 
       resp = await fetch(`https://computerelite.github.io/tools/Oculus/OlderAppVersions/${oculus.id}.json`);
