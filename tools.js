@@ -897,13 +897,13 @@ async function appInfo(args) {
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       // data.genres = oculus.genres && oculus.genres.split(', ');
 
-      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
         headers: {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Origin': 'https://computerelite.github.io',
+          'Origin': 'https://www.oculus.com',
         },
       });
       try {
@@ -1078,13 +1078,13 @@ async function appInfoEvents(args) {
 
       // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
 
-      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
         headers: {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Origin': 'https://computerelite.github.io',
+          'Origin': 'https://www.oculus.com',
         },
       });
       try {
