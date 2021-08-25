@@ -1192,33 +1192,36 @@ async function appInfoEvents(args) {
 }
 
 async function checkMount(attempt = 0) {
-  console.log('checkMount()')
+  console.log('checkMount()', attempt);
   try {
-    const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
-      method: 'post',
-    });
     attempt++;
 
     if (!(await fsp.readdir(global.mountFolder)).length && attempt < 15) {
       return new Promise((res, rej) => {
         setTimeout(() => {
-          checkMount().then(res).catch(rej);
+          checkMount(attempt).then(res).catch(rej);
         }, 1000);
       });
     }
 
+    const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
+      method: 'post',
+    });
+
+    console.log('checkMount', resp);
     global.mounted = resp.ok;
     return resp.ok;
     //setTimeout(updateRcloneProgress, 2000);
   }
   catch (e) {
+    console.warn('checkMount', e);
     global.mounted = false;
     return false;
   }
 }
 
 async function checkDeps(arg){
-  console.log('checkDeps()');
+  console.log('checkDeps()', arg);
   let res = {
     [arg]: {
       version: false,
@@ -1386,10 +1389,15 @@ async function umount() {
 }
 
 async function mount() {
-  if (await checkMount(global.mountFolder)) {
+  // if (await checkMount(13)) {
     // return;
-    await killRClone();
-  }
+    try {
+      await killRClone();
+    }
+    catch (err) {
+      console.log('rclone not started');
+    }
+  // }
 
   await umount();
 

@@ -152,7 +152,7 @@
 <footer class="footer text-center">
   <hr>
   <b>SideNoder v{{ version }}</b>
-  <a class="btn btn-sm btn-info" onclick="$id('donateModal').modal('show')"><i class="fa fa-usd"></i> Donate</a>
+  <a class="btn btn-sm btn-info" onclick="loadInclude('modals/donate.twig', 'donatemodaldiv')"><i class="fa fa-usd"></i> Donate</a>
   <br>
   https://github.com/vKolerts/quest-sidenoder
 </footer>
@@ -172,8 +172,15 @@
 <a class="btn btn-dark btn-floating btn-lg" id="backToTop" onclick="backToTop()"><i class="fa fa-angle-up"></i></a>
 
 <script>
-  if (!remote.getGlobal('currentConfiguration').donShown) {
-    setTimeout(()=>$id('donateModal').modal('show'), 2000 * 60);
+  const donShown = Date.now() - (remote.getGlobal('currentConfiguration').donShown || 0);
+  console.log(
+    // Date.now(),
+    // remote.getGlobal('currentConfiguration').donShown,
+    // 1000 * 5 * 24 * 3600,
+    donShown
+  );
+  if (donShown > 1000 * 5 * 24 * 3600) {
+    setTimeout(()=>loadInclude('modals/donate.twig', 'donatemodaldiv'), 2000 * 60);
   }
 
   loadInclude('device_info.twig', 'device_infoDiv');
@@ -183,7 +190,6 @@
   loadInclude('modals/processing.twig', 'processingmodaldiv');
   loadInclude('modals/app_start.twig', 'appstartmodaldiv');
   loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
-  loadInclude('modals/donate.twig', 'donatemodaldiv');
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();

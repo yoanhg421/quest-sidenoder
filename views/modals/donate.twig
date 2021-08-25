@@ -1,21 +1,21 @@
-<div class="modal fade" id="donateModal" tabindex="-1" role="dialog" aria-labelledby="donateModalLabel"  data-backdrop="static" data-keyboard="false">
+<div class="modal" id="donateModal">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="donateModalLabel">Donate</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span>&times;</span>
+          <span>×</span>
         </button>
       </div>
       <div class="modal-body text-center" id="donateModalBody">
         Your donation will motivate me to work on lot of new features.
-        <br/>Thanks and please don't forget add your nickname at description
-        <hr/>
+        <br>Thanks and please don't forget add your nickname at description
+        <hr>
         <a class="btn btn-outline-info" onclick="shell.openExternal('https://paypal.me/1xyst')"><i class="fa fa-paypal"></i> PayPal</a>
         <a class="btn btn-outline-light" onclick="shell.openExternal('https://yoomoney.ru/to/410011725792647')"><i class="fa fa-money"></i> YooMoney</a>
-        <hr/>
-        <img class="mb-2" alt="bitcoin-qr" src="./img/qrbtc.jpg" />
-        <br/><input readonly="readonly" value="bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy" size="38" onclick="copyInput(this)">
+        <hr>
+        <img class="mb-2" alt="bitcoin-qr" src="./img/qrbtc.jpg">
+        <br><input readonly="readonly" value="bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy" size="38" onclick="copyInput(this)">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -25,5 +25,11 @@
 </div>
 
 <script>
-  ipcRenderer.send('change_config', { key: 'donShown', val: true });
+  ipcRenderer.send('change_config', { key: 'donShown', val: Date.now() });
+  $id('donateModal')
+  .modal('show')
+  .on('hidden.bs.modal', () => {
+    console.log('donateModal closed');
+    id('donatemodaldiv').innerHTML = '';
+  });
 </script>
