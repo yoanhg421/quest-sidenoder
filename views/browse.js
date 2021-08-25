@@ -221,7 +221,7 @@ function loadDir(list) {
       <i class="fa fa-youtube-play"></i></a> `;
 
     const size = item.size
-    ? `${item.size} Gb`
+    ? `${item.size} Mb`
     : `<a onclick="getDirSize(this, '${fullPath}')">
       <i class="fa fa-calculator" title="Calculate folder size"></i> get size
     </a>`;
