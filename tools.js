@@ -2091,7 +2091,7 @@ async function getInstalledApps(obj = false) {
     info['versionCode'] = versionCode;
     info['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
-      : 'unknown.png';
+      : `http://cdn.apk-cloud.com/detail/image/${packageName}-w130.png`//'unknown.png';
 
     appinfo[packageName] = info;
   }
@@ -2127,7 +2127,7 @@ async function getInstalledAppsWithUpdates() {
   let updates = [];
   for (const app of apps) {
     const packageName = app['packageName'];
-    console.log(packageName, 'checking');
+    // console.log(packageName, 'checking');
 
     if (!remoteKeys.includes(packageName)) continue;
 
@@ -2150,6 +2150,7 @@ async function getInstalledAppsWithUpdates() {
     }
   }
 
+  global.installedApps = false;
   return updates;
 }
 

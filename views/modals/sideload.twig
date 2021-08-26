@@ -194,7 +194,7 @@
         .removeClass('fa-spin')
         .addClass('fa-check-circle-o');
 
-      remote.getGlobal('notify')(arg.location, 'Sucesfully installed', 'low');
+      remote.getGlobal('notify')('Sucesfully sideloaded', arg.location, 'low');
     }
 
     if (arg.update) {
@@ -205,7 +205,7 @@
     if (arg.error) {
       $id('sideloadError').text(arg.error);
       $id('sideloadErrorArea').show();
-      remote.getGlobal('notify')(arg.location, 'Failed');
+      remote.getGlobal('notify')('Sideload Failed', arg.location);
     }
   });
 
