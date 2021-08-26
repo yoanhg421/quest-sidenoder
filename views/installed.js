@@ -8,6 +8,7 @@ ipcRenderer.on('get_installed', (event, arg) => {
   }
 
   $id('processingModal').modal('hide');
+  $id('installedModal').modal('show');
 });
 
 ipcRenderer.on('get_installed_with_updates', (event, arg) => {
@@ -63,8 +64,8 @@ function drawInstalledApps(apps) {
       <br/><small>${app.packageName}<br/>VersionCode: ${app.versionCode}</small></td><td style="vertical-align:middle;">`;
 
     if (!app.update) {
-      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-md btn-info"> <i class="fa fa-play"></i> Launch</a> `;
-      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-md btn-danger"> <i class="fa fa-trash-o"></i> Uninstall</a> `;
+      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-md btn-info" title="Launch"><i class="fa fa-play"></i></a> `;
+      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-md btn-danger" title="Uninstall"><i class="fa fa-trash-o"></i></a> `;
       row += `<a onclick="appTools('${app.packageName}')" class="adbdev btn btn-md btn-primary"> <i class="fa fa-cog"></i> Tools</a> `;
     }
     else {
@@ -77,7 +78,7 @@ function drawInstalledApps(apps) {
     rows += row;
   }
 
-  id('listTable').innerHTML = rows;
+  id('intalledTable').innerHTML = rows;
 }
 
 
