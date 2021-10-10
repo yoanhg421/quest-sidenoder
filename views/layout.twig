@@ -158,21 +158,29 @@
 </footer>
 
 <!-- modals -->
-<div id="sideloadmodaldiv"></div>
-<div id="tweaksmodaldiv"></div>
 <div id="installedmodaldiv"></div>
+<div id="tweaksmodaldiv"></div>
 <div id="appinfomodaldiv"></div>
 <div id="appinfoeventsmodaldiv"></div>
 <div id="confirmmodaldiv"></div>
-<div id="processingmodaldiv"></div>
+<div id="sideloadmodaldiv"></div>
 <div id="appstartmodaldiv"></div>
 <div id="apptoolsmodaldiv"></div>
 <div id="scrcpymodaldiv"></div>
+<div id="processingmodaldiv"></div>
 <div id="donatemodaldiv"></div>
 
 <a class="btn btn-dark btn-floating btn-lg" id="backToTop" onclick="backToTop()"><i class="fa fa-angle-up"></i></a>
 
 <script>
+  loadInclude('device_info.twig', 'device_infoDiv');
+  loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
+  loadInclude('modals/appinfo_events.twig', 'appinfoeventsmodaldiv');
+  loadInclude('modals/confirm.twig', 'confirmmodaldiv');
+  loadInclude('modals/app_start.twig', 'appstartmodaldiv');
+  loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
+  loadInclude('modals/processing.twig', 'processingmodaldiv');
+
   const donShown = Date.now() - (remote.getGlobal('currentConfiguration').donShown || 0);
   console.log(
     // Date.now(),
@@ -184,13 +192,6 @@
     setTimeout(()=>loadInclude('modals/donate.twig', 'donatemodaldiv'), 2000 * 60);
   }
 
-  loadInclude('device_info.twig', 'device_infoDiv');
-  loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
-  loadInclude('modals/appinfo_events.twig', 'appinfoeventsmodaldiv');
-  loadInclude('modals/confirm.twig', 'confirmmodaldiv');
-  loadInclude('modals/processing.twig', 'processingmodaldiv');
-  loadInclude('modals/app_start.twig', 'appstartmodaldiv');
-  loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();
