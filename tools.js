@@ -897,6 +897,7 @@ async function appInfo(args) {
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       // data.genres = oculus.genres && oculus.genres.split(', ');
 
+      //https://computerelite.github.io
       let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
@@ -983,6 +984,8 @@ async function appInfo(args) {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/json',
           'Origin': 'https://sidequestvr.com',
+          'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
         },
       });
       const json = await resp.json();
@@ -1005,6 +1008,9 @@ async function appInfo(args) {
         headers: {
           'Content-Type': 'application/json',
           'Origin': 'https://sidequestvr.com',
+          'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
+
         },
       });
       const json_img = await resp_img.json();
@@ -1156,6 +1162,8 @@ async function appInfoEvents(args) {
             'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
             'Content-Type': 'application/json',
             'Origin': 'https://sidequestvr.com',
+            'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
           },
         });
         const json = await resp.json();
@@ -1327,7 +1335,7 @@ function returnError(message) {
 
 async function killRClone() {
   const killCmd = platform == 'win'
-    ? `taskkill.exe /F /IM rclone.exe /T` // TODO: need test
+    ? `taskkill.exe /F /T /IM rclone.exe`
     : `killall -9 rclone`;
   console.log('try kill rclone');
   return new Promise((res, rej) => {
@@ -1473,8 +1481,8 @@ async function getDir(folder) {
     const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
     let installedApps = {}
+    let gameListName = false;
     try {
-      let gameListName = false;
       for (const name of GAME_LIST_NAMES) {
         if (!files.includes(name)) continue;
         gameListName = name;
@@ -2360,6 +2368,9 @@ async function reloadConfig() {
     scrcpyCrop: '1600:900:2017:510',
     lastIp: '',
     userHide: false,
+    dirBookmarks: [
+      { name: 'Sidenoder folder', path: global.sidenoderHome },
+    ]
   };
 
   if (await fsp.exists(configLocationOld)) {
@@ -2379,6 +2390,10 @@ async function reloadConfig() {
 
   if (global.currentConfiguration.tmpdir) {
     global.tmpdir = global.currentConfiguration.tmpdir;
+  }
+
+  if (!global.currentConfiguration.dirBookmarks) {
+    global.currentConfiguration.dirBookmarks = defaultConfig.dirBookmarks;
   }
 
   await parseRcloneSections();
