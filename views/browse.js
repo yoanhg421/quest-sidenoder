@@ -25,11 +25,39 @@ function setLocation(loc) {
   resizeLoc();
 }
 
+function addBookmark(name, path, write_cfg = true) {
+  // console.log('addBookmark', { name, path, write_cfg });
+  if (!name) return alert('Bookmark name can`t be empty');
+  const i = $('.dir-bookmark').length;
+  id('bookmarksdropdown').innerHTML += `<div class="dropdown-item">
+    <a class="dir-bookmark" onclick="getDir('${path}');$id('bookmarksdropdown').toggle()">
+    <i class="fa fa-star-o"></i> ${name}</a>
+    <a class="pull-right text-danger" data-i="${i}" onclick="delBookmark(this)"> x</a>
+  </div>`;
+  if (write_cfg) {
+    const bookmarks = remote.getGlobal('currentConfiguration').dirBookmarks;
+    bookmarks.push({ name, path });
+    ipcRenderer.send('change_config', { key: 'dirBookmarks', val: bookmarks });
+  }
+
+  $id('bookmarkName').val('');
+}
+
+function delBookmark(el) {
+  const $el = $(el);
+  const i = $el.data('i');
+  const bookmarks = remote.getGlobal('currentConfiguration').dirBookmarks;
+  bookmarks.splice(i, 1);
+  ipcRenderer.send('change_config', { key: 'dirBookmarks', val: bookmarks });
+  $el.parent().remove();
+}
+
 document.addEventListener('keydown', (e) => {
   console.log(e);
   if (!id('path')) return;
 
-  if (e.code == 'Backspace' && !$('.find-input').is(':focus')) upDir();
+  if (e.code == 'Backspace'
+    && !$('.find-input').is(':focus') && !$('#bookmarkName').is(':focus')) upDir();
   if (e.ctrlKey && e.code == 'KeyR') refreshDir();
   if (e.ctrlKey && e.altKey && e.code == 'KeyD') remote.getGlobal('win').webContents.openDevTools();
 });
@@ -41,9 +69,9 @@ function resizeLoc() {
   const dir_path = id('path');
   if (!dir_path) return;
 
-  const width = window.innerWidth / 10 - 50;
+  const width = window.innerWidth / 10 - 60;
   if (dir_path.title.length > width) {
-    dir_path.innerText = dir_path.title.substr(0, 8) + '...' + dir_path.title.slice(-(width - 11));
+    dir_path.innerText = dir_path.title.substr(0, 8) + '...' + dir_path.title.slice(-(width - 10));
   }
   else {
     dir_path.innerText = dir_path.title;
