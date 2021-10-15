@@ -2272,7 +2272,7 @@ async function init() {
   console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
 
   try {
-    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json');
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json?' + Date.now());
     QUEST_ICONS = await res.json();
     console.log('icons list loaded');
   }
@@ -2281,7 +2281,7 @@ async function init() {
   }
 
   try {
-    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e');
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e?' + Date.now());
     const text = await res.text();
     const iv = Buffer.from(text.substring(0, l), 'hex');
     const secret = crypto.createHash(hash_alg).update(pkg.author.split(' ')[0].repeat(2)).digest('base64').substr(0, l);
