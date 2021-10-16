@@ -24,6 +24,7 @@ const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
 
 const GAME_LIST_NAMES = [
+  'FFA.txt',
   'GameList.txt',
   'VRP-GameList.txt',
   'Dynamic.txt',
