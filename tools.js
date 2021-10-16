@@ -2117,7 +2117,7 @@ async function getInstalledAppsWithUpdates() {
   let remotePackages = {};
   let remoteList = {};
   for (const app of list) {
-    const { name, packageName, versionCode, simpleName, filePath } = app;
+    const { name, packageName, versionCode, simpleName, filePath, size } = app;
     if (!packageName) continue;
 
     if (!remotePackages[packageName]) remotePackages[packageName] = [];
@@ -2127,6 +2127,7 @@ async function getInstalledAppsWithUpdates() {
       versionCode,
       simpleName,
       filePath,
+      size,
     };
   };
 
@@ -2146,12 +2147,14 @@ async function getInstalledAppsWithUpdates() {
       const remoteversion = package.versionCode;
 
       // console.log({ packageName, installedVersion, remoteversion });
+      // console.log({ package });
 
       if (remoteversion <= installedVersion) continue;
 
+      app['simpleName'] = package.simpleName;
       app['update'] = [];
       app['update']['path'] = package.filePath;
-      app['simpleName'] = package.simpleName;
+      app['update']['size'] = package.size;
       app['update']['versionCode'] = remoteversion;
       updates.push(app);
 

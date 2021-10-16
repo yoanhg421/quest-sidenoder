@@ -71,7 +71,8 @@ function drawInstalledApps(apps) {
     else {
       row += `<a data-path="${app.update.path}" onclick='update(this)' class="btn btn-sm btn-info">
         <i class="fa fa-upload"></i> Update to
-        <br/> v.${app.update.versionCode}</a>`;
+        <br/> v.${app.update.versionCode}
+        <br/> ${app.update.size} Mb</a>`;
     }
 
     row += `<td></tr>`;
