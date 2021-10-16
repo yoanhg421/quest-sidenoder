@@ -194,7 +194,7 @@
         .removeClass('fa-spin')
         .addClass('fa-check-circle-o');
 
-      remote.getGlobal('notify')('Sucesfully sideloaded', arg.location, 'low');
+      if (!arg.error) remote.getGlobal('notify')('Sucesfully sideloaded', arg.location, 'low');
     }
 
     if (arg.update) {

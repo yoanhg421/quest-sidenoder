@@ -1823,9 +1823,20 @@ async function sideloadFolder(arg) {
 
       apkfile = apktmp;
     }
+  }
+  catch (e) {
+    // returnError(e);
+    console.error(e);
+    res.download = 'fail';
+    res.done = 'fail';
+    res.error = e;
+    return win.webContents.send('sideload_process', res);
+  }
 
-    res.aapt = 'processing';
-    win.webContents.send('sideload_process', res);
+  res.aapt = 'processing';
+  win.webContents.send('sideload_process', res);
+
+  try {
     packageinfo = await getPackageInfo(apkfile);
 
     packageName = packageinfo.packageName;
