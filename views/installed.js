@@ -23,6 +23,7 @@ ipcRenderer.on('get_installed_with_updates', (event, arg) => {
 
 ipcRenderer.on('uninstall', (event, arg) => {
   console.log('uninstall msg came ! ');
+  $id('installedModal').modal('hide');
   $id('appToolModal').modal('hide');
   loadInclude('modals/installed.twig', 'installedmodaldiv');
 });
