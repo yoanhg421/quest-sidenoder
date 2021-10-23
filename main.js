@@ -118,11 +118,13 @@ ipcMain.on('check_mount', async (event, arg) => {
   checkMount(event);
 });
 
+let rcloneProgress = false;
 async function checkMount(event) {
   await tools.checkMount();
   event.reply('check_mount', { success: global.mounted });
-  if (global.mounted) {
-    tools.updateRcloneProgress()
+  if (global.mounted && !rcloneProgress) {
+    tools.updateRcloneProgress();
+    rcloneProgress = true;
   }
 
   return;
