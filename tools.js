@@ -2127,7 +2127,8 @@ async function getInstalledAppsWithUpdates() {
   const list = await getDir(remotePath);
   let remotePackages = {};
   let remoteList = {};
-  for (const app of list) {
+
+  if (list) for (const app of list) {
     const { name, packageName, versionCode, simpleName, filePath, size } = app;
     if (!packageName) continue;
 
