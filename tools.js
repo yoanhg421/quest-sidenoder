@@ -545,7 +545,7 @@ async function rebootBootloader() {
   return res;
 }
 async function sideloadFile(path) {
-  const res = await execShellCommand(`${adbCmd} sideload "${path}"`);
+  const res = await execShellCommand(`"${adbCmd}" sideload "${path}"`);
   console.log('sideloadFile', { res });
   return res;
 }
@@ -1248,14 +1248,14 @@ async function checkDeps(arg){
 
       res[arg].cmd = adbCmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
       try {
-        await execShellCommand(`${res[arg].cmd} start-server`);
+        await execShellCommand(`"${res[arg].cmd}" start-server`);
       }
       catch (err) {
         if (!err.toString().includes('daemon started successfully'))
           throw err;
       }
 
-      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`${res[arg].cmd} --version`);
+      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" --version`);
 
       await trackDevices();
     }
@@ -1264,19 +1264,19 @@ async function checkDeps(arg){
       // module with autodownload https://github.com/sntran/rclone.js/blob/main/index.js
       // res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
       res[arg].cmd = await fetchBinary('rclone');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+      res[arg].version = await execShellCommand(`"${res[arg].cmd}" --version`);
     }
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "7-Zip"`);
+      res[arg].version = await execShellCommand(`"${res[arg].cmd}" --help ${grep_cmd} "7-Zip"`);
       console.log(res[arg].version);
     }
 
     if (arg == 'scrcpy') {
       res[arg].cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
       try {
-        res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+        res[arg].version = await execShellCommand(`"${res[arg].cmd}" --version`);
       }
       catch(err) {
         res[arg].version = err; // don`t know why version at std_err((
@@ -1392,8 +1392,8 @@ async function umount() {
     return;
   }
 
-  await execShellCommand(`umount ${global.mountFolder}`, true);
-  await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
+  await execShellCommand(`umount "${global.mountFolder}"`, true);
+  await execShellCommand(`fusermount -uz "${global.mountFolder}"`, true);
   await fsp.mkdir(global.mountFolder, { recursive: true });
 }
 
