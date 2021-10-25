@@ -23,7 +23,9 @@ const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
 
-const GAME_LIST_NAMES = [
+init();
+
+const GAME_LIST_NAMES = global.currentConfiguration.gameListNames || [
   'FFA.txt',
   'GameList.txt',
   'VRP-GameList.txt/VRP-GameList.txt',
@@ -39,8 +41,6 @@ let grep_cmd = '| grep ';
 if (platform == 'win') {
   grep_cmd = '| findstr ';
 }
-
-init();
 
 
 module.exports =
