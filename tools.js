@@ -26,6 +26,7 @@ const configLocation = path.join(global.sidenoderHome, 'config.json');
 const GAME_LIST_NAMES = [
   'FFA.txt',
   'GameList.txt',
+  'VRP-GameList.txt/VRP-GameList.txt',
   'VRP-GameList.txt',
   'Dynamic.txt',
 ];
@@ -1485,7 +1486,8 @@ async function getDir(folder) {
     let gameListName = false;
     try {
       for (const name of GAME_LIST_NAMES) {
-        if (!files.includes(name)) continue;
+        if (!fs.existsSync(path.join(folder, name))) continue;
+        // if (!files.includes(name)) continue;
         gameListName = name;
         break;
       }
