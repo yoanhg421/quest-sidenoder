@@ -1528,6 +1528,10 @@ async function getDir(folder) {
     }
     catch (err) {
       console.error(`${gameListName} failed`, err);
+      gameListName = {
+        err: `Can't parse GameList.txt Maybe issue of server - please attempt to switch mirror at settings. Actual mirrors posted there
+          <a class="btn btn-sm btn-info" onclick=shell.openExternal('http://t.me/sidenoder')> http://t.me/sidenoder</a>`,
+      };
     }
 
     // console.log(gameList);
@@ -1661,6 +1665,10 @@ async function getDir(folder) {
     ) {
       console.log('getDir cached', folder);
       cacheOculusGames = fileNames;
+    }
+
+    if (gameListName && gameListName.err) {
+      fileNames.unshift({name: gameListName.err});
     }
 
     return fileNames;
