@@ -2,7 +2,7 @@
   <div class="card-header sticky" id="nav-panel">
     <h4 class="pull-left mb-0">
       <a class="btn btn-md btn-primary" onclick="upDir()" title="Up dir ../ (hotkey:backspace)"> <i class="fa fa-level-up"></i> </a>
-      <a class="btn btn-md btn-primary" onclick="shell.openPath($id('path').text())" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
+      <a class="btn btn-md btn-primary" id="shellOpenDirPath" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
       <span id="path"></u></span>
     </h4>
     <h4 class="pull-right mb-0">
@@ -60,5 +60,6 @@
     addBookmark(name, path, false);
   }
 
-  id('addBookmark').onclick = () => { addBookmark(id('bookmarkName').value, id('path').title) };
+  id('addBookmark').onclick = () => addBookmark(id('bookmarkName').value, id('path').title);
+  id('shellOpenDirPath').onclick = () => shell.openPath(id('path').title);
 </script>
