@@ -43,6 +43,8 @@ if (platform == 'win') {
   grep_cmd = '| findstr ';
 }
 
+let RCLONE_ID = 0;
+
 
 module.exports =
 {
@@ -54,6 +56,7 @@ module.exports =
   checkDeps,
   checkMount,
   mount,
+  killRClone,
   getDir,
   returnError,
   sideloadFolder,
@@ -1219,9 +1222,9 @@ async function checkMount(attempt = 0) {
       method: 'post',
     });
 
-    console.log('checkMount', resp);
     global.mounted = resp.ok;
-    return resp.ok;
+    console.log('checkMount', global.mounted);
+    return global.mounted;
     //setTimeout(updateRcloneProgress, 2000);
   }
   catch (e) {
@@ -1337,6 +1340,7 @@ function returnError(message) {
 
 
 async function killRClone() {
+  RCLONE_ID++;
   const killCmd = platform == 'win'
     ? `taskkill.exe /F /T /IM rclone.exe`
     : `killall -9 rclone`;
@@ -1359,7 +1363,7 @@ async function killRClone() {
   })
 }
 
-async function parseRcloneSections() {
+async function parseRcloneSections(newCfg = false) {
   if (!global.currentConfiguration.rcloneConf) return;
   if (!(await fsp.exists(global.currentConfiguration.rcloneConf))) {
     return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
@@ -1378,7 +1382,7 @@ async function parseRcloneSections() {
   }
 
   global.rcloneSections = sections;
-  if (sections.length && !global.currentConfiguration.cfgSection) {
+  if (sections.length && (newCfg || !global.currentConfiguration.cfgSection)) {
     await changeConfig('cfgSection', sections[0]);
   }
 
@@ -1412,6 +1416,9 @@ async function mount() {
 
   await umount();
 
+  if (global.mounted) {
+    return global.mounted = false;
+  }
 
    // TODO: temoporary
   if (!global.currentConfiguration.rcloneConf) {
@@ -1431,12 +1438,15 @@ async function mount() {
   // await fsp.writeFile(epath + '.enc', base64data);
   //console.log(cpath);
 
+  const myId = RCLONE_ID;
   const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
   const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
       console.error('rclone error:', error);
+      if (RCLONE_ID != myId) error = false;
+      console.log({ RCLONE_ID, myId });
       win.webContents.send('check_mount', { success: false, error });
       // checkMount();
       /*if (error.message.search('transport endpoint is not connected')) {
@@ -2454,7 +2464,7 @@ async function changeConfig(key, value) {
   global.currentConfiguration[key] = value;
   await saveConfig();
 
-  if (key == 'rcloneConf') await parseRcloneSections();
+  if (key == 'rcloneConf') await parseRcloneSections(true);
   if (key == 'tmpdir') global.tmpdir = value || require('os').tmpdir().replace(/\\/g, '/');
 
   return value;
