@@ -35,6 +35,7 @@ const GAME_LIST_NAMES = global.currentConfiguration.gameListNames || [
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
+let KMETAS2 = {};
 
 let adbCmd = 'adb';
 let grep_cmd = '| grep ';
@@ -1482,9 +1483,11 @@ async function getDir(folder) {
   try {
     const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
+    let gameListName2Package = {};
     let installedApps = {}
     let gameListName = false;
     try {
+      // throw 'test';
       for (const name of GAME_LIST_NAMES) {
         if (!fs.existsSync(path.join(folder, name))) continue;
         // if (!files.includes(name)) continue;
@@ -1523,6 +1526,7 @@ async function getDir(folder) {
               size: meta[5],
             }
           }
+
         }
       }
     }
@@ -1565,6 +1569,7 @@ async function getDir(folder) {
         newItem = false;
 
       const gameMeta = gameList[fileName];
+
       if (gameMeta) {
         simpleName = gameMeta.simpleName;
         packageName = gameMeta.packageName;
@@ -1580,8 +1585,20 @@ async function getDir(folder) {
         }
       }
 
-      if (!versionCode && (new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
-        versionCode = fileName.match(/.*v([0-9]+)\+[0-9].*/)[1];
+      let regex = /^([\w -.!,&+']*) v\d+\+/;
+      if (!gameMeta && gameListName && !gameListName.err && regex.test(fileName)) {
+        simpleName = fileName.match(regex)[1];
+        packageName = KMETAS2[simpleName];
+      }
+
+      regex = /v(\d+)\+/;
+      if (!versionCode && regex.test(fileName)) {
+        versionCode = fileName.match(regex)[1];
+      }
+
+      regex = /v\d+\+([\w.]*) /;
+      if (!versionName && regex.test(fileName)) {
+        versionName = fileName.match(regex)[1];
       }
 
       if (!versionCode && (new RegExp('.*\ -versionCode-')).test(fileName)) {
@@ -1591,6 +1608,7 @@ async function getDir(folder) {
       if (!packageName && (new RegExp('.*\ -packageName-')).test(fileName)) {
         packageName = fileName.match(/-packageName-([a-zA-Z0-9.]*)/)[1];
       }
+
 
       /*
       // obbs path the same =(
@@ -2314,6 +2332,10 @@ async function init() {
     const decipher = crypto.createDecipheriv('aes-256-cbc', secret, iv);
     const encrypted = text.substring(l);
     KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
+    for (const package of Object.keys(KMETAS)) {
+      KMETAS2[KMETAS[package].simpleName] = package;
+    }
+
     console.log('kmetas loaded');
   }
   catch (err) {
