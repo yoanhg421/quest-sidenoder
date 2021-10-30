@@ -172,7 +172,7 @@ function loadDir(list) {
   for (const item of list) {
     // console.log(item);
     if (!item.createdAt) {
-      rows += `<tr class="listitem"><td class="badge badge-danger" style="font-size: 100%;"><i class="fa fa-times-circle-o"></i> ${item.name}</td></tr>`;
+      cards_first.unshift(`<div class="listitem badge badge-danger"><i class="fa fa-times-circle-o"></i> ${item.name}</div>`);
       continue;
     }
 

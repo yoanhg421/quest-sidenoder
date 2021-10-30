@@ -1533,8 +1533,9 @@ async function getDir(folder) {
     catch (err) {
       console.error(`${gameListName} failed`, err);
       gameListName = {
-        err: `Can't parse GameList.txt Maybe issue of server - please attempt to switch mirror at settings. Actual mirrors posted there
-          <a class="btn btn-sm btn-info" onclick=shell.openExternal('http://t.me/sidenoder')> http://t.me/sidenoder</a>`,
+        err: `Can't parse GameList.txt
+          <br/>Maybe issue of server - please attempt to switch mirror at settings.
+          <br/>Actual mirrors posted there <a class="btn btn-sm btn-info" onclick=shell.openExternal('http://t.me/sidenoder')> http://t.me/sidenoder</a>`,
       };
     }
 
@@ -1586,7 +1587,7 @@ async function getDir(folder) {
       }
 
       let regex = /^([\w -.!,&+']*) v\d+\+/;
-      if (!gameMeta && gameListName && !gameListName.err && regex.test(fileName)) {
+      if (gameListName && !gameMeta && regex.test(fileName)) {
         simpleName = fileName.match(regex)[1];
         packageName = KMETAS2[simpleName];
       }
