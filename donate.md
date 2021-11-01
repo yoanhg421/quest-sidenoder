@@ -1,3 +1,3 @@
-![Donate PayPal](views/img/qrbtc.jpg)
+![Donate ETH or BNB or MATIC or ERC20 or BEP20](views/img/qrbtc.jpg)
 
-bitcoin:17P4buoVXLEzcLRBNfw6VUn5GbpENAgZKy
+eth:0xc3F7cA87e558C423A546Ed3B6B037424454c0000
