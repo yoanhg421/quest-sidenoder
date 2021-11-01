@@ -8,6 +8,7 @@ ipcRenderer.on('get_installed', (event, arg) => {
   }
 
   $id('processingModal').modal('hide');
+  $id('installedModal').modal('show');
 });
 
 ipcRenderer.on('get_installed_with_updates', (event, arg) => {
@@ -22,8 +23,9 @@ ipcRenderer.on('get_installed_with_updates', (event, arg) => {
 
 ipcRenderer.on('uninstall', (event, arg) => {
   console.log('uninstall msg came ! ');
+  $id('installedModal').modal('hide');
   $id('appToolModal').modal('hide');
-  loadInclude('installed_include.twig');
+  loadInclude('modals/installed.twig', 'installedmodaldiv');
 });
 
 function getUpdates() {
@@ -63,21 +65,22 @@ function drawInstalledApps(apps) {
       <br/><small>${app.packageName}<br/>VersionCode: ${app.versionCode}</small></td><td style="vertical-align:middle;">`;
 
     if (!app.update) {
-      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-md btn-info"> <i class="fa fa-play"></i> Launch</a> `;
-      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-md btn-danger"> <i class="fa fa-trash-o"></i> Uninstall</a> `;
+      row += `<a onclick="startApp('${app.packageName}')" class="adbdev btn btn-md btn-info" title="Launch"><i class="fa fa-play"></i></a> `;
+      row += `<a onclick="uninstall(this, '${app.packageName}')" class="adbdev btn btn-md btn-danger" title="Uninstall"><i class="fa fa-trash-o"></i></a> `;
       row += `<a onclick="appTools('${app.packageName}')" class="adbdev btn btn-md btn-primary"> <i class="fa fa-cog"></i> Tools</a> `;
     }
     else {
       row += `<a data-path="${app.update.path}" onclick='update(this)' class="btn btn-sm btn-info">
         <i class="fa fa-upload"></i> Update to
-        <br/> v.${app.update.versionCode}</a>`;
+        <br/> v.${app.update.versionCode}
+        <br/> ${app.update.size} Mb</a>`;
     }
 
     row += `<td></tr>`;
     rows += row;
   }
 
-  id('listTable').innerHTML = rows;
+  id('intalledTable').innerHTML = rows;
 }
 
 

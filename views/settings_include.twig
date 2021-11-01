@@ -114,6 +114,7 @@
     options+= `<option value="${section}">${section}</option>`;
   }
   id('cfgSection').innerHTML = options;
+  $id('cfgSection').on('change', () => { if (remote.getGlobal('mounted')) checkMount(); });
 
   for (const key of OPT_KEYS) {
     $id(key)
@@ -149,9 +150,13 @@
   }]));
   $id('tmpdirBtn').on('click', (e) => setCustomPath('tmpdir', 'Temp dirrectory custom path', 'Browse to new temp dirrectory location', undefined, 'openDirectory'));
 
-  ipcRenderer.removeAllListeners('device_tweaks');
+  ipcRenderer.removeAllListeners('change_config');
   ipcRenderer.on('change_config', (event, { key, val }) => {
     if (!OPT_KEYS.includes(key)) return;
+    if (key == 'rcloneConf') {
+      if (remote.getGlobal('mounted')) checkMount();
+      loadInclude('settings_include.twig');
+    }
 
     $(`#${key}`).val(val).addClass('is-valid');
   });

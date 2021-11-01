@@ -109,7 +109,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="adbdev disabled btn btn-primary mr-1" onclick="loadInclude('installed_include.twig')" title="Installed APP's">
+            <a class="adbdev disabled btn btn-primary mr-1" onclick="loadInclude('modals/installed.twig', 'installedmodaldiv')" title="Installed APP's">
               <i class="fa fa-list"></i>
               Installed
             </a>
@@ -128,13 +128,13 @@
 
         <div>
           <span type="button"  id="mountbtn" onclick="checkMount()" class="btn btn-sm btn-danger" disabled>
-            <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECT
+            <i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>disconnected
           </span>
           <span type="button" id="devicebtn" class="btn btn-sm btn-danger"  disabled>
-            <i class="fa fa-spin fa-refresh"></i> | DEVICE:</br>DISCONNECT
+            <i class="fa fa-spin fa-refresh"></i> | DEVICE:</br>disconnected
           </span>
           <span type="button" id="wirelessbtn" onclick="connectWireless()" class="btn btn-sm btn-danger"  disabled>
-            <i id="wirelessrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECT
+            <i id="wirelessrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>disconnected
           </span>
         </div>
       </div>
@@ -152,38 +152,46 @@
 <footer class="footer text-center">
   <hr>
   <b>SideNoder v{{ version }}</b>
-  <a class="btn btn-sm btn-info" onclick="$id('donateModal').modal('show')"><i class="fa fa-usd"></i> Donate</a>
+  <a class="btn btn-sm btn-info" onclick="loadInclude('modals/donate.twig', 'donatemodaldiv')"><i class="fa fa-usd"></i> Donate</a>
   <br>
   https://github.com/vKolerts/quest-sidenoder
 </footer>
 
 <!-- modals -->
-<div id="sideloadmodaldiv"></div>
+<div id="installedmodaldiv"></div>
 <div id="tweaksmodaldiv"></div>
 <div id="appinfomodaldiv"></div>
 <div id="appinfoeventsmodaldiv"></div>
 <div id="confirmmodaldiv"></div>
-<div id="processingmodaldiv"></div>
+<div id="sideloadmodaldiv"></div>
 <div id="appstartmodaldiv"></div>
 <div id="apptoolsmodaldiv"></div>
 <div id="scrcpymodaldiv"></div>
+<div id="processingmodaldiv"></div>
 <div id="donatemodaldiv"></div>
 
 <a class="btn btn-dark btn-floating btn-lg" id="backToTop" onclick="backToTop()"><i class="fa fa-angle-up"></i></a>
 
 <script>
-  if (!remote.getGlobal('currentConfiguration').donShown) {
-    setTimeout(()=>$id('donateModal').modal('show'), 2000 * 60);
-  }
-
   loadInclude('device_info.twig', 'device_infoDiv');
   loadInclude('modals/appinfo.twig', 'appinfomodaldiv');
   loadInclude('modals/appinfo_events.twig', 'appinfoeventsmodaldiv');
   loadInclude('modals/confirm.twig', 'confirmmodaldiv');
-  loadInclude('modals/processing.twig', 'processingmodaldiv');
   loadInclude('modals/app_start.twig', 'appstartmodaldiv');
   loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
-  loadInclude('modals/donate.twig', 'donatemodaldiv');
+  loadInclude('modals/processing.twig', 'processingmodaldiv');
+
+  const donShown = Date.now() - (remote.getGlobal('currentConfiguration').donShown || 0);
+  console.log(
+    // Date.now(),
+    // remote.getGlobal('currentConfiguration').donShown,
+    // 1000 * 5 * 24 * 3600,
+    donShown
+  );
+  if (donShown > 1000 * 5 * 24 * 3600 || donShown < 0) {
+    setTimeout(()=>loadInclude('modals/donate.twig', 'donatemodaldiv'), 2000 * 60);
+  }
+
 
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();
@@ -256,7 +264,7 @@
         .removeClass('btn-warning')
         .removeClass('btn-danger')
         .addClass('btn-success')
-        .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | MOUNT:</br>CONNECTED`);
+        .html(`<i id="mountrefresh" class="fa fa-check-circle-o"></i> | UNMOUNT:</br>connected`);
       $id('remotebtn').removeClass('disabled');
 
       if (!remote.getGlobal('adbDevice')) return;
@@ -269,7 +277,7 @@
         .removeClass('btn-success')
         .removeClass('btn-warning')
         .addClass('btn-danger')
-        .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>DISCONNECT`);
+        .html(`<i id="mountrefresh" class="fa fa-refresh"></i> | MOUNT:</br>disconnected`);
       $id('remotebtn').addClass('disabled');
 
       $id('updateBadge').addClass('disabled');
@@ -293,7 +301,7 @@
       $id('devicebtn')
         .removeClass('btn-danger')
         .addClass('btn-success')
-        .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>CONNECTED`);
+        .html(`<i class="fa fa-check-circle-o"></i> | DEVICE:</br>connected`);
 
       $('a.adbdev').removeClass('disabled');
       if (!remote.getGlobal('mounted')) {
@@ -305,7 +313,7 @@
         $id('wirelessbtn')
           .removeClass('btn-danger')
           .addClass('btn-success')
-          .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+          .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>connected`);
       }
 
       ipcRenderer.send('get_device_info', '');
@@ -315,7 +323,7 @@
       $id('devicebtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
-        .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>DISCONNECT`);
+        .html(`<i class="fa fa-refresh fa-spin"></i> | DEVICE:</br>disconnected`);
 
       $('a.adbdev').addClass('disabled');
 
@@ -323,7 +331,7 @@
       $id('wirelessbtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
-        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECT`);
+        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>disconnected`);
     }
   });
 
@@ -337,7 +345,7 @@
       $id('wirelessbtn')
         .removeClass('btn-danger')
         .addClass('btn-success')
-        .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>CONNECTED`);
+        .html(`<i id="wirelessrefresh" class="fa fa-check-circle-o"></i> | WIRELESS:</br>connected`);
 
       dialog.showMessageBox(null, {
         type: 'info',
@@ -351,7 +359,7 @@
       $id('wirelessbtn')
         .removeClass('btn-success')
         .addClass('btn-danger')
-        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>DISCONNECT`);
+        .html(`<i id="wirelessbtnrefresh" class="fa fa-refresh"></i> | WIRELESS:</br>disconnected`);
     }
   });
 
@@ -379,8 +387,8 @@
   });
 </script>
 <script src="js/search.js"></script>
-<script src="browse.js"></script>
-<script src="installed.js"></script>
+<script src="js/browse.js"></script>
+<script src="js/installed.js"></script>
 
 </body>
 </html>

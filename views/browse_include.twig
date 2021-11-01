@@ -2,10 +2,21 @@
   <div class="card-header sticky" id="nav-panel">
     <h4 class="pull-left mb-0">
       <a class="btn btn-md btn-primary" onclick="upDir()" title="Up dir ../ (hotkey:backspace)"> <i class="fa fa-level-up"></i> </a>
-      <a class="btn btn-md btn-primary" onclick="shell.openPath($id('path').text())" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
+      <a class="btn btn-md btn-primary" id="shellOpenDirPath" title="Open by filebrowser"> <i class="fa fa-folder-open"></i> </a>
       <span id="path"></u></span>
     </h4>
     <h4 class="pull-right mb-0">
+      <button class="btn btn-md btn-primary dropdown-toggle" type="button" onclick="$id('bookmarksdropdown').toggle()">
+        <i class="fa fa-star" title="Bookmarks"></i>
+      </button>
+      <div id="bookmarksdropdown" class="dropdown-menu" style="left: auto; top: auto;">
+        <div class="input-group">
+          <input id="bookmarkName" class="ml-3" value="" placeholder="Bookmark name" />
+          <a class="btn btn-warning btn-sm mr-3" id="addBookmark">
+            <i class="fa fa-plus" title="Add current location"></i></a>
+        </div>
+        <hr/>
+      </div>
       <a class="btn btn-md btn-primary" onclick="refreshDir()" title="(hotkey: ctrl+r)"> <i class="fa fa-refresh"></i> Refresh</a>
       <a class="btn btn-md btn-primary" onclick="openSearch()" title="(hotkey: ctrl+f)"> <i class="fa fa-search"></i> Search</a>
       <button class="btn btn-md btn-primary dropdown-toggle" type="button" onclick="$id('searchdropdownmenu').toggle()">
@@ -45,4 +56,10 @@
 <script>
   $id('processingModal').modal('show');
   id('nav-panel').style.top = $id('topbar').height() + 'px'; // fix navbar position
+  for (const {name, path} of remote.getGlobal('currentConfiguration').dirBookmarks) {
+    addBookmark(name, path, false);
+  }
+
+  id('addBookmark').onclick = () => addBookmark(id('bookmarkName').value, id('path').title);
+  id('shellOpenDirPath').onclick = () => shell.openPath(id('path').title);
 </script>

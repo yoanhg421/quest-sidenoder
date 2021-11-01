@@ -23,14 +23,19 @@ const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
 
-const GAME_LIST_NAMES = [
+init();
+
+const GAME_LIST_NAMES = global.currentConfiguration.gameListNames || [
+  'FFA.txt',
   'GameList.txt',
+  'VRP-GameList.txt/VRP-GameList.txt',
   'VRP-GameList.txt',
   'Dynamic.txt',
 ];
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
+let KMETAS2 = {};
 
 let adbCmd = 'adb';
 let grep_cmd = '| grep ';
@@ -38,7 +43,7 @@ if (platform == 'win') {
   grep_cmd = '| findstr ';
 }
 
-init();
+let RCLONE_ID = 0;
 
 
 module.exports =
@@ -51,6 +56,7 @@ module.exports =
   checkDeps,
   checkMount,
   mount,
+  killRClone,
   getDir,
   returnError,
   sideloadFolder,
@@ -544,7 +550,7 @@ async function rebootBootloader() {
   return res;
 }
 async function sideloadFile(path) {
-  const res = await execShellCommand(`${adbCmd} sideload "${path}"`);
+  const res = await execShellCommand(`"${adbCmd}" sideload "${path}"`);
   console.log('sideloadFile', { res });
   return res;
 }
@@ -897,18 +903,21 @@ async function appInfo(args) {
       data.url = `https://www.oculus.com/experiences/quest/${data.id}`;
       // data.genres = oculus.genres && oculus.genres.split(', ');
 
-      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      //https://computerelite.github.io
+      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
         headers: {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Origin': 'https://computerelite.github.io',
+          'Origin': 'https://www.oculus.com',
         },
       });
-      let json = await resp.json();
-      // console.log({ json });
-      if (!json.error) {
+      try {
+        let json = await resp.json();
+        // console.log({ json });
+        if (json.error) throw json.error;
+
         const meta = json.data.node;
         data.name = meta.appName;
         data.detailed_description = meta.display_long_description && meta.display_long_description.split('\n').join('<br/>');
@@ -940,7 +949,9 @@ async function appInfo(args) {
           data.movies = [{ mp4: { '480': meta.trailer.uri } }];
         }
       }
-      else {
+      catch(err) {
+        console.error(res, 'fetch error', err);
+
         resp = await fetch(`${data.url}?locale=${global.locale}`);
         const meta = await WAE().parse(await resp.text());
         const jsonld = meta.jsonld.Product[0];
@@ -979,6 +990,8 @@ async function appInfo(args) {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/json',
           'Origin': 'https://sidequestvr.com',
+          'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
         },
       });
       const json = await resp.json();
@@ -1001,6 +1014,9 @@ async function appInfo(args) {
         headers: {
           'Content-Type': 'application/json',
           'Origin': 'https://sidequestvr.com',
+          'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
+
         },
       });
       const json_img = await resp_img.json();
@@ -1074,18 +1090,20 @@ async function appInfoEvents(args) {
 
       // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
 
-      let resp = await fetch(`https://cors-anywhere-computerelite.herokuapp.com/https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
         headers: {
           'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Origin': 'https://computerelite.github.io',
+          'Origin': 'https://www.oculus.com',
         },
       });
-      let json = await resp.json();
-      // console.log({ json });
-      if (!json.error) {
+      try {
+        let json = await resp.json();
+        if (json.error) throw json.error;
+
+        // console.log({ json });
         const events = json.data.node.supportedBinaries.edges;
         for (const { node } of events) {
           const e = node;
@@ -1104,8 +1122,8 @@ async function appInfoEvents(args) {
           data.events.push(event);
         }
       }
-      else {
-        console.error(res, 'fetch error', json.error);
+      catch (err) {
+        console.error(res, 'fetch error', err);
       }
 
       resp = await fetch(`https://computerelite.github.io/tools/Oculus/OlderAppVersions/${oculus.id}.json`);
@@ -1150,6 +1168,8 @@ async function appInfoEvents(args) {
             'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3',
             'Content-Type': 'application/json',
             'Origin': 'https://sidequestvr.com',
+            'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
           },
         });
         const json = await resp.json();
@@ -1186,33 +1206,36 @@ async function appInfoEvents(args) {
 }
 
 async function checkMount(attempt = 0) {
-  console.log('checkMount()')
+  console.log('checkMount()', attempt);
   try {
-    const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
-      method: 'post',
-    });
     attempt++;
 
     if (!(await fsp.readdir(global.mountFolder)).length && attempt < 15) {
       return new Promise((res, rej) => {
         setTimeout(() => {
-          checkMount().then(res).catch(rej);
+          checkMount(attempt).then(res).catch(rej);
         }, 1000);
       });
     }
 
+    const resp = await fetch('http://127.0.0.1:5572/rc/noop', {
+      method: 'post',
+    });
+
     global.mounted = resp.ok;
-    return resp.ok;
+    console.log('checkMount', global.mounted);
+    return global.mounted;
     //setTimeout(updateRcloneProgress, 2000);
   }
   catch (e) {
+    console.warn('checkMount', e);
     global.mounted = false;
     return false;
   }
 }
 
 async function checkDeps(arg){
-  console.log('checkDeps()');
+  console.log('checkDeps()', arg);
   let res = {
     [arg]: {
       version: false,
@@ -1230,14 +1253,14 @@ async function checkDeps(arg){
 
       res[arg].cmd = adbCmd = globalAdb ? 'adb' : (await fetchBinary('adb'));
       try {
-        await execShellCommand(`${res[arg].cmd} start-server`);
+        await execShellCommand(`"${res[arg].cmd}" start-server`);
       }
       catch (err) {
         if (!err.toString().includes('daemon started successfully'))
           throw err;
       }
 
-      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`${res[arg].cmd} --version`);
+      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" --version`);
 
       await trackDevices();
     }
@@ -1246,19 +1269,19 @@ async function checkDeps(arg){
       // module with autodownload https://github.com/sntran/rclone.js/blob/main/index.js
       // res.rclone.cmd = global.currentConfiguration.rclonePath || await commandExists('rclone');
       res[arg].cmd = await fetchBinary('rclone');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+      res[arg].version = await execShellCommand(`"${res[arg].cmd}" --version`);
     }
 
     if (arg == 'zip') {
       res[arg].cmd = await fetchBinary('7za');
-      res[arg].version = await execShellCommand(`${res[arg].cmd} --help ${grep_cmd} "7-Zip"`);
+      res[arg].version = await execShellCommand(`"${res[arg].cmd}" --help ${grep_cmd} "7-Zip"`);
       console.log(res[arg].version);
     }
 
     if (arg == 'scrcpy') {
       res[arg].cmd = global.currentConfiguration.scrcpyPath || await commandExists('scrcpy');
       try {
-        res[arg].version = await execShellCommand(`${res[arg].cmd} --version`);
+        res[arg].version = await execShellCommand(`"${res[arg].cmd}" --version`);
       }
       catch(err) {
         res[arg].version = err; // don`t know why version at std_err((
@@ -1317,8 +1340,9 @@ function returnError(message) {
 
 
 async function killRClone() {
+  RCLONE_ID++;
   const killCmd = platform == 'win'
-    ? `taskkill.exe /F /IM rclone.exe /T` // TODO: need test
+    ? `taskkill.exe /F /T /IM rclone.exe`
     : `killall -9 rclone`;
   console.log('try kill rclone');
   return new Promise((res, rej) => {
@@ -1339,7 +1363,7 @@ async function killRClone() {
   })
 }
 
-async function parseRcloneSections() {
+async function parseRcloneSections(newCfg = false) {
   if (!global.currentConfiguration.rcloneConf) return;
   if (!(await fsp.exists(global.currentConfiguration.rcloneConf))) {
     return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
@@ -1358,7 +1382,7 @@ async function parseRcloneSections() {
   }
 
   global.rcloneSections = sections;
-  if (sections.length && !global.currentConfiguration.cfgSection) {
+  if (sections.length && (newCfg || !global.currentConfiguration.cfgSection)) {
     await changeConfig('cfgSection', sections[0]);
   }
 
@@ -1374,19 +1398,27 @@ async function umount() {
     return;
   }
 
-  await execShellCommand(`umount ${global.mountFolder}`, true);
-  await execShellCommand(`fusermount -uz ${global.mountFolder}`, true);
+  await execShellCommand(`umount "${global.mountFolder}"`, true);
+  await execShellCommand(`fusermount -uz "${global.mountFolder}"`, true);
   await fsp.mkdir(global.mountFolder, { recursive: true });
 }
 
 async function mount() {
-  if (await checkMount(global.mountFolder)) {
+  // if (await checkMount(13)) {
     // return;
-    await killRClone();
-  }
+    try {
+      await killRClone();
+    }
+    catch (err) {
+      console.log('rclone not started');
+    }
+  // }
 
   await umount();
 
+  if (global.mounted) {
+    return global.mounted = false;
+  }
 
    // TODO: temoporary
   if (!global.currentConfiguration.rcloneConf) {
@@ -1406,12 +1438,15 @@ async function mount() {
   // await fsp.writeFile(epath + '.enc', base64data);
   //console.log(cpath);
 
+  const myId = RCLONE_ID;
   const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
   const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
   console.log('start rclone');
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
       console.error('rclone error:', error);
+      if (RCLONE_ID != myId) error = false;
+      console.log({ RCLONE_ID, myId });
       win.webContents.send('check_mount', { success: false, error });
       // checkMount();
       /*if (error.message.search('transport endpoint is not connected')) {
@@ -1458,11 +1493,14 @@ async function getDir(folder) {
   try {
     const files = await fsp.readdir(folder/*, { withFileTypes: true }*/);
     let gameList = {};
+    let gameListName2Package = {};
     let installedApps = {}
+    let gameListName = false;
     try {
-      let gameListName = false;
+      // throw 'test';
       for (const name of GAME_LIST_NAMES) {
-        if (!files.includes(name)) continue;
+        if (!fs.existsSync(path.join(folder, name))) continue;
+        // if (!files.includes(name)) continue;
         gameListName = name;
         break;
       }
@@ -1498,11 +1536,17 @@ async function getDir(folder) {
               size: meta[5],
             }
           }
+
         }
       }
     }
     catch (err) {
       console.error(`${gameListName} failed`, err);
+      gameListName = {
+        err: `Can't parse GameList.txt
+          <br/>Maybe issue of server - please attempt to switch mirror at settings.
+          <br/>Actual mirrors posted there <a class="btn btn-sm btn-info" onclick=shell.openExternal('http://t.me/sidenoder')> http://t.me/sidenoder</a>`,
+      };
     }
 
     // console.log(gameList);
@@ -1536,6 +1580,7 @@ async function getDir(folder) {
         newItem = false;
 
       const gameMeta = gameList[fileName];
+
       if (gameMeta) {
         simpleName = gameMeta.simpleName;
         packageName = gameMeta.packageName;
@@ -1551,8 +1596,20 @@ async function getDir(folder) {
         }
       }
 
-      if (!versionCode && (new RegExp('.*v[0-9]+\\+[0-9].*')).test(fileName)) {
-        versionCode = fileName.match(/.*v([0-9]+)\+[0-9].*/)[1];
+      let regex = /^([\w -.!,&+']*) v\d+\+/;
+      if (gameListName && !gameMeta && regex.test(fileName)) {
+        simpleName = fileName.match(regex)[1];
+        packageName = KMETAS2[simpleName];
+      }
+
+      regex = /v(\d+)\+/;
+      if (!versionCode && regex.test(fileName)) {
+        versionCode = fileName.match(regex)[1];
+      }
+
+      regex = /v\d+\+([\w.]*) /;
+      if (!versionName && regex.test(fileName)) {
+        versionName = fileName.match(regex)[1];
       }
 
       if (!versionCode && (new RegExp('.*\ -versionCode-')).test(fileName)) {
@@ -1562,6 +1619,7 @@ async function getDir(folder) {
       if (!packageName && (new RegExp('.*\ -packageName-')).test(fileName)) {
         packageName = fileName.match(/-packageName-([a-zA-Z0-9.]*)/)[1];
       }
+
 
       /*
       // obbs path the same =(
@@ -1636,6 +1694,10 @@ async function getDir(folder) {
     ) {
       console.log('getDir cached', folder);
       cacheOculusGames = fileNames;
+    }
+
+    if (gameListName && gameListName.err) {
+      fileNames.unshift({name: gameListName.err});
     }
 
     return fileNames;
@@ -1800,9 +1862,20 @@ async function sideloadFolder(arg) {
 
       apkfile = apktmp;
     }
+  }
+  catch (e) {
+    // returnError(e);
+    console.error(e);
+    res.download = 'fail';
+    res.done = 'fail';
+    res.error = e;
+    return win.webContents.send('sideload_process', res);
+  }
 
-    res.aapt = 'processing';
-    win.webContents.send('sideload_process', res);
+  res.aapt = 'processing';
+  win.webContents.send('sideload_process', res);
+
+  try {
     packageinfo = await getPackageInfo(apkfile);
 
     packageName = packageinfo.packageName;
@@ -2077,7 +2150,7 @@ async function getInstalledApps(obj = false) {
     info['versionCode'] = versionCode;
     info['imagePath'] = QUEST_ICONS.includes(packageName + '.jpg')
       ? `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`
-      : 'unknown.png';
+      : `http://cdn.apk-cloud.com/detail/image/${packageName}-w130.png`//'unknown.png';
 
     appinfo[packageName] = info;
   }
@@ -2093,8 +2166,9 @@ async function getInstalledAppsWithUpdates() {
   const list = await getDir(remotePath);
   let remotePackages = {};
   let remoteList = {};
-  for (const app of list) {
-    const { name, packageName, versionCode, simpleName, filePath } = app;
+
+  if (list) for (const app of list) {
+    const { name, packageName, versionCode, simpleName, filePath, size } = app;
     if (!packageName) continue;
 
     if (!remotePackages[packageName]) remotePackages[packageName] = [];
@@ -2104,6 +2178,7 @@ async function getInstalledAppsWithUpdates() {
       versionCode,
       simpleName,
       filePath,
+      size,
     };
   };
 
@@ -2113,7 +2188,7 @@ async function getInstalledAppsWithUpdates() {
   let updates = [];
   for (const app of apps) {
     const packageName = app['packageName'];
-    console.log(packageName, 'checking');
+    // console.log(packageName, 'checking');
 
     if (!remoteKeys.includes(packageName)) continue;
 
@@ -2123,12 +2198,14 @@ async function getInstalledAppsWithUpdates() {
       const remoteversion = package.versionCode;
 
       // console.log({ packageName, installedVersion, remoteversion });
+      // console.log({ package });
 
       if (remoteversion <= installedVersion) continue;
 
+      app['simpleName'] = package.simpleName;
       app['update'] = [];
       app['update']['path'] = package.filePath;
-      app['simpleName'] = package.simpleName;
+      app['update']['size'] = package.size;
       app['update']['versionCode'] = remoteversion;
       updates.push(app);
 
@@ -2136,6 +2213,7 @@ async function getInstalledAppsWithUpdates() {
     }
   }
 
+  global.installedApps = false;
   return updates;
 }
 
@@ -2249,7 +2327,7 @@ async function init() {
   console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
 
   try {
-    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json');
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json?' + Date.now());
     QUEST_ICONS = await res.json();
     console.log('icons list loaded');
   }
@@ -2258,13 +2336,17 @@ async function init() {
   }
 
   try {
-    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e');
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/.e?' + Date.now());
     const text = await res.text();
     const iv = Buffer.from(text.substring(0, l), 'hex');
     const secret = crypto.createHash(hash_alg).update(pkg.author.split(' ')[0].repeat(2)).digest('base64').substr(0, l);
     const decipher = crypto.createDecipheriv('aes-256-cbc', secret, iv);
     const encrypted = text.substring(l);
     KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
+    for (const package of Object.keys(KMETAS)) {
+      KMETAS2[KMETAS[package].simpleName] = package;
+    }
+
     console.log('kmetas loaded');
   }
   catch (err) {
@@ -2345,6 +2427,9 @@ async function reloadConfig() {
     scrcpyCrop: '1600:900:2017:510',
     lastIp: '',
     userHide: false,
+    dirBookmarks: [
+      { name: 'Sidenoder folder', path: global.sidenoderHome },
+    ]
   };
 
   if (await fsp.exists(configLocationOld)) {
@@ -2366,6 +2451,10 @@ async function reloadConfig() {
     global.tmpdir = global.currentConfiguration.tmpdir;
   }
 
+  if (!global.currentConfiguration.dirBookmarks) {
+    global.currentConfiguration.dirBookmarks = defaultConfig.dirBookmarks;
+  }
+
   await parseRcloneSections();
 }
 
@@ -2375,7 +2464,7 @@ async function changeConfig(key, value) {
   global.currentConfiguration[key] = value;
   await saveConfig();
 
-  if (key == 'rcloneConf') await parseRcloneSections();
+  if (key == 'rcloneConf') await parseRcloneSections(true);
   if (key == 'tmpdir') global.tmpdir = value || require('os').tmpdir().replace(/\\/g, '/');
 
   return value;
