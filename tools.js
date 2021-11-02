@@ -1597,7 +1597,7 @@ async function getDir(folder) {
       }
 
       let regex = /^([\w -.!,&+']*) v\d+\+/;
-      if (gameListName && !gameMeta && regex.test(fileName)) {
+      if (gameListName && !packageName && regex.test(fileName)) {
         simpleName = fileName.match(regex)[1];
         packageName = KMETAS2[simpleName];
       }
@@ -1620,19 +1620,19 @@ async function getDir(folder) {
         packageName = fileName.match(/-packageName-([a-zA-Z0-9.]*)/)[1];
       }
 
-
-      /*
       // obbs path the same =(
-      if (!packageName && KMETAS[fileName]) {
+      if (gameListName && !packageName && KMETAS[fileName]) {
         packageName = fileName;
-      }*/
+      }
 
 
       if (packageName) {
-        if (QUEST_ICONS.includes(packageName + '.jpg'))
+        if (QUEST_ICONS.includes(packageName + '.jpg')) {
           imagePath = `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`;
-        else if (!imagePath)
+        }
+        else if (!imagePath) {
           imagePath = 'unknown.png';
+        }
 
         kmeta = KMETAS[packageName];
         installedApp = installedApps[packageName];
@@ -1642,6 +1642,11 @@ async function getDir(folder) {
             installed++;
           }
         }
+      }
+
+      if (gameListName && !packageName && versionCode) {
+        packageName = 'can`t parse package name';
+        imagePath = 'unknown.png';
       }
 
       if (kmeta) {
