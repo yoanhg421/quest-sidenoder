@@ -1508,6 +1508,8 @@ async function getDir(folder) {
       if (gameListName) {
         const list = (await fsp.readFile(path.join(folder, gameListName), 'utf8')).split('\n');
         let listVer;
+        if (!list.length) throw gameListName + ' is empty';
+
         for (const line of list) {
           const meta = line.split(';');
           if (!listVer) {
