@@ -1601,7 +1601,7 @@ async function getDir(folder) {
       let regex = /^([\w -.!,&+']*) v\d+\+/;
       if (gameListName && !packageName && regex.test(fileName)) {
         simpleName = fileName.match(regex)[1];
-        packageName = KMETAS2[simpleName];
+        packageName = KMETAS2[escString(simpleName)];
       }
 
       regex = /v(\d+)\+/;
@@ -2351,7 +2351,7 @@ async function init() {
     const encrypted = text.substring(l);
     KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
     for (const package of Object.keys(KMETAS)) {
-      KMETAS2[KMETAS[package].simpleName] = package;
+      KMETAS2[escString(KMETAS[package].simpleName)] = package;
     }
 
     console.log('kmetas loaded');
@@ -2359,6 +2359,12 @@ async function init() {
   catch (err) {
     console.error('can`t get kmetas', err);
   }
+}
+
+function escString(val) {
+  let res = val.toLowerCase();
+  res = res.replace(/[-\_:.,!?\"'&™®| ]/g, '');
+  return res;
 }
 
 async function initLogs() {
