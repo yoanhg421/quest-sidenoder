@@ -73,6 +73,7 @@ module.exports =
   enableMTP,
   startSCRCPY,
   rebootDevice,
+  rebootRecovery,
   rebootBootloader,
   sideloadFile,
   getLaunchActiviy,
@@ -193,6 +194,7 @@ async function deviceTweaksGet(arg) {
   if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution'));
   if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')) + 'x' + (await adbShell('getprop debug.oculus.capture.height'));
   if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')) + 'x' + (await adbShell('getprop debug.oculus.textureHeight'));
+  //oculus.capture.bitrate
 
   return res;
 }
@@ -542,6 +544,11 @@ async function startSCRCPY() {
 async function rebootDevice() {
   const res = await adbShell(`reboot`);
   console.log('rebootDevice', { res });
+  return res;
+}
+async function rebootRecovery() {
+  const res = await adbShell(`reboot recovery`);
+  console.log('rebootRecovery', { res });
   return res;
 }
 async function rebootBootloader() {
@@ -1598,7 +1605,7 @@ async function getDir(folder) {
         }
       }
 
-      let regex = /^([\w -.!,&+']*) v\d+\+/;
+      let regex = /^([\w -.,!?&+™®'"]*) v\d+\+/;
       if (gameListName && !packageName && regex.test(fileName)) {
         simpleName = fileName.match(regex)[1];
         packageName = KMETAS2[escString(simpleName)];
