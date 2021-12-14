@@ -1267,7 +1267,7 @@ async function checkDeps(arg){
           throw err;
       }
 
-      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" --version`);
+      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" version`);
 
       await trackDevices();
     }
