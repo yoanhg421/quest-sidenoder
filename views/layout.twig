@@ -184,9 +184,9 @@
   loadInclude('modals/processing.twig', 'processingmodaldiv');
   loadInclude('modals/prompt.twig', 'promptmodaldiv');
 
-  loadInclude('modals/sideload-queue.twig', 'sideload-queuediv', () => {
+  /*loadInclude('modals/sideload-queue.twig', 'sideload-queuediv', () => {
     ipcRenderer.send('sideload_read_queue', '');
-  });
+  });*/
 
   const donShown = Date.now() - (remote.getGlobal('currentConfiguration').donShown || 0);
   console.log(

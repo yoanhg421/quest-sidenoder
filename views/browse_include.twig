@@ -54,8 +54,6 @@
 </div>
 
 <script>
-  $id('showQueue').show(100);
-
   $id('processingModal').modal('show');
   id('nav-panel').style.top = $id('topbar').height() + 'px'; // fix navbar position
   for (const {name, path} of remote.getGlobal('currentConfiguration').dirBookmarks) {
