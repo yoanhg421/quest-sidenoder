@@ -53,13 +53,20 @@ function delBookmark(el) {
 }
 
 document.addEventListener('keydown', (e) => {
-  console.log(e);
   if (!id('path')) return;
 
+  console.log(e);
   if (e.code == 'Backspace'
-    && !$('.find-input').is(':focus') && !$('#bookmarkName').is(':focus')) upDir();
-  if (e.ctrlKey && e.code == 'KeyR') refreshDir();
-  if (e.ctrlKey && e.altKey && e.code == 'KeyD') remote.getGlobal('win').webContents.openDevTools();
+    && !$('.form-control').is(':focus')
+    && !$('.find-input').is(':focus')
+    && !$('#bookmarkName').is(':focus')) return upDir();
+
+  if (e.ctrlKey
+    && e.code == 'KeyR') return refreshDir();
+
+  if (e.ctrlKey
+    && e.altKey
+    && e.code == 'KeyD') return remote.getGlobal('win').webContents.openDevTools();
 });
 
 window.addEventListener('resize', resizeLoc);

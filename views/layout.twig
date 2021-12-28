@@ -164,11 +164,13 @@
 <div id="appinfoeventsmodaldiv"></div>
 <div id="confirmmodaldiv"></div>
 <div id="sideloadmodaldiv"></div>
+<div id="sideload-queuediv"></div>
 <div id="appstartmodaldiv"></div>
 <div id="apptoolsmodaldiv"></div>
 <div id="scrcpymodaldiv"></div>
 <div id="processingmodaldiv"></div>
 <div id="donatemodaldiv"></div>
+<div id="promptmodaldiv"></div>
 
 <a class="btn btn-dark btn-floating btn-lg" id="backToTop" onclick="backToTop()"><i class="fa fa-angle-up"></i></a>
 
@@ -180,6 +182,11 @@
   loadInclude('modals/app_start.twig', 'appstartmodaldiv');
   loadInclude('modals/scrcpy.twig', 'scrcpymodaldiv');
   loadInclude('modals/processing.twig', 'processingmodaldiv');
+  loadInclude('modals/prompt.twig', 'promptmodaldiv');
+
+  loadInclude('modals/sideload-queue.twig', 'sideload-queuediv', () => {
+    ipcRenderer.send('sideload_read_queue', '');
+  });
 
   const donShown = Date.now() - (remote.getGlobal('currentConfiguration').donShown || 0);
   console.log(
