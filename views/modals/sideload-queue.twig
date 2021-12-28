@@ -1,0 +1,488 @@
+<!-- Modal -->
+<div class="modal fade modal-right" id="sideloadQueueModal" tabindex="-1" role="dialog" aria-labelledby="sideloadQueueModalLabel"  data-backdrop="static" data-keyboard="false">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sideloadModalLabel"><i id="sideloadRefresh" class="fa fa-refresh"></i> Sideload queue</h5>  <!-- fa-spin -->
+        <small id="sideload_transfer_state" class="text-right"></small>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-striped table-hover table-fixed-header text-center">
+          <thead>
+            <th>Name:</th>
+            <th>Check device:</th>
+            <th>Download APK:</th>
+            <th>Package info:</th>
+            <th>Check if installed:</th>
+            <th>Backup Appdata:</th>
+            <th>Uninstall APK:</th>
+            <th>Install APK:</th>
+            <th>Restore Appdata:</th>
+            <th>Remove OBB's:</th>
+            <th>Download OBB's:</th>
+            <th>Copy OBB's:</th>
+            <th>State:</th>
+          </thead>
+          <tbody id="sideloadQueue">
+            <tr id="queue-1gdfvd3">
+              <td>
+                TestfdsfsdfsdfsTestfdsfsdfsdfsTestfdsfsdfsdfs TestfdsfsdfsdfsTestfdsfsdfsdfsTest fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Testfdsfsdfsdfs TestfdsfsdfsdfsTestfdsfsdfsdfsTest fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Test fds fs dfs dfsTestfdsfsdfsdfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Test fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Test fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Test fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+            <tr id="queue-1gdfvd3">
+              <td>
+                Test fds fs dfs dfs.apk
+              </td>
+              <td>
+                <span class="deviceBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="aaptDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="checkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="backupDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="uninstallDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="apkDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="restoreDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="removeObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="downloadObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="copyObbDoneBadge badge badge-warning">pending</span>
+              </td>
+              <td>
+                <span class="sideloadDoneBadge badge badge-warning">pending</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a class="btn btn-info btn-floating btn-lg" id="showQueue" onclick="showQueue()">1</a>
+<script>
+
+  function showQueue() {
+    $id('sideloadQueueModal').modal('show');
+  }
+
+  function hash(s) {
+    const r = s.split('').reduce((a,b)=>(((a << 5)-a)+b.charCodeAt(0))|0,0).toString(18);
+    return r < 0 ? 'm' + Math.abs(r) : r;
+  }
+
+  ipcRenderer.removeAllListeners('sideload_add_queue');
+  ipcRenderer.on('sideload_add_queue', (event, data) => {
+    console.log('sideload_add_queue received', data);
+    for (const item of data) {
+      sideloadAddQueue(item);
+    }
+
+    const sideloadQueue = $('#sideloadQueue tr').length;
+    if (data.length) {
+      $id('showQueue').text($('#sideloadQueue tr').length);
+      $id('showQueue').show();
+    }
+  });
+
+  ipcRenderer.removeAllListeners('process_data');
+  ipcRenderer.on('process_data', (event, data) => {
+    console.log('process_data received', data);
+    if (!data)  return id('sideload_transfer_state').innerHTML = '';
+
+    let line = `${data.cmd}: ${formatBytes(data.bytes)}`;
+    if (data.size) {
+      line+= ` of ${formatBytes(data.size)} (${data.percentage}%)`;
+    }
+
+    if (data.speedAvg) {
+      line+= ` - ${formatBytes(data.speedAvg)}/s (${formatEta(data.eta)})`;
+    }
+
+    const name = data.name.split('/').pop();
+    id('sideload_transfer_state').innerHTML = `${line}<br/> ${name}`;
+  });
+
+  ipcRenderer.removeAllListeners('start_sideload');
+  ipcRenderer.on('start_sideload', (event, arg) => {
+    console.log('start_sideload msg came ! ');
+    console.log(arg);
+    const { success, path } = arg;
+    if (!success) return;
+
+    const lastslashindex = path.lastIndexOf('/');
+    const file= path.substring(lastslashindex  + 1)
+
+    $id('sideloadModal').modal('show');
+    id('sideloadText').innerHTML = 'pending: <br/><b>'+file+'</b>';
+  });
+
+  ipcRenderer.removeAllListeners('sideload_process');
+  ipcRenderer.on('sideload_process', (event, arg) => {
+    console.log('sideload_process', arg);
+    const job = $id('queue' + hash(arg.path));
+
+    if (arg.device) {
+      badgeState(job.find('.deviceBadge'), arg.device);
+    }
+
+    if (arg.aapt) {
+      badgeState(job.find('.aaptDoneBadge'), arg.aapt);
+    }
+
+    if (arg.check) {
+      badgeState(job.find('.checkDoneBadge'), arg.check);
+    }
+
+    if (arg.backup) {
+      badgeState(job.find('.backupDoneBadge'), arg.backup);
+    }
+
+    if (arg.uninstall) {
+      badgeState(job.find('.uninstallDoneBadge'), arg.uninstall);
+    }
+
+    if (arg.restore) {
+      badgeState(job.find('.restoreDoneBadge'), arg.restore);
+    }
+
+    if (arg.download) {
+      badgeState(job.find('.downloadDoneBadge'), arg.download);
+    }
+
+    if (arg.apk) {
+      badgeState(job.find('.apkDoneBadge'), arg.apk);
+    }
+
+    if (arg.remove_obb) {
+      badgeState(job.find('.removeObbDoneBadge'), arg.remove_obb);
+    }
+
+    if (arg.download_obb) {
+      badgeState(job.find('.downloadObbDoneBadge'), arg.download_obb);
+    }
+
+    if (arg.push_obb) {
+      badgeState(job.find('.copyObbDoneBadge'), arg.push_obb);
+    }
+
+    remote.getGlobal('win').setProgressBar($('.badge-warning').length / $('.badge').length);
+
+    if (arg.done) {
+      badgeState(job.find('.sideloadDoneBadge'), arg.done);
+
+      $id('sideloadDoneBtn')
+        .removeClass('disabled')
+        .removeClass('btn-primary')
+        .addClass('btn-success')
+        .html('Done');
+      $id('sideloadRefresh')
+        .removeClass('fa-refresh')
+        .removeClass('fa-spin')
+        .addClass('fa-check-circle-o');
+
+      if (!arg.error) remote.getGlobal('notify')('Sucesfully sideloaded', arg.location, 'low');
+    }
+
+    if (arg.update) {
+      getUpdates();
+    }
+
+
+    if (arg.error) {
+      $id('sideloadError').text(arg.error);
+      $id('sideloadErrorArea').show();
+      remote.getGlobal('notify')('Sideload Failed', arg.location);
+    }
+  });
+
+  function sideloadAddQueue(data) {
+
+  }
+
+  function badgeState(badge, text) {
+    badge.text(text);
+    if (!badge.hasClass('badge-warning')) return;
+
+    let state = '';
+    if (text === 'done') state = 'success';
+    else if (text === 'skip') state = 'secondary';
+    else if (text === 'fail') state = 'danger';
+    else if (text.includes('/')) {
+      const parts = text.split('/');
+      if (parts[0] == parts[1]) state = 'success';
+      else return;
+    }
+    else return;
+
+    badge.removeClass('badge-warning').addClass('badge-' + state);
+  }
+
+  $id('sideloadDoneBtn').on('click', function(){
+    remote.getGlobal('win').setProgressBar(0);
+    $id('sideloadModal').modal('hide');
+    // $('.modal-backdrop').remove();
+  });
+</script>

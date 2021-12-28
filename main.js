@@ -460,7 +460,7 @@ global.close = false;
 function createWindow () {
   global.win = new BrowserWindow({
     width: 1000,
-    minWidth: 800,
+    minWidth: 920,
     height: 800,
     minHeight: 500,
     title: 'Quest-Sidenoder',
