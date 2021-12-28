@@ -166,15 +166,15 @@
       name: 'Exe', extensions: ['exe'],
       name: 'All', extensions: ['*'],
     }];
-    const file = await dialog.showOpenDialog(null, {
+    const res = await dialog.showOpenDialog(null, {
       properties: [type],
       title,
       message,
       filters,
     });
-    if (file.canceled) return;
+    if (res.canceled) return;
 
-    const val = file.filePaths[0];
+    const val = res.filePaths[0];
     $(`#${key}`).val(val);
     ipcRenderer.send('change_config', {key, val});
     return val;

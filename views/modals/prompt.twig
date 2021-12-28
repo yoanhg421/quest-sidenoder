@@ -9,7 +9,11 @@
       </div>
       <div class="modal-body">
         <div id="promptModalMessage"></div>
-        <input class="form-control" id="promptModalInput"/>
+        <div class="input-group">
+          <input class="form-control ml-3" id="promptModalInput"/>
+          <a class="btn btn-info mr-3" id="promptModalBrowse">
+              <i class="fa fa-folder-open" title="Browse.."></i></a>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
@@ -20,11 +24,34 @@
 </div>
 
 <script>
-  async function promptDialog(title, message, inputValue) {
+  id('promptModalBrowse').onclick = async () => {
+    const input = id('promptModalInput');
+    const res = await dialog.showOpenDialog(null, {
+      properties: ['openDirectory'],
+      title: 'Browse dirrectory',
+      // message: 'Browse dirrectory',
+      defaultPath: input.value,
+    });
+    console.log(res);
+    if (res.canceled) return;
+
+    input.value = res.filePaths[0];
+  };
+
+
+  async function promptDialog(title, message, inputValue, dir = false) {
     id('promptModalLabel').innerHTML = title;
     id('promptModalMessage').innerHTML = message;
     const input = id('promptModalInput');
     input.value = inputValue;
+
+    const browse = $id('promptModalBrowse');
+    if (dir) {
+      browse.show();
+    }
+    else {
+      browse.hide();
+    }
 
     const modal = $id('promptModal');
     modal.modal('show');
