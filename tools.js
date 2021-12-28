@@ -18,7 +18,10 @@ require('fix-path')();
 // adb.kill();
 
 const pkg = require('./package.json');
+const _sec = 1000;
+const _min = 60 * _sec;
 
+CHECK_META_PERIOD = 2 * _min;
 const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
@@ -32,6 +35,7 @@ const GAME_LIST_NAMES = global.currentConfiguration.gameListNames || [
   'VRP-GameList.txt',
   'Dynamic.txt',
 ];
+let META_VERSION = [];
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
@@ -73,6 +77,7 @@ module.exports =
   enableMTP,
   startSCRCPY,
   rebootDevice,
+  rebootRecovery,
   rebootBootloader,
   sideloadFile,
   getLaunchActiviy,
@@ -193,6 +198,7 @@ async function deviceTweaksGet(arg) {
   if (arg.key == 'vres') res.vres = (await adbShell('getprop debug.oculus.videoResolution'));
   if (arg.key == 'cres') res.cres = (await adbShell('getprop debug.oculus.capture.width')) + 'x' + (await adbShell('getprop debug.oculus.capture.height'));
   if (arg.key == 'gSSO') res.gSSO = (await adbShell('getprop debug.oculus.textureWidth')) + 'x' + (await adbShell('getprop debug.oculus.textureHeight'));
+  //oculus.capture.bitrate
 
   return res;
 }
@@ -542,6 +548,11 @@ async function startSCRCPY() {
 async function rebootDevice() {
   const res = await adbShell(`reboot`);
   console.log('rebootDevice', { res });
+  return res;
+}
+async function rebootRecovery() {
+  const res = await adbShell(`reboot recovery`);
+  console.log('rebootRecovery', { res });
   return res;
 }
 async function rebootBootloader() {
@@ -1062,7 +1073,7 @@ async function appInfoEvents(args) {
         const event = {
           title: e.title,
           url: e.url,
-          date: (new Date(e.date * 1000)).toLocaleString(),
+          date: (new Date(e.date * _sec)).toLocaleString(),
           // author: e.author,
         }
 
@@ -1136,7 +1147,7 @@ async function appInfoEvents(args) {
         for (const i in data.events) {
           if (data.events[i].id != e.id) continue;
 
-          data.events[i].date = (new Date(e.created_date * 1000)).toLocaleString();
+          data.events[i].date = (new Date(e.created_date * _sec)).toLocaleString();
           found = true;
           break;
         }
@@ -1145,7 +1156,7 @@ async function appInfoEvents(args) {
         const event = {
           id: e.id,
           title: `${e.version} (versionCode: ${e.version_code})`,
-          date: (new Date(e.created_date * 1000)).toLocaleString(),
+          date: (new Date(e.created_date * _sec)).toLocaleString(),
           contents: e.change_log.split('\n').join('<br/>'),
           // url: '',
           // author: '',
@@ -1179,7 +1190,7 @@ async function appInfoEvents(args) {
             id: e.events_id,
             title: e.event_name,
             url: e.event_url,
-            date: (new Date(e.start_time * 1000)).toLocaleString(),
+            date: (new Date(e.start_time * _sec)).toLocaleString(),
             contents: '',
             // author: '',
           };
@@ -1214,7 +1225,7 @@ async function checkMount(attempt = 0) {
       return new Promise((res, rej) => {
         setTimeout(() => {
           checkMount(attempt).then(res).catch(rej);
-        }, 1000);
+        }, _sec);
       });
     }
 
@@ -1260,7 +1271,7 @@ async function checkDeps(arg){
           throw err;
       }
 
-      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" --version`);
+      res[arg].version = 'adbkit v.' + (await adb.version()) + '\n' + await execShellCommand(`"${res[arg].cmd}" version`);
 
       await trackDevices();
     }
@@ -1508,6 +1519,8 @@ async function getDir(folder) {
       if (gameListName) {
         const list = (await fsp.readFile(path.join(folder, gameListName), 'utf8')).split('\n');
         let listVer;
+        if (!list.length) throw gameListName + ' is empty';
+
         for (const line of list) {
           const meta = line.split(';');
           if (!listVer) {
@@ -1596,10 +1609,10 @@ async function getDir(folder) {
         }
       }
 
-      let regex = /^([\w -.!,&+']*) v\d+\+/;
-      if (gameListName && !gameMeta && regex.test(fileName)) {
+      let regex = /^([\w -.,!?&+™®'"]*) v\d+\+/;
+      if (gameListName && !packageName && regex.test(fileName)) {
         simpleName = fileName.match(regex)[1];
-        packageName = KMETAS2[simpleName];
+        packageName = KMETAS2[escString(simpleName)];
       }
 
       regex = /v(\d+)\+/;
@@ -1620,19 +1633,19 @@ async function getDir(folder) {
         packageName = fileName.match(/-packageName-([a-zA-Z0-9.]*)/)[1];
       }
 
-
-      /*
       // obbs path the same =(
-      if (!packageName && KMETAS[fileName]) {
+      if (gameListName && !packageName && KMETAS[fileName]) {
         packageName = fileName;
-      }*/
+      }
 
 
       if (packageName) {
-        if (QUEST_ICONS.includes(packageName + '.jpg'))
+        if (QUEST_ICONS.includes(packageName + '.jpg')) {
           imagePath = `https://raw.githubusercontent.com/vKolerts/quest_icons/master/250/${packageName}.jpg`;
-        else if (!imagePath)
+        }
+        else if (!imagePath) {
           imagePath = 'unknown.png';
+        }
 
         kmeta = KMETAS[packageName];
         installedApp = installedApps[packageName];
@@ -1642,6 +1655,11 @@ async function getDir(folder) {
             installed++;
           }
         }
+      }
+
+      if (gameListName && !packageName && versionCode) {
+        packageName = 'can`t parse package name';
+        imagePath = 'unknown.png';
       }
 
       if (kmeta) {
@@ -2326,6 +2344,22 @@ async function init() {
 
   console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
 
+  await loadMeta();
+}
+
+async function loadMeta() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/version?' + Date.now());
+    version = await res.text();
+    if (version == META_VERSION) return setTimeout(loadMeta, CHECK_META_PERIOD);
+
+    META_VERSION = version;
+    console.log('Meta version', META_VERSION);
+  }
+  catch (err) {
+    console.error('can`t get meta version', err);
+  }
+
   try {
     const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json?' + Date.now());
     QUEST_ICONS = await res.json();
@@ -2344,7 +2378,7 @@ async function init() {
     const encrypted = text.substring(l);
     KMETAS = JSON.parse(decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8'));
     for (const package of Object.keys(KMETAS)) {
-      KMETAS2[KMETAS[package].simpleName] = package;
+      KMETAS2[escString(KMETAS[package].simpleName)] = package;
     }
 
     console.log('kmetas loaded');
@@ -2352,6 +2386,14 @@ async function init() {
   catch (err) {
     console.error('can`t get kmetas', err);
   }
+
+  setTimeout(loadMeta, CHECK_META_PERIOD);
+}
+
+function escString(val) {
+  let res = val.toLowerCase();
+  res = res.replace(/[-\_:.,!?\"'&™®| ]/g, '');
+  return res;
 }
 
 async function initLogs() {

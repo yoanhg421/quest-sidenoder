@@ -280,6 +280,25 @@ ipcMain.on('reboot_device', async (event, arg) => {
   return;
 });
 
+ipcMain.on('reboot_recovery', async (event, arg) => {
+  console.log('reboot_recovery received');
+  if (!global.adbDevice) {
+    console.log('Missing device, sending ask_device');
+    event.reply('ask_device', '');
+    return;
+  }
+
+  try {
+    const res = await tools.rebootRecovery();
+    event.reply('cmd_sended', { success: res });
+  }
+  catch (err) {
+    event.reply('cmd_sended', { success: err });
+  }
+
+  return;
+});
+
 ipcMain.on('reboot_bootloader', async (event, arg) => {
   console.log('reboot_bootloader received');
   if (!global.adbDevice) {
@@ -441,7 +460,7 @@ global.close = false;
 function createWindow () {
   global.win = new BrowserWindow({
     width: 1000,
-    minWidth: 800,
+    minWidth: 920,
     height: 800,
     minHeight: 500,
     title: 'Quest-Sidenoder',

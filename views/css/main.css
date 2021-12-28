@@ -6,7 +6,7 @@ a { cursor: pointer; }
   padding: .4rem 0.75rem;
 }
 .btn-floating, [class*="btn-outline-"].btn-floating {
-  border-radius: 50%;
+  border-radius: 50px;
   position: relative;
 }
 .btn {
@@ -64,6 +64,7 @@ body {
 pre {
   margin: 5pt;
   padding: 0;
+  overflow: visible;
 }
 
 .modal { overflow: auto !important; }
@@ -119,8 +120,8 @@ pre {
   position: fixed;
   width: 52px;
   height: 52px;
-  bottom: 20px;
-  left: 30px;
+  bottom: 20pt;
+  left: 20pt;
   padding-top: 10px;
   display: none;
 }
@@ -179,4 +180,93 @@ pre {
   white-space:normal;
   font-size:100%;
   line-height:18pt;
+}
+
+#sideloadQueueModal.fade .modal-dialog {
+  transform: translate(45%, 45%) scale(0.1);
+}
+#sideloadQueueModal.show .modal-dialog {
+  transform: none;
+}
+#sideloadQueueModal .modal-dialog {
+  min-width: 900px;
+  max-width: 100%;
+  width: 90%;
+  bottom: 20pt;
+  position: fixed;
+  right: 20pt;
+  margin: 0;
+}
+
+
+#showQueue {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  bottom: 20pt;
+  right: 20pt;
+  padding-top: 10px;
+  display: none;
+}
+
+#sideloadQueueModal table {
+  text-align: center;
+  font-size: 8pt;
+}
+#sideloadQueueModal td:first-child {
+  text-align: left;
+  /*min-width: 30%;*/
+}
+
+#sideloadQueueModal .modal-body {
+  padding: 0;
+  height: 300pt;
+  overflow: auto;
+  border-top: 1px solid rgba(0,0,0,0.4);
+}
+
+#sideloadQueueModal th {
+  background: #32383E;
+  position: sticky;
+  top: -1px;
+}
+
+.table td,
+.table th,
+.table thead th {
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0,0,0,.4);
+  border-top: none;
+}
+
+html {
+  overflow-y:  scroll;
+}
+
+ /* width */
+::-webkit-scrollbar {
+  width: 6pt;
+  height: 6pt;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  background: #bbb;
+  border: 1px solid #666;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-corner {
+  background: rgba(0,0,0,0);
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+
+  border: 1px solid #666;
+  border-radius: 4px;
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+  border: 1px solid #666;
+  border-radius: 4px;
 }
