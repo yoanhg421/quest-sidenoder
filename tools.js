@@ -18,7 +18,10 @@ require('fix-path')();
 // adb.kill();
 
 const pkg = require('./package.json');
+const _sec = 1000;
+const _min = 60 * _sec;
 
+CHECK_META_PERIOD = 2 * _min;
 const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
@@ -32,6 +35,7 @@ const GAME_LIST_NAMES = global.currentConfiguration.gameListNames || [
   'VRP-GameList.txt',
   'Dynamic.txt',
 ];
+let META_VERSION = [];
 let QUEST_ICONS = [];
 let cacheOculusGames = false;
 let KMETAS = {};
@@ -1069,7 +1073,7 @@ async function appInfoEvents(args) {
         const event = {
           title: e.title,
           url: e.url,
-          date: (new Date(e.date * 1000)).toLocaleString(),
+          date: (new Date(e.date * _sec)).toLocaleString(),
           // author: e.author,
         }
 
@@ -1143,7 +1147,7 @@ async function appInfoEvents(args) {
         for (const i in data.events) {
           if (data.events[i].id != e.id) continue;
 
-          data.events[i].date = (new Date(e.created_date * 1000)).toLocaleString();
+          data.events[i].date = (new Date(e.created_date * _sec)).toLocaleString();
           found = true;
           break;
         }
@@ -1152,7 +1156,7 @@ async function appInfoEvents(args) {
         const event = {
           id: e.id,
           title: `${e.version} (versionCode: ${e.version_code})`,
-          date: (new Date(e.created_date * 1000)).toLocaleString(),
+          date: (new Date(e.created_date * _sec)).toLocaleString(),
           contents: e.change_log.split('\n').join('<br/>'),
           // url: '',
           // author: '',
@@ -1186,7 +1190,7 @@ async function appInfoEvents(args) {
             id: e.events_id,
             title: e.event_name,
             url: e.event_url,
-            date: (new Date(e.start_time * 1000)).toLocaleString(),
+            date: (new Date(e.start_time * _sec)).toLocaleString(),
             contents: '',
             // author: '',
           };
@@ -1221,7 +1225,7 @@ async function checkMount(attempt = 0) {
       return new Promise((res, rej) => {
         setTimeout(() => {
           checkMount(attempt).then(res).catch(rej);
-        }, 1000);
+        }, _sec);
       });
     }
 
@@ -2340,6 +2344,22 @@ async function init() {
 
   console.log({ platform, arch, version, sidenoderHome }, process.platform, process.arch, process.argv);
 
+  await loadMeta();
+}
+
+async function loadMeta() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/version?' + Date.now());
+    version = await res.text();
+    if (version == META_VERSION) return setTimeout(loadMeta, CHECK_META_PERIOD);
+
+    META_VERSION = version;
+    console.log('Meta version', META_VERSION);
+  }
+  catch (err) {
+    console.error('can`t get meta version', err);
+  }
+
   try {
     const res = await fetch('https://raw.githubusercontent.com/vKolerts/quest_icons/master/list.json?' + Date.now());
     QUEST_ICONS = await res.json();
@@ -2366,6 +2386,8 @@ async function init() {
   catch (err) {
     console.error('can`t get kmetas', err);
   }
+
+  setTimeout(loadMeta, CHECK_META_PERIOD);
 }
 
 function escString(val) {
