@@ -926,10 +926,12 @@ async function appInfo(args) {
       });
       try {
         let json = await resp.json();
-        // console.log({ json });
+        // console.log('json', json);
         if (json.error) throw json.error;
 
         const meta = json.data.node;
+        if (!meta) throw 'empty json.data.node';
+
         data.name = meta.appName;
         data.detailed_description = meta.display_long_description && meta.display_long_description.split('\n').join('<br/>');
         data.genres = meta.genre_names;
@@ -965,22 +967,30 @@ async function appInfo(args) {
 
         resp = await fetch(`${data.url}?locale=${global.locale}`);
         const meta = await WAE().parse(await resp.text());
-        const jsonld = meta.jsonld.Product[0];
+        const { metatags } = meta;
+        // console.log('meta', meta);
 
-        data.name = jsonld.name;
+        data.name = metatags['og:title'][0].replace(' on Oculus Quest', '');
+        data.header_image = metatags['og:image'][0];
+        data.short_description = metatags['og:description'][0] && metatags['og:description'][0].split('\n').join('<br/>');
+        data.url = metatags['al:web:url'][0];
 
-        data.header_image = meta.metatags['og:image'][0];
-        data.short_description = meta.metatags['og:description'][0] && meta.metatags['og:description'][0].split('\n').join('<br/>');
-        data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
-        data.url = meta.metatags['al:web:url'][0];
-        if (jsonld.image) {
-          for (const id in jsonld.image) {
-            if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+        const jsonld = meta.jsonld.Product && meta.jsonld.Product[0] || JSON.parse(metatags['json-ld'][0]);
+        // console.log(jsonld);
 
-            data.screenshots.push({
-              id,
-              path_thumbnail: jsonld.image[id],
-            });
+        if (jsonld) {
+          if (jsonld.name) data.name = jsonld.name;
+          data.detailed_description = jsonld.description && jsonld.description.split('\n').join('<br/>');
+
+          if (jsonld.image) {
+            for (const id in jsonld.image) {
+              if (['0', '1', '2'].includes(id)) continue; // skip resizes of header
+
+              data.screenshots.push({
+                id,
+                path_thumbnail: jsonld.image[id],
+              });
+            }
           }
         }
       }
@@ -1375,30 +1385,52 @@ async function killRClone() {
 }
 
 async function parseRcloneSections(newCfg = false) {
-  if (!global.currentConfiguration.rcloneConf) return;
-  if (!(await fsp.exists(global.currentConfiguration.rcloneConf))) {
-    return console.error('rclone config not found', global.currentConfiguration.rcloneConf);
+  console.warn('parseRcloneSections', newCfg);
+  if (!global.currentConfiguration.rclonePath) {
+    return console.error('rclone binary not defined');
   }
 
-  const cfg = await fsp.readFile(global.currentConfiguration.rcloneConf, 'utf8');
-
-  if (!cfg) return console.error('rclone config is empty', global.currentConfiguration.rcloneConf);
-
-  const lines = cfg.split('\n');
-  let sections = [];
-  for (const line of lines) {
-    if (line[0] != '[') continue;
-    const section = line.match(/\[(.*?)\]/)[1];
-    sections.push(section);
+  if (!global.currentConfiguration.rcloneConf) {
+    return console.error('rclone config not defined');
   }
 
-  global.rcloneSections = sections;
-  if (sections.length && (newCfg || !global.currentConfiguration.cfgSection)) {
-    await changeConfig('cfgSection', sections[0]);
+  try {
+    const rcloneCmd = global.currentConfiguration.rclonePath;
+    const out = await execShellCommand(`"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config list`);
+    if (!out) {
+      return console.error('rclone config is empty', global.currentConfiguration.rcloneConf, out);
+    }
+
+    const sections = out.split('\n');
+    if (sections.length) sections.pop();
+    if (!sections.length) {
+      return console.error('rclone config sections not found', global.currentConfiguration.rcloneConf, { out, sections });
+    }
+
+    global.rcloneSections = sections;
+  }
+  catch (err) {
+    const cfg = await fsp.readFile(global.currentConfiguration.rcloneConf, 'utf8');
+
+    if (!cfg) return console.error('rclone config is empty', global.currentConfiguration.rcloneConf);
+
+    const lines = cfg.split('\n');
+    let sections = [];
+    for (const line of lines) {
+      if (line[0] != '[') continue;
+      const section = line.match(/\[(.*?)\]/)[1];
+      sections.push(section);
+    }
+
+    global.rcloneSections = sections;
   }
 
-  // console.log({ sections });
-  return sections;
+  if (newCfg || !global.currentConfiguration.cfgSection) {
+    await changeConfig('cfgSection', global.rcloneSections[0]);
+  }
+
+  // console.log({ sections: global.rcloneSections });
+  return global.rcloneSections;
 }
 
 async function umount() {
@@ -1415,6 +1447,10 @@ async function umount() {
 }
 
 async function mount() {
+  if (!global.currentConfiguration.rclonePath || !global.currentConfiguration.rcloneConf) {
+    win.webContents.send('alert', 'Rclone not configured');
+  }
+
   // if (await checkMount(13)) {
     // return;
     try {
@@ -1431,27 +1467,9 @@ async function mount() {
     return global.mounted = false;
   }
 
-   // TODO: temoporary
-  if (!global.currentConfiguration.rcloneConf) {
-    const rcloneConf = path.join(sidenoderHome, 'rclone.conf');
-
-    const epath = path.join(__dirname , 'a.enc'); // 'a'
-    const data = await fsp.readFile(epath, 'utf8');
-    const buff = Buffer.from(data, 'base64');
-    const cfg = buff.toString('ascii');
-    await fsp.writeFile(rcloneConf, cfg);
-
-    await changeConfig('rcloneConf', rcloneConf);
-  }
-
-  // const buff = new Buffer(data);
-  // const base64data = buff.toString('base64');
-  // await fsp.writeFile(epath + '.enc', base64data);
-  //console.log(cpath);
-
   const myId = RCLONE_ID;
   const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
-  const rcloneCmd = global.currentConfiguration.rclonePath || 'rclone';
+  const rcloneCmd = global.currentConfiguration.rclonePath;
   console.log('start rclone');
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
     if (error) {
@@ -2462,7 +2480,7 @@ async function reloadConfig() {
     adbPath: '',
     rclonePath: '',
     rcloneConf: '',
-    cfgSection: 'VRP_mirror10',
+    cfgSection: 'VRP-mirror13',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
     scrcpyBitrate: '5',

@@ -238,12 +238,12 @@ function loadDir(list) {
 
     if (item.oculusId) {
       selectBtn+= `<a onclick="oculusInfo('${item.packageName}')" title="Oculus information" class="btn btn-sm btn-dark">
-        <img src="img/oculus.png" width="14" style="margin-top: -1px;" /></a> `;
+        <img src="img/oculus.svg" width="14" style="margin-top: -1px;" /></a> `;
     }
 
     if (item.sqId) {
       selectBtn+= `<a onclick="sqInfo('${item.packageName}')" title="SideQuest information" class="btn btn-sm btn-light">
-        <img src="img/sq.png" width="14" style="margin-top: -1px;" /></a> `;
+        <img src="img/sq.svg" width="14" style="margin-top: -1px;" /></a> `;
     }
 
     if (item.steamId) {
