@@ -472,7 +472,7 @@ async function isWireless() {
     const devices = await adb.listDevices();
     for (const device of devices) {
       if (!device.id.includes(':5555')) continue;
-      if (['offline', 'authorizing', 'unauthorized'].includes(device.type)) continue;
+      if (['offline', 'authorizing'].includes(device.type)) continue;
       if (['unauthorized'].includes(device.type)) {
         win.webContents.send('alert', 'Please authorize adb access on your device');
         continue;
@@ -568,6 +568,7 @@ async function sideloadFile(path) {
 
 async function getDeviceSync(attempt = 0) {
   try {
+    // const lastDevice = global.adbDevice;
     const devices = await adb.listDevices();
     console.log({ devices });
     global.adbDevice = false;
@@ -577,6 +578,7 @@ async function getDeviceSync(attempt = 0) {
         win.webContents.send('alert', 'Please authorize adb access on your device');
         continue;
       }
+
       if (
         !global.currentConfiguration.allowOtherDevices
         && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
@@ -586,9 +588,10 @@ async function getDeviceSync(attempt = 0) {
     }
 
 
-    if (!global.adbDevice && attempt < 3) {
-      return setTimeout(()=> getDeviceSync(attempt + 1), 200);
-    }
+    /*if (!global.adbDevice && devices.length > 0 && attempt < 1) {
+      return setTimeout(()=> getDeviceSync(attempt + 1), 1000);
+    }*/
+    // if (lastDevice == global.adbDevice) return;
 
     win.webContents.send('check_device', { success: global.adbDevice });
 
@@ -851,11 +854,16 @@ async function trackDevices() {
     const tracker = await adb.trackDevices()
     tracker.on('add', async (device) => {
       console.log('Device was plugged in', device.id);
-      await getDeviceSync();
+      // await getDeviceSync();
     });
 
     tracker.on('remove', async (device) => {
       console.log('Device was unplugged', device.id);
+      // await getDeviceSync();
+    });
+
+    tracker.on('change', async (device) => { // TODO: // need fix double run
+      console.log('Device was changed', device.id);
       await getDeviceSync();
     });
 
