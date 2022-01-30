@@ -30,6 +30,18 @@
             </div>
           </div>
 
+          {% if platform == 'mac' %}
+          <div class="form-group mb-4">
+            <label for="rcloneConf">Path config:</label>
+            <div class="input-group">
+              <select class="adbdev custom-select" id="mountCmd">
+                <option value="mount">mount</option>
+                <option value="cmount">cmount (support old rclone versions)</option>
+              </select>
+            </div>
+          </div>
+          {% endif %}
+
           <div class="form-check mb-0">
             <label for="autoMount" class="form-check-label">
               <input class="form-check-input" type="checkbox" id="autoMount">
@@ -99,6 +111,7 @@
     'adbPath',
     'rclonePath',
     'rcloneConf',
+    'mountCmd',
     'scrcpyPath',
     'tmpdir',
   ];
@@ -114,7 +127,6 @@
     options+= `<option value="${section}">${section}</option>`;
   }
   id('cfgSection').innerHTML = options;
-  $id('cfgSection').on('change', () => { if (remote.getGlobal('mounted')) checkMount(); });
 
   for (const key of OPT_KEYS) {
     $id(key)
@@ -153,8 +165,13 @@
   ipcRenderer.removeAllListeners('change_config');
   ipcRenderer.on('change_config', (event, { key, val }) => {
     if (!OPT_KEYS.includes(key)) return;
-    if (key == 'rcloneConf') {
+    if ([
+      'cfgSection',
+      'rcloneConf',
+      'mountCmd',
+    ].includes(key)) {
       if (remote.getGlobal('mounted')) checkMount();
+
       loadInclude('settings_include.twig');
     }
 

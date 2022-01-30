@@ -1476,7 +1476,7 @@ async function mount() {
   }
 
   const myId = RCLONE_ID;
-  const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
+  const mountCmd = global.currentConfiguration.mountCmd;
   const rcloneCmd = global.currentConfiguration.rclonePath;
   console.log('start rclone');
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
@@ -2488,6 +2488,7 @@ async function reloadConfig() {
     adbPath: '',
     rclonePath: '',
     rcloneConf: '',
+    mountCmd: 'mount',
     cfgSection: 'VRP-mirror13',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
