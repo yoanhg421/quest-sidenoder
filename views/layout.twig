@@ -23,7 +23,9 @@
 
   <script>
     const electron = window.require('electron');
-    const { ipcRenderer, remote, shell } = electron;
+    const remote = window.require('@electron/remote');
+    console.log(electron);
+    const { ipcRenderer, /*remote, */shell } = electron;
     const { dialog } = remote;
 
     function loadInclude(template, id = null, complete = null) {

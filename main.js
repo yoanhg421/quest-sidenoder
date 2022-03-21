@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Notification, powerSaveBlocker, ipcMain, dialog } = require('electron');
+// const { BrowserWindow } = require('@electron/remote')
 const fs = require('fs');
 const path = require('path');
 global.twig = require('electron-twig');
@@ -467,11 +468,13 @@ function createWindow () {
     //frame:false,
     webPreferences: {
       nodeIntegration: true,
-      enableRemoteModule:true,
+      enableRemoteModule: true,
       contextIsolation: false,
       webView: true,
     }
-  })
+  });
+  require('@electron/remote/main').initialize();
+  require("@electron/remote/main").enable(win.webContents);
   win.setMenu(null);
   win.maximize(true);
 

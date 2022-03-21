@@ -5,6 +5,7 @@
   "main": "main.js",
   "dependencies": {
     "@devicefarmer/adbkit": "^3.2.0",
+    "@electron/remote": "^2.0.5",
     "adbkit-apkreader": "^3.2.0",
     "command-exists": "^1.2.9",
     "compare-versions": "^3.6.0",
@@ -16,7 +17,7 @@
     "web-auto-extractor": "^1.0.17"
   },
   "devDependencies": {
-    "electron": "^10.1.5",
+    "electron": "^17.1.1",
     "electron-builder": "^22.9.1"
   },
   "scripts": {

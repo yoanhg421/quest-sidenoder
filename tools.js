@@ -1334,7 +1334,8 @@ async function fetchBinary(bin) {
   const file = global.platform == 'win' ? `${bin}.exe` : bin;
 
   const binPath = path.join(sidenoderHome, file);
-  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
+  const branch = bin == 'rclone' ? 'new' : 'master';
+  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/${branch}/${global.platform}/${global.arch}/${file}`;
   await fetchFile(binUrl, binPath);
 
   if (bin == 'adb' && global.platform == 'win') {
