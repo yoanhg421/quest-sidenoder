@@ -12,6 +12,9 @@ const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
 const fetch = require('node-fetch');
 const WAE = require('web-auto-extractor').default
+// const HttpProxyAgent = require('https-proxy-agent'); // TODO add https proxy support
+const { SocksProxyAgent } = require('socks-proxy-agent');
+const url = require('url');
 // const ApkReader = require('node-apk-parser');
 
 require('fix-path')();
@@ -25,6 +28,10 @@ CHECK_META_PERIOD = 2 * _min;
 const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
+
+let agentOculus,
+  agentSteam,
+  agentSQ;
 
 init();
 
@@ -472,7 +479,7 @@ async function isWireless() {
     const devices = await adb.listDevices();
     for (const device of devices) {
       if (!device.id.includes(':5555')) continue;
-      if (['offline', 'authorizing', 'unauthorized'].includes(device.type)) continue;
+      if (['offline', 'authorizing'].includes(device.type)) continue;
       if (['unauthorized'].includes(device.type)) {
         win.webContents.send('alert', 'Please authorize adb access on your device');
         continue;
@@ -568,6 +575,7 @@ async function sideloadFile(path) {
 
 async function getDeviceSync(attempt = 0) {
   try {
+    // const lastDevice = global.adbDevice;
     const devices = await adb.listDevices();
     console.log({ devices });
     global.adbDevice = false;
@@ -577,6 +585,7 @@ async function getDeviceSync(attempt = 0) {
         win.webContents.send('alert', 'Please authorize adb access on your device');
         continue;
       }
+
       if (
         !global.currentConfiguration.allowOtherDevices
         && await adbShell('getprop ro.product.brand', device.id) != 'oculus'
@@ -586,9 +595,10 @@ async function getDeviceSync(attempt = 0) {
     }
 
 
-    if (!global.adbDevice && attempt < 3) {
-      return setTimeout(()=> getDeviceSync(attempt + 1), 200);
-    }
+    /*if (!global.adbDevice && devices.length > 0 && attempt < 1) {
+      return setTimeout(()=> getDeviceSync(attempt + 1), 1000);
+    }*/
+    // if (lastDevice == global.adbDevice) return;
 
     win.webContents.send('check_device', { success: global.adbDevice });
 
@@ -851,11 +861,16 @@ async function trackDevices() {
     const tracker = await adb.trackDevices()
     tracker.on('add', async (device) => {
       console.log('Device was plugged in', device.id);
-      await getDeviceSync();
+      // await getDeviceSync();
     });
 
     tracker.on('remove', async (device) => {
       console.log('Device was unplugged', device.id);
+      // await getDeviceSync();
+    });
+
+    tracker.on('change', async (device) => { // TODO: // need fix double run
+      console.log('Device was changed', device.id);
       await getDeviceSync();
     });
 
@@ -896,8 +911,9 @@ async function appInfo(args) {
       data.id = steam.id;
       data.url = `https://store.steampowered.com/app/${data.id}/`;
 
-      const resp = await fetch(`https://store.steampowered.com/api/appdetails?appids=${data.id}`, {
+      const resp = await fetchTimeout(`https://store.steampowered.com/api/appdetails?appids=${data.id}`, {
         headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
+        agent: agentSteam,
       });
       const json = await resp.json();
       // console.log({ json });
@@ -915,7 +931,7 @@ async function appInfo(args) {
       // data.genres = oculus.genres && oculus.genres.split(', ');
 
       //https://computerelite.github.io
-      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      let resp = await fetchTimeout(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"itemId":"${oculus.id}","first":1}&doc_id=5373392672732392`,
         headers: {
@@ -923,6 +939,7 @@ async function appInfo(args) {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Origin': 'https://www.oculus.com',
         },
+        agent: agentOculus,
       });
       try {
         let json = await resp.json();
@@ -965,7 +982,9 @@ async function appInfo(args) {
       catch(err) {
         console.error(res, 'fetch error', err);
 
-        resp = await fetch(`${data.url}?locale=${global.locale}`);
+        resp = await fetchTimeout(`${data.url}?locale=${global.locale}`, {
+          agent: agentOculus,
+        });
         const meta = await WAE().parse(await resp.text());
         const { metatags } = meta;
         // console.log('meta', meta);
@@ -1004,7 +1023,7 @@ async function appInfo(args) {
       data.id = sq.id;
       data.url = `https://sidequestvr.com/app/${data.id}/`;
 
-      const resp = await fetch(`https://api.sidequestvr.com/get-app`, {
+      const resp = await fetchTimeout(`https://api.sidequestvr.com/get-app`, {
         method: 'POST',
         body: JSON.stringify({ apps_id: data.id }),
         headers: {
@@ -1014,6 +1033,7 @@ async function appInfo(args) {
           'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
           'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
         },
+        agent: agentSQ,
       });
       const json = await resp.json();
       const meta = json.data[0];
@@ -1029,7 +1049,7 @@ async function appInfo(args) {
           .replace('/watch?v=', '/')
         ];
 
-      const resp_img = await fetch(`https://api.sidequestvr.com/get-app-screenshots`, {
+      const resp_img = await fetchTimeout(`https://api.sidequestvr.com/get-app-screenshots`, {
         method: 'POST',
         body: JSON.stringify({ apps_id: data.id }),
         headers: {
@@ -1039,6 +1059,7 @@ async function appInfo(args) {
           'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
 
         },
+        agent: agentSQ,
       });
       const json_img = await resp_img.json();
       for (const id in json_img.data) {
@@ -1072,8 +1093,9 @@ async function appInfoEvents(args) {
 
       data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
 
-      const resp = await fetch(`http://api.steampowered.com/ISteamNews/GetNewsForApp/v0002?appid=${steam.id}`, {
+      const resp = await fetchTimeout(`http://api.steampowered.com/ISteamNews/GetNewsForApp/v0002?appid=${steam.id}`, {
         headers: { 'Accept-Language': global.locale + ',ru;q=0.8,en-US;q=0.5,en;q=0.3' },
+        agent: agentSteam,
       });
       const json = await resp.json();
       // console.log({ json });
@@ -1111,7 +1133,7 @@ async function appInfoEvents(args) {
 
       // data.url = `https://store.steampowered.com/news/app/${steam.id}/`;
 
-      let resp = await fetch(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
+      let resp = await fetchTimeout(`https://graph.oculus.com/graphql?forced_locale=${global.locale}`, {
         method: 'POST',
         body: `access_token=OC|1317831034909742|&variables={"id":"${oculus.id}"}&doc_id=1586217024733717`,
         headers: {
@@ -1119,6 +1141,7 @@ async function appInfoEvents(args) {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Origin': 'https://www.oculus.com',
         },
+        agent: agentOculus,
       });
       try {
         let json = await resp.json();
@@ -1182,7 +1205,7 @@ async function appInfoEvents(args) {
       // console.log({ sq });
 
       for (const is_news of [true, false]) {
-        const resp = await fetch(`https://api.sidequestvr.com/events-list`, {
+        const resp = await fetchTimeout(`https://api.sidequestvr.com/events-list`, {
           method: 'POST',
           body: JSON.stringify({ apps_id: sq.id, is_news }),
           headers: {
@@ -1192,6 +1215,7 @@ async function appInfoEvents(args) {
             'Cookie': ' __stripe_mid=829427af-c8dd-47d1-a857-1dc73c95b947201218; cf_clearance=LkOSetFAXEs255r2rAMVK_hm_I0lawkUfJAedj1nkD0-1633288577-0-250; __stripe_sid=6e94bd6b-19a4-4c34-98d5-1dc46423dd2e2f3688',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0',
           },
+          agent: agentSQ,
         });
         const json = await resp.json();
         // console.log({ json });
@@ -1326,7 +1350,8 @@ async function fetchBinary(bin) {
   const file = global.platform == 'win' ? `${bin}.exe` : bin;
 
   const binPath = path.join(sidenoderHome, file);
-  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${file}`;
+  const branch = /*bin == 'rclone' ? 'new' :*/ 'master';
+  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/${branch}/${global.platform}/${global.arch}/${file}`;
   await fetchFile(binUrl, binPath);
 
   if (bin == 'adb' && global.platform == 'win') {
@@ -1468,7 +1493,7 @@ async function mount() {
   }
 
   const myId = RCLONE_ID;
-  const mountCmd = (platform == 'mac') ? 'cmount' : 'mount';
+  const mountCmd = global.currentConfiguration.mountCmd;
   const rcloneCmd = global.currentConfiguration.rclonePath;
   console.log('start rclone');
   exec(`"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`, (error, stdout, stderr) => {
@@ -2426,6 +2451,11 @@ async function initLogs() {
   const log_file = fs.createWriteStream(log_path, { flags: 'w' });
   const log_stdout = process.stdout;
 
+  function dateF() {
+    const d = new Date();
+    return `[${d.toLocaleString()}.${d.getMilliseconds()}] `;
+  }
+
   console.log = function(...d) {
     let line = '';
     let line_color = '';
@@ -2441,8 +2471,8 @@ async function initLogs() {
       line_color += '\x1b[32m' + formated + '\x1b[0m ';
     }
 
-    log_stdout.write(line_color + '\n');
-    log_file.write(line + '\n');
+    log_stdout.write(dateF() + line_color + '\n');
+    log_file.write(dateF() + line + '\n');
   };
 
   console.error = function(...d) {
@@ -2451,8 +2481,8 @@ async function initLogs() {
       line += util.format(l) + ' ';
     }
 
-    log_stdout.write('\x1b[31mERROR: ' + line + '\x1b[0m\n');
-    log_file.write('ERROR: ' + line + '\n');
+    log_stdout.write(`\x1b[31m${dateF()}ERROR: ` + line + '\x1b[0m\n');
+    log_file.write(dateF()+ 'ERROR: ' + line + '\n');
   };
 
   console.warning = function(...d) {
@@ -2461,9 +2491,19 @@ async function initLogs() {
       line += util.format(l) + ' ';
     }
 
-    log_stdout.write('\x1b[33mWARN: ' + line + '\x1b[0m\n');
-    log_file.write('WARN: ' + line + '\n');
+    log_stdout.write(`\x1b[33m${dateF()}WARN: ` + line + '\x1b[0m\n');
+    log_file.write(dateF() + 'WARN: ' + line + '\n');
   };
+}
+
+async function fetchTimeout(url = '', options = {}, timeout = 20 * 1000) {
+  const controller = new AbortController();
+  options.signal = controller.signal;
+  setTimeout(() => {
+    controller.abort()
+  }, timeout);
+
+  return fetch(url, options);
 }
 
 
@@ -2480,6 +2520,7 @@ async function reloadConfig() {
     adbPath: '',
     rclonePath: '',
     rcloneConf: '',
+    mountCmd: 'mount',
     cfgSection: 'VRP-mirror13',
     snapshotsDelete: true,
     mntGamePath: 'Quest Games',
@@ -2489,7 +2530,12 @@ async function reloadConfig() {
     userHide: false,
     dirBookmarks: [
       { name: 'Sidenoder folder', path: global.sidenoderHome },
-    ]
+    ],
+
+    proxyUrl: '',
+    proxyOculus: false,
+    proxySteam: false,
+    proxySQ: false,
   };
 
   if (await fsp.exists(configLocationOld)) {
@@ -2515,11 +2561,23 @@ async function reloadConfig() {
     global.currentConfiguration.dirBookmarks = defaultConfig.dirBookmarks;
   }
 
+  proxySettings()
+
   await parseRcloneSections();
+}
+
+function proxySettings(proxyUrl = global.currentConfiguration.proxyUrl) {
+  const { proxyOculus, proxySteam, proxySQ } = global.currentConfiguration;
+
+  agentOculus = proxyUrl && proxyOculus ? new SocksProxyAgent(proxyUrl) : undefined;
+  agentSteam = proxyUrl && proxySteam ? new SocksProxyAgent(proxyUrl) : undefined;
+  agentSQ = proxyUrl && proxySQ ? new SocksProxyAgent(proxyUrl) : undefined;
 }
 
 async function changeConfig(key, value) {
   console.log('cfg.update', key, value);
+  if (key == 'proxyUrl') proxySettings(value);
+  if (['proxyOculus', 'proxySteam', 'proxySQ'].includes(key)) proxySettings();
 
   global.currentConfiguration[key] = value;
   await saveConfig();
