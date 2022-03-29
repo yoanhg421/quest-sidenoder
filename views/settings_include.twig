@@ -100,6 +100,41 @@
           </div> -->
         </div>
       </div>
+
+      <div class="card bg-primary mb-2">
+        <div class="card-header">Proxy settings EXPERIMENTAL:</div>
+        <div class="card-body">
+          <div class="form-group mb-4">
+            <label for="proxyUrl">Socks proxy url (for example from https://hideip.me/ru/proxy/socks5list):</label>
+            <input id="proxyUrl" class="form-control" value="" placeholder="socks://[HOST]:[PORT]" />
+          </div>
+
+          <div class="form-check mb-0">
+            <label for="proxyOculus" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="proxyOculus">
+              <img src="img/oculus.svg" width="14" style="margin-top: -2px;" /> Enable proxy for fetch Oculus information
+            </label>
+          </div>
+          <div class="form-check mb-0">
+            <label for="proxySteam" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="proxySteam">
+              <i class="fa fa fa-steam-square"></i> Enable proxy for fetch Steam information
+            </label>
+          </div>
+          <div class="form-check mb-0">
+            <label for="proxySQ" class="form-check-label">
+              <input class="form-check-input" type="checkbox" id="proxySQ">
+              <img src="img/sq-white.svg" width="14" /> Enable proxy for fetch SideQuest information
+            </label>
+          </div>
+
+          <!-- <div class="form-group">
+            <a id="debugTool" class="btn btn-primary">
+              <i class="fa fa-bug"></i> Open debug tools
+            </a>
+          </div> -->
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -114,12 +149,16 @@
     'mountCmd',
     'scrcpyPath',
     'tmpdir',
+    'proxyUrl',
   ];
   const CHKBOXES = [
     'autoMount',
     'allowOtherDevices',
     'cacheOculusGames',
     'userHide',
+    'proxyOculus',
+    'proxySteam',
+    'proxySQ',
   ];
 
   let options = '';

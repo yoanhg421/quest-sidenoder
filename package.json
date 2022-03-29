@@ -12,9 +12,9 @@
     "electron-find": "1.0.7",
     "electron-twig": "1.1.1",
     "fix-path": "3.0.0",
-    "https-proxy-agent": "5.0.0",
     "jquery": "3.6.0",
     "node-fetch": "2.6.7",
+    "socks-proxy-agent": "6.2.0-beta.0",
     "web-auto-extractor": "1.0.17"
   },
   "devDependencies": {
