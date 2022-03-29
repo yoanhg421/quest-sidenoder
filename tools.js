@@ -11,6 +11,7 @@ const ApkReader = require('adbkit-apkreader');
 const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
 const fetch = require('node-fetch');
+const HttpsProxyAgent = require('https-proxy-agent'); // TODO add to options for oculus parse
 const WAE = require('web-auto-extractor').default
 // const ApkReader = require('node-apk-parser');
 
@@ -2435,6 +2436,11 @@ async function initLogs() {
   const log_file = fs.createWriteStream(log_path, { flags: 'w' });
   const log_stdout = process.stdout;
 
+  function dateF() {
+    const d = new Date();
+    return `[${d.toLocaleString()}.${d.getMilliseconds()}] `;
+  }
+
   console.log = function(...d) {
     let line = '';
     let line_color = '';
@@ -2450,8 +2456,8 @@ async function initLogs() {
       line_color += '\x1b[32m' + formated + '\x1b[0m ';
     }
 
-    log_stdout.write(line_color + '\n');
-    log_file.write(line + '\n');
+    log_stdout.write(dateF() + line_color + '\n');
+    log_file.write(dateF() + line + '\n');
   };
 
   console.error = function(...d) {
@@ -2460,8 +2466,8 @@ async function initLogs() {
       line += util.format(l) + ' ';
     }
 
-    log_stdout.write('\x1b[31mERROR: ' + line + '\x1b[0m\n');
-    log_file.write('ERROR: ' + line + '\n');
+    log_stdout.write(`\x1b[31m${dateF()}ERROR: ` + line + '\x1b[0m\n');
+    log_file.write(dateF()+ 'ERROR: ' + line + '\n');
   };
 
   console.warning = function(...d) {
@@ -2470,8 +2476,8 @@ async function initLogs() {
       line += util.format(l) + ' ';
     }
 
-    log_stdout.write('\x1b[33mWARN: ' + line + '\x1b[0m\n');
-    log_file.write('WARN: ' + line + '\n');
+    log_stdout.write(`\x1b[33m${dateF()}WARN: ` + line + '\x1b[0m\n');
+    log_file.write(dateF() + 'WARN: ' + line + '\n');
   };
 }
 
