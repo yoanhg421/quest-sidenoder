@@ -189,8 +189,8 @@ pre {
   transform: none;
 }
 #sideloadQueueModal .modal-dialog {
-  min-width: 900px;
-  max-width: 100%;
+  min-width: 600px;
+  max-width: 1200px;
   width: 90%;
   bottom: 20pt;
   position: fixed;
@@ -211,7 +211,7 @@ pre {
 
 #sideloadQueueModal table {
   text-align: center;
-  font-size: 8pt;
+  font-size: 11pt;
 }
 #sideloadQueueModal td:first-child {
   text-align: left;
