@@ -4,8 +4,9 @@
 <!---[![Donate Other Crypto](https://img.shields.io/badge/Donate-Crypto-red.svg)](https://nowpayments.io/donation?api_key=MAKXTDS-MMK4BZQ-J5F0TBA-6QCGGFX)-->
 
 
+**SideNoder** - A **cross platform sideloader** for Quest(1&2&3) standalone vr headset.
 
-**SideNoder** - A **cross platform sideloader** for Quest(1&2) standalone vr headset.
+# Quest 3 comaptibility added in v 0.8.0
 
 <details>
 <summary>
@@ -44,6 +45,20 @@ What makes sidenoder better than other sideloaders ?
 
 
 ---
+
+## MacOS compatibility
+
+To install on mac one has to manually install latest rclone in Terminal using following command:
+```bash
+sudo -v ; curl https://rclone.org/install.sh | sudo bash
+```
+Other version of rclone will not work.
+
+Also android tools and scrcpy is required:
+```bash
+ brew install scrcpy
+brew install android-platform-tools
+```
 
 #### Planned:
 https://github.com/vKolerts/quest-sidenoder/projects/1

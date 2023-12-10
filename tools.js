@@ -10,21 +10,20 @@ const commandExists = require('command-exists');
 const ApkReader = require('adbkit-apkreader');
 const adbkit = require('@devicefarmer/adbkit').default;
 const adb = adbkit.createClient();
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const WAE = require('web-auto-extractor').default
 // const HttpProxyAgent = require('https-proxy-agent'); // TODO add https proxy support
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const url = require('url');
 // const ApkReader = require('node-apk-parser');
-
-require('fix-path')();
+const fixPath = (...args) => import('fix-path').then(({default: fixPath}) => fixPath(...args));
 // adb.kill();
 
 const pkg = require('./package.json');
 const _sec = 1000;
 const _min = 60 * _sec;
 
-CHECK_META_PERIOD = 2 * _min;
+let CHECK_META_PERIOD = 2 * _min;
 const l = 32;
 const configLocationOld = path.join(global.homedir, 'sidenoder-config.json');
 const configLocation = path.join(global.sidenoderHome, 'config.json');
@@ -740,11 +739,11 @@ async function adbPullFolder(orig, dest, sync = false) {
   return true;
 }
 
-async function adbPush(orig, dest, sync = false) {
+async function adbPush(orig, dest, sync = false, rights = false) {
   console.log('adbPush', orig, dest);
   const transfer = sync
-    ? await sync.pushFile(orig, dest)
-    : await adb.getDevice(global.adbDevice).push(orig, dest);
+    ? rights ? await sync.pushFile(orig, dest, { mode: 0o777 }) : await sync.pushFile(orig, dest)
+    : rights ? await adb.getDevice(global.adbDevice).push(orig, dest, { mode: 0o777 }) : await adb.getDevice(global.adbDevice).push(orig, dest);
   const stats = await fsp.lstat(orig);
   const size = stats.size;
 
@@ -817,7 +816,7 @@ async function adbInstall(apk) {
   console.log('adbInstall', apk);
   const temp_path = '/data/local/tmp/install.apk';
 
-  await adbPush(apk, temp_path);
+  await adbPush(apk, temp_path, false, false);
   try {
     await adb.getDevice(global.adbDevice).installRemote(temp_path);
   }
@@ -1421,7 +1420,7 @@ async function parseRcloneSections(newCfg = false) {
 
   try {
     const rcloneCmd = global.currentConfiguration.rclonePath;
-    const out = await execShellCommand(`"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config list`);
+    const out = await execShellCommand(`"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config show`);
     if (!out) {
       return console.error('rclone config is empty', global.currentConfiguration.rcloneConf, out);
     }
@@ -2099,7 +2098,7 @@ async function sideloadFolder(arg) {
     }
     catch (e) {
       res.remove_obb = 'skip';
-      //console.log(e);
+      console.log(e);
     }
 
     res.download_obb = 'processing';
@@ -2140,11 +2139,12 @@ async function sideloadFolder(arg) {
 
           res.download_obb = (+res.download_obb.split('/')[0] + 1) + '/' + obbFiles.length;
           win.webContents.send('sideload_process', res);
-
-          await adbPush(obbtmp, `${destFile}`);
+          await adbShell(`push "${obbtmp}" "${destFile}"`);
+          //await adbPush(obbtmp, `${destFile}`, false, true);
         }
         else {
-          await adbPush(obb, `${destFile}`);
+          await adbShell(`push "${obb}" "${destFile}"`);
+          //await adbPush(obb, `${destFile}`, false, true);
         }
 
         res.push_obb = (+res.push_obb.split('/')[0] + 1) + '/' + obbFiles.length;

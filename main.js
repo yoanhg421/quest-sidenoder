@@ -65,7 +65,6 @@ ipcMain.on('get_installed_with_updates', async (event, arg) => {
   console.log('get_installed_with_updates', apps.length);
 
   event.reply('get_installed_with_updates', { success: true, apps });
-  return;
 });
 
 ipcMain.on('get_device_info', async (event, arg) => {
@@ -77,7 +76,6 @@ async function getDeviceInfo(event) {
   const res = await tools.getDeviceInfo();
 
   event.reply('get_device_info', res);
-  return;
 }
 
 ipcMain.on('connect_wireless', async (event, arg) => {
