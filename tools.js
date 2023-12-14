@@ -1359,7 +1359,7 @@ async function checkMount(attempt = 0) {
         }, _sec)
       })
     }
-    const resp = await fetch("http://127.0.0.1:5572/rc/noop", {
+    const resp = await net.fetch("http://127.0.0.1:5572/rc/noop", {
       method: "post",
     })
 
@@ -2501,7 +2501,7 @@ async function uninstall(packageName) {
 let rcloneProgress = false
 async function updateRcloneProgress() {
   try {
-    const response = await fetch("http://127.0.0.1:5572/core/stats", {
+    const response = await net.fetch("http://127.0.0.1:5572/core/stats", {
       method: "POST",
     })
     const data = await response.json()
