@@ -6,12 +6,13 @@ const util = require("util")
 const path = require("path")
 const crypto = require("crypto")
 const commandExists = require("command-exists")
-const { dialog } = require("electron")
+const { dialog, net } = require("electron")
 const ApkReader = require("adbkit-apkreader")
 const adbkit = require("@devicefarmer/adbkit").default
 const adb = adbkit.createClient()
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args))
+
 const WAE = require("web-auto-extractor").default
 // const HttpProxyAgent = require('https-proxy-agent'); // TODO add https proxy support
 const { SocksProxyAgent } = require("socks-proxy-agent")
@@ -1347,6 +1348,7 @@ async function appInfoEvents(args) {
 
 async function checkMount(attempt = 0) {
   console.log("checkMount()", attempt)
+
   try {
     attempt++
 
@@ -1357,8 +1359,7 @@ async function checkMount(attempt = 0) {
         }, _sec)
       })
     }
-
-    const resp = await fetch("http://127.0.0.1:5572/rc/noop", {
+    const resp = await net.fetch("http://127.0.0.1:5572/rc/noop", {
       method: "post",
     })
 
@@ -1616,8 +1617,11 @@ async function mount() {
   const rcloneCmd = global.currentConfiguration.rclonePath
   console.log("start rclone")
   exec(
-    `"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --allow-non-empty --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`,
+    // `/Users/yoanherrera/sidenoder/rclone mount --read-only --rc --rc-no-auth --config="/Users/yoanherrera/sidenoder/rclone.conf" VRP: "/var/folders/bd/trf4b_ld6xz0xg2nq_00g51r0000gn/T/mnt"`,
+    `"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth  --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`,
     (error, stdout, stderr) => {
+      console.log(stdout, stderr)
+
       if (error) {
         console.error("rclone error:", error)
         if (RCLONE_ID != myId) error = false
