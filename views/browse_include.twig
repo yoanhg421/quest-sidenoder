@@ -61,7 +61,7 @@
   }
 
   id('addBookmark').onclick = () => addBookmark(id('bookmarkName').value, id('path').title);
-  id('shellOpenDirPath').onclick = () => shell.openPath(id('path').title);
+  id('shellOpenDirPath').onclick = () => shell.openPath(path.normalize(id('path').title));
   id('editDirPath').onclick = () => promptDialog('Change directory location', '', id('path').title, true)
     .then(loc => { if (loc) getDir(loc) });
 

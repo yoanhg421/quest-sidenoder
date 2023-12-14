@@ -6,7 +6,7 @@ const util = require("util")
 const path = require("path")
 const crypto = require("crypto")
 const commandExists = require("command-exists")
-const { dialog, net } = require("electron")
+const { dialog, net, app } = require("electron")
 const ApkReader = require("adbkit-apkreader")
 const adbkit = require("@devicefarmer/adbkit").default
 const adb = adbkit.createClient()
@@ -1359,7 +1359,7 @@ async function checkMount(attempt = 0) {
         }, _sec)
       })
     }
-    const resp = await net.fetch("http://127.0.0.1:5572/rc/noop", {
+    const resp = await fetch("http://127.0.0.1:5572/rc/noop", {
       method: "post",
     })
 
@@ -1448,18 +1448,35 @@ async function fetchBinary(bin) {
 
   const file = global.platform == "win" ? `${bin}.exe` : bin
 
+  const arch = global.arch == "arm64" ? "x64" : global.arch
+
+  const appPath =
+    process.argv[2] == "--dev" ? app.getAppPath() : process.resourcesPath
+  const filepath = path.join(
+    appPath,
+    "build",
+    "tools",
+    bin,
+    global.platform,
+    arch
+  )
+
+  console.log("*******************", filepath)
+
   const binPath = path.join(sidenoderHome, file)
-  const branch = /*bin == 'rclone' ? 'new' :*/ "master"
-  const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/${branch}/${global.platform}/${global.arch}/${file}`
-  await fetchFile(binUrl, binPath)
+  // const branch = /*bin == 'rclone' ? 'new' :*/ "master"
+  // const binUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/${branch}/${global.platform}/${arch}/${file}`
+
+  const binFile = path.join(filepath, file)
+  await fetchFile(binFile, binPath)
 
   if (bin == "adb" && global.platform == "win") {
     const libFile = "AdbWinApi.dll"
-    const libUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${libFile}`
+    const libUrl = path.join(filepath, "AdbWinApi.dll")
     await fetchFile(libUrl, path.join(sidenoderHome, libFile))
 
     const usbLibFile = "AdbWinUsbApi.dll"
-    const usbLibUrl = `https://raw.githubusercontent.com/vKolerts/${bin}-bin/master/${global.platform}/${global.arch}/${usbLibFile}`
+    const usbLibUrl = path.join(filepath, "AdbWinUsbApi.dll")
     await fetchFile(usbLibUrl, path.join(sidenoderHome, usbLibFile))
   }
 
@@ -1468,11 +1485,14 @@ async function fetchBinary(bin) {
 
 async function fetchFile(url, dest) {
   console.log("fetchFile", { url, dest })
-  const resp = await fetch(url)
-  if (!resp.ok) throw new Error(`Can't download '${url}': ${resp.statusText}`)
+  await fsp.copyFile(url, dest)
+  // const resp = await fetch(url)
+  // if (!resp.ok) throw new Error(`Can't download '${url}': ${resp.statusText}`)
 
-  if (await fsp.exists(dest)) await fsp.unlink(dest)
-  return fsp.writeFile(dest, await resp.buffer(), { mode: 0o755 })
+  // if (await fsp.exists(dest)) await fsp.unlink(dest)
+  // return fsp.writeFile(dest, Buffer.from(await resp.arrayBuffer()), {
+  //   mode: 0o755,
+  // })
 }
 
 function returnError(message) {
@@ -1524,7 +1544,7 @@ async function parseRcloneSections(newCfg = false) {
       `"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config dump`
     )
     const output = JSON.parse(out)
-    console.log("CONFIG: ", output)
+
     if (!out) {
       return console.error(
         "rclone config is empty",

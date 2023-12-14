@@ -7,6 +7,7 @@
     "@devicefarmer/adbkit": "3.2.5",
     "@electron/remote": "2.1.0",
     "adbkit-apkreader": "3.2.0",
+    "axios": "^1.6.2",
     "command-exists": "1.2.9",
     "compare-versions": "6.1.0",
     "electron-find": "1.0.7",
@@ -38,15 +39,23 @@
     "directories": {
       "output": "out"
     },
-    "afterPack": "./removeLocales.js",
+    "extraResources": [
+      "./build/tools"
+    ],
     "mac": {
       "target": [
-        "dir"
+        "dmg"
+      ],
+      "publish": [
+        "github"
       ]
     },
     "win": {
       "target": [
         "nsis"
+      ],
+      "publish": [
+        "github"
       ]
     },
     "linux": {
