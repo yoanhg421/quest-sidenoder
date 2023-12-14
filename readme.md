@@ -6,7 +6,7 @@
 
 **SideNoder** - A **cross platform sideloader** for Quest(1&2&3) standalone vr headset.
 
-# Quest 3 comaptibility added in v 0.8.0
+# Quest 3 comaptibility added in v 0.8.1
 
 <details>
 <summary>
