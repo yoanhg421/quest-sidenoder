@@ -6,9 +6,9 @@ name: CI-WINDOWS-OTHER
 # events but only for the main branch
 on:
   push:
-    branches: [ ]
+    branches: []
   pull_request:
-    branches: [ ]
+    branches: []
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -22,7 +22,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "21.x"
 
       - name: electron-packager
         run: |
@@ -39,7 +42,6 @@ jobs:
           cd /home/runner/work/quest-sidenoder/quest-sidenoder/sidenoder-win32-x64/
           mkdir -p /tmp/builds/win32/x64/
           zip -r /tmp/builds/win32/x64/sidenoder-win32-x64.zip *
-
 
       - name: Upload windows Build Artifact
         uses: actions/upload-artifact@v2
