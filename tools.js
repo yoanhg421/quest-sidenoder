@@ -6,7 +6,6 @@ const util = require("util")
 const path = require("path")
 const crypto = require("crypto")
 const commandExists = require("command-exists")
-
 const ApkReader = require("adbkit-apkreader")
 const adbkit = require("@devicefarmer/adbkit").default
 const adb = adbkit.createClient()
