@@ -26,7 +26,7 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder -mwl",
     "dist-win": "electron-builder -w",
-    "dist-mac": "electron-builder -m dmg --x64",
+    "dist-mac": "electron-builder -m",
     "postdist": "npm run pack-win && npm run pack-mac",
     "postinstall": "electron-builder install-app-deps",
     "pack-win": "cd out/win-unpacked && cp ../windows-install.bat ./ && 7za a sidenoder-$npm_package_version-win.zip  ./* && mv sidenoder-$npm_package_version-win.zip ../",
