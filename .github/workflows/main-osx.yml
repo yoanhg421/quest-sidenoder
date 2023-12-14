@@ -39,7 +39,7 @@ jobs:
           name: sidenoder-mac
           path: out/*.tar.gz
       - name: Upload darwin Build zip Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: sidenoder-darwin-x64-zip
+          name: sidenoder-mac
           path: /tmp/builds/darwin/zip/
