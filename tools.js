@@ -6,10 +6,10 @@ const util = require("util")
 const path = require("path")
 const crypto = require("crypto")
 const commandExists = require("command-exists")
+const { dialog } = require("electron")
 const ApkReader = require("adbkit-apkreader")
 const adbkit = require("@devicefarmer/adbkit").default
 const adb = adbkit.createClient()
-adbkit.sync
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args))
 const WAE = require("web-auto-extractor").default
@@ -25,7 +25,7 @@ const pkg = require("./package.json")
 const _sec = 1000
 const _min = 60 * _sec
 
-const CHECK_META_PERIOD = 2 * _min
+let CHECK_META_PERIOD = 2 * _min
 const l = 32
 const configLocationOld = path.join(global.homedir, "sidenoder-config.json")
 const configLocation = path.join(global.sidenoderHome, "config.json")
@@ -791,7 +791,7 @@ async function adbPullFolder(orig, dest, sync = false) {
 async function adbPush(orig, dest, sync = false) {
   console.log("adbPush", orig, dest)
   const transfer = sync
-    ? await sync.push(orig, dest, { mode: 0o777 })
+    ? await sync.pushFile(orig, dest)
     : await adb.getDevice(global.adbDevice).push(orig, dest)
   const stats = await fsp.lstat(orig)
   const size = stats.size
@@ -865,7 +865,7 @@ async function adbInstall(apk) {
   console.log("adbInstall", apk)
   const temp_path = "/data/local/tmp/install.apk"
 
-  await adbPush(apk, temp_path)
+  await adbPush(apk, temp_path, false, false)
   try {
     await adb.getDevice(global.adbDevice).installRemote(temp_path)
   } catch (err) {
@@ -1520,8 +1520,10 @@ async function parseRcloneSections(newCfg = false) {
   try {
     const rcloneCmd = global.currentConfiguration.rclonePath
     const out = await execShellCommand(
-      `"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config list`
+      `"${rcloneCmd}" --config="${global.currentConfiguration.rcloneConf}" config dump`
     )
+    const output = JSON.parse(out)
+    console.log("CONFIG: ", output)
     if (!out) {
       return console.error(
         "rclone config is empty",
@@ -1530,8 +1532,9 @@ async function parseRcloneSections(newCfg = false) {
       )
     }
 
-    const sections = out.split("\n")
-    if (sections.length) sections.pop()
+    const sections = Object.keys(output)
+    console.log("SECTIONS: ", sections)
+    // if (sections.length) sections.pop()
     if (!sections.length) {
       return console.error(
         "rclone config sections not found",
@@ -1576,7 +1579,7 @@ async function umount() {
   if (platform == "win") {
     if (!(await fsp.exists(global.mountFolder))) return
 
-    await fsp.rm(global.mountFolder, { recursive: true })
+    await fsp.rmdir(global.mountFolder, { recursive: true })
     return
   }
 
@@ -1613,7 +1616,7 @@ async function mount() {
   const rcloneCmd = global.currentConfiguration.rclonePath
   console.log("start rclone")
   exec(
-    `"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`,
+    `"${rcloneCmd}" ${mountCmd} --read-only --rc --rc-no-auth --allow-non-empty --config="${global.currentConfiguration.rcloneConf}" ${global.currentConfiguration.cfgSection}: "${global.mountFolder}"`,
     (error, stdout, stderr) => {
       if (error) {
         console.error("rclone error:", error)
@@ -2225,7 +2228,7 @@ async function sideloadFolder(arg) {
       console.log("remove_obb done", packageName)
     } catch (e) {
       res.remove_obb = "skip"
-      //console.log(e);
+      console.log(e)
     }
 
     res.download_obb = "processing"
@@ -2267,10 +2270,10 @@ async function sideloadFolder(arg) {
           res.download_obb =
             +res.download_obb.split("/")[0] + 1 + "/" + obbFiles.length
           win.webContents.send("sideload_process", res)
-
-          await adbPush(obbtmp, `${destFile}`)
+          await adbPush(obbtmp, `${destFile}`, false)
         } else {
-          await adbPush(obb, `${destFile}`)
+          await adbShell(`mkdir -p ${obbFolderDest}`, global.adbDevice, true)
+          await adbPush(obb, `${destFile}`, false)
         }
 
         res.push_obb = +res.push_obb.split("/")[0] + 1 + "/" + obbFiles.length

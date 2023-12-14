@@ -8,12 +8,12 @@ const {
   Menu,
 } = require("electron")
 // const { BrowserWindow } = require('@electron/remote')
+require("@electron/remote/main").initialize()
+
 const fs = require("fs")
 const path = require("path")
-global.twig = require("electron-twig")
-const remote = require("@electron/remote/main")
 
-remote.initialize()
+global.twig = require("electron-twig")
 
 app.disableHardwareAcceleration()
 
@@ -59,6 +59,7 @@ ipcMain.on("get_installed", async (event, arg) => {
   console.log("get_installed", apps.length)
 
   event.reply("get_installed", { success: true, apps })
+  return
 })
 
 ipcMain.on("get_installed_with_updates", async (event, arg) => {
@@ -87,16 +88,19 @@ ipcMain.on("connect_wireless", async (event, arg) => {
     console.log("Missing device, sending ask_device")
     event.reply("connect_wireless", { success: false })
     event.reply("ask_device", "")
+    return
   }
 
   const ip = await tools.connectWireless()
   event.reply("connect_wireless", { success: !!ip, ip })
+  return
 })
 
 ipcMain.on("disconnect_wireless", async (event, arg) => {
   console.log("disconnect_wireless received")
   const res = await tools.disconnectWireless()
   event.reply("connect_wireless", { success: !res })
+  return
 })
 
 ipcMain.on("check_deps", async (event, arg) => {
@@ -109,6 +113,8 @@ ipcMain.on("check_deps", async (event, arg) => {
 ipcMain.on("mount", async (event, arg) => {
   await tools.mount()
   setTimeout(() => checkMount(event), 1000)
+
+  return
 })
 
 ipcMain.on("check_mount", async (event, arg) => {
@@ -123,6 +129,8 @@ async function checkMount(event) {
     tools.updateRcloneProgress()
     rcloneProgress = true
   }
+
+  return
 }
 
 ipcMain.on("start_sideload", async (event, arg) => {
@@ -136,6 +144,8 @@ ipcMain.on("start_sideload", async (event, arg) => {
   event.reply("start_sideload", { success: true, path: arg.path })
   await tools.sideloadFolder(arg)
   getDeviceInfo(event)
+
+  return
 })
 
 ipcMain.on("folder_install", async (event, { path, update }) => {
@@ -144,11 +154,13 @@ ipcMain.on("folder_install", async (event, { path, update }) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   const install = await tools.getApkFromFolder(path)
   console.log({ install })
   event.reply("ask_sideload", { success: true, install, update })
+  return
 })
 
 ipcMain.on("filedrop", async (event, path) => {
@@ -156,11 +168,13 @@ ipcMain.on("filedrop", async (event, path) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   // TODO: check isApk
 
   event.reply("ask_sideload", { success: true, install: { path } })
+  return
 })
 
 ipcMain.on("reset_cache", async (event, arg) => {
@@ -180,6 +194,7 @@ ipcMain.on("get_dir", async (event, arg) => {
     install.notes = await tools.detectNoteTxt(folder)
 
     event.reply("ask_sideload", { success: true, install }) // TODO: install_desc
+    return
   }
 
   //if only 1 apk inside, send straight to there
@@ -221,6 +236,7 @@ ipcMain.on("enable_mtp", async (event, arg) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   try {
@@ -229,6 +245,8 @@ ipcMain.on("enable_mtp", async (event, arg) => {
   } catch (err) {
     event.reply("cmd_sended", { success: err })
   }
+
+  return
 })
 
 ipcMain.on("scrcpy_start", async (event, arg) => {
@@ -236,11 +254,13 @@ ipcMain.on("scrcpy_start", async (event, arg) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   const res = await tools.startSCRCPY()
   console.log("startSCRCPY", res)
   event.reply("scrcpy_start", { success: !!res })
+  return
 })
 
 ipcMain.on("reboot_device", async (event, arg) => {
@@ -248,6 +268,7 @@ ipcMain.on("reboot_device", async (event, arg) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   try {
@@ -256,6 +277,8 @@ ipcMain.on("reboot_device", async (event, arg) => {
   } catch (err) {
     event.reply("cmd_sended", { success: err })
   }
+
+  return
 })
 
 ipcMain.on("reboot_recovery", async (event, arg) => {
@@ -263,6 +286,7 @@ ipcMain.on("reboot_recovery", async (event, arg) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   try {
@@ -271,6 +295,8 @@ ipcMain.on("reboot_recovery", async (event, arg) => {
   } catch (err) {
     event.reply("cmd_sended", { success: err })
   }
+
+  return
 })
 
 ipcMain.on("reboot_bootloader", async (event, arg) => {
@@ -278,6 +304,7 @@ ipcMain.on("reboot_bootloader", async (event, arg) => {
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   try {
@@ -286,17 +313,21 @@ ipcMain.on("reboot_bootloader", async (event, arg) => {
   } catch (err) {
     event.reply("cmd_sended", { success: err })
   }
+
+  return
 })
 ipcMain.on("sideload_update", async (event, arg) => {
   console.log("sideload_update received")
   if (!global.adbDevice) {
     console.log("Missing device, sending ask_device")
     event.reply("ask_device", "")
+    return
   }
 
   if (!arg) {
     console.log("update.zip not defined")
     event.reply("cmd_sended", { success: "Update.zip path not defined" })
+    return
   }
 
   try {
@@ -305,6 +336,8 @@ ipcMain.on("sideload_update", async (event, arg) => {
   } catch (err) {
     event.reply("cmd_sended", { success: err })
   }
+
+  return
 })
 
 ipcMain.on("device_tweaks", async (event, arg) => {
@@ -319,11 +352,14 @@ ipcMain.on("device_tweaks", async (event, arg) => {
     if (!global.adbDevice) {
       console.log("Missing device, sending ask_device")
       event.reply("ask_device", "")
+      return
     }
 
     const res = await tools.deviceTweaksSet(arg)
     event.reply("device_tweaks", arg)
   }
+
+  return
 })
 
 ipcMain.on("uninstall", async (event, arg) => {
@@ -331,40 +367,47 @@ ipcMain.on("uninstall", async (event, arg) => {
   resp = await tools.uninstall(arg)
   event.reply("uninstall", { success: true })
   getDeviceInfo(event)
+  return
 })
 
 ipcMain.on("get_activities", async (event, arg) => {
   console.log("get_activities received", arg)
   const activities = await tools.getActivities(arg)
   event.reply("get_activities", { success: !!activities, activities })
+  return
 })
 ipcMain.on("start_activity", async (event, arg) => {
   console.log("start_activity received", arg)
   const resp = await tools.startActivity(arg)
   event.reply("start_activity", { success: !!resp })
+  return
 })
 ipcMain.on("start_app", async (event, arg) => {
   console.log("start_app received", arg)
   const activity = await tools.getLaunchActiviy(arg)
   const resp = await tools.startActivity(activity)
   event.reply("start_app", { success: !!resp })
+  return
 })
 ipcMain.on("dev_open_url", async (event, arg) => {
   console.log("dev_open_url received", arg)
   const resp = await tools.devOpenUrl(arg)
   event.reply("dev_open_url", { success: !!resp })
+  return
 })
 
 ipcMain.on("change_config", async (event, { key, val }) => {
   console.log("change_config received", { key, val })
   val = await tools.changeConfig(key, val)
   event.reply("change_config", { success: true, key, val })
+  return
 })
 
 ipcMain.on("app_config_set", async (event, { package, key, val }) => {
   console.log("change_config received", { package, key, val })
   const res = await tools.changeAppConfig(package, key, val)
   event.reply("app_config_set", res)
+  return
 })
 
 ipcMain.on("app_info", async (event, arg) => {
@@ -372,6 +415,7 @@ ipcMain.on("app_info", async (event, arg) => {
   const res = await tools.appInfo(arg)
   // console.log({ res });
   event.reply("app_info", res)
+  return
 })
 
 ipcMain.on("app_events_info", async (event, arg) => {
@@ -379,28 +423,33 @@ ipcMain.on("app_events_info", async (event, arg) => {
   const res = await tools.appInfoEvents(arg)
   // console.log({ res });
   event.reply("app_events_info", res)
+  return
 })
 
 ipcMain.on("app_tools", async (event, arg) => {
   console.log("app_tools received", arg)
   const resp = await tools.checkAppTools(arg)
   event.reply("app_tools", resp)
+  return
 })
 
 ipcMain.on("app_backup", async (event, arg) => {
   console.log("app_backup received", arg)
   const resp = await tools.backupApp(arg)
   event.reply("app_backup", { success: resp })
+  return
 })
 ipcMain.on("data_backup", async (event, arg) => {
   console.log("data_backup received", arg)
   const resp = await tools.backupAppData(arg)
   event.reply("data_backup", { success: resp })
+  return
 })
 ipcMain.on("data_restore", async (event, arg) => {
   console.log("data_restore received", arg)
   const resp = await tools.restoreAppData(arg)
   event.reply("data_restore", { success: resp })
+  return
 })
 
 global.close = false
@@ -420,7 +469,7 @@ function createWindow() {
     },
   })
   // require("@electron/remote/main").initialize()
-  remote.enable(win.webContents)
+  require("@electron/remote/main").enable(win.webContents)
   win.setMenu(null)
   win.maximize(true)
 
@@ -453,7 +502,7 @@ function createWindow() {
       message: 'Are you sure you want to quit?'
     })
     .then(({ response }) => {
-      if (response != 0) 
+      if (response != 0) return;
       close = true;
       app.quit();
     });
@@ -481,7 +530,7 @@ async function startApp() {
   // DEFAULT
   await app.whenReady()
 
-  if (global.platform === "mac") {
+  if (global.platform == "mac") {
     app.dock.setMenu(
       Menu.buildFromTemplate([
         {
@@ -497,9 +546,8 @@ async function startApp() {
   createWindow()
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
-    }
+    if (BrowserWindow.getAllWindows().length != 0) return
+    createWindow()
   })
   app.on("window-all-closed", (e) => {
     // powerSaveBlocker.stop(id)
